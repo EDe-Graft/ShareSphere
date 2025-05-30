@@ -261,7 +261,7 @@ app.get("/user-posts", async (req, res) => {
         });
       })
     )
- 
+     
     res.json({
       success: true,
       posts: userPosts

@@ -1,4 +1,4 @@
-# Share Sphere
+# ShareSphere
 
 <div align="center">
   <img src="frontend/public/ShareSphereLogo.png" alt="ShareSphere Logo" width="200"/>
