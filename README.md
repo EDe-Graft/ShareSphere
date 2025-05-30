@@ -1,7 +1,7 @@
 # ShareSphere
 
 <div align="center">
-  <img src="frontend/public/ShareSphereLogo.png" alt="ShareSphere Logo" width="200"/>
+  <img src="client/public/ShareSphereLogo.png" alt="ShareSphere Logo" width="200"/>
   <h3>Connect, Share, and Collaborate</h3>
 </div>
 

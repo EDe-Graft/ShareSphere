@@ -19,17 +19,17 @@ pids
 .DS_Store
 Thumbs.db
 
-# --- Frontend (Vite + React) ---
-frontend/dist/
-frontend/.vite/
-frontend/node_modules/
-frontend/.env
-frontend/.env.local
+# --- client (Vite + React) ---
+client/dist/
+client/.vite/
+client/node_modules/
+client/.env
+client/.env.local
 
 # --- Backend (Express + Passport) ---
-server/server/node_modules/
-server/server/.env
-server/server/.env.local
+server/node_modules/
+server/.env
+server/.env.local
 
 # --- Build folders ---
 build/
