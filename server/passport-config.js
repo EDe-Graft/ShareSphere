@@ -1,0 +1,100 @@
+import { Strategy as LocalStrategy } from "passport-local";
+import GoogleStrategy from "passport-google-oauth2";
+import GitHubStrategy from "passport-github2"; //  import GitHub strategy
+import bcrypt from "bcrypt";
+
+export function configurePassport(passport, db) {
+  // LOCAL STRATEGY
+  passport.use("local", new LocalStrategy({
+    usernameField: 'email',
+    passwordField: 'password'
+  }, async (email, password, cb) => {
+    try {
+      console.log("local strategy activated");
+      const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+      if (result.rows.length > 0) {
+        const user = result.rows[0];
+        const passwordMatch = await bcrypt.compare(password, user.password);
+        if (passwordMatch) {
+          return cb(null, user);
+        } else {
+          return cb(null, false, { message: 'incorrect password' });
+        }
+      } else {
+        return cb(null, false, { message: 'no user found' });
+      }
+    } catch (error) {
+      return cb(error);
+    }
+  }));
+
+  // GOOGLE STRATEGY
+  passport.use("google", new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: process.env.GOOGLE_CALLBACK_URL,
+    userProfileURL: process.env.USER_PROFILE_URL
+  }, async function(accessToken, refreshToken, profile, cb) {
+    try {
+      console.log("Google strategy activated");
+      const result = await db.query("SELECT * FROM users WHERE email = $1", [profile.email]);
+      let userId;
+
+      if (result.rows.length === 0) {
+        const newUser = await db.query(
+          "INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *",
+          [profile.displayName, profile.email, "google"]
+        );
+        userId = newUser.rows[0].user_id;
+      } else {
+        userId = result.rows[0].user_id;
+      }
+
+      profile.user_id = userId;
+      cb(null, profile);
+    } catch (error) {
+      cb(error);
+    }
+  }));
+
+  // ✅ GITHUB STRATEGY
+  passport.use("github", new GitHubStrategy({
+    clientID: process.env.GITHUB_CLIENT_ID,
+    clientSecret: process.env.GITHUB_CLIENT_SECRET,
+    callbackURL: process.env.GITHUB_CALLBACK_URL
+  }, async (accessToken, refreshToken, profile, cb) => {
+    try {
+      console.log("GitHub strategy activated");
+      const profileUrl = profile.profileUrl;
+      if (!profileUrl) return cb(null, false, { message: "No profile found" });
+
+      const result = await db.query("SELECT * FROM users WHERE email = $1", [profileUrl]);
+      let userId;
+      let authStrategy;
+
+      if (result.rows.length === 0) {
+        const newUser = await db.query(
+          "INSERT INTO users (name, email, password, strategy) VALUES ($1, $2, $3, $4) RETURNING *",
+          [profile.displayName, profileUrl, "github", "github"]
+        );
+        userId = newUser.rows[0].user_id;
+        authStrategy = newUser.rows[0].strategy
+      } else {
+        userId = result.rows[0].user_id;
+        authStrategy = result.rows[0].strategy
+      }
+
+      profile.user_id = userId;
+      profile.email = profileUrl;
+      profile.authStrategy = authStrategy;
+      cb(null, profile);
+
+    } catch (error) {
+      cb(error);
+    }
+  }));
+
+  // SERIALIZATION
+  passport.serializeUser((user, cb) => cb(null, user));
+  passport.deserializeUser((user, cb) => cb(null, user));
+}

@@ -1,0 +1,49 @@
+#project-wide
+.DS_Store
+
+# dependencies
+/node_modules/
+
+# local env files
+.env
+.env.local
+.env.*.local
+
+# Vite build output
+/dist/
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor folders and files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Optional coverage directory
+/coverage/
+
+# Optional lock files if you prefer Yarn over npm (or vice versa)
+/yarn.lock
+
+# Optional test runner cache
+/jest-cache/
+/jest.config.js
+
+# Optional service worker/designer files
+/.pnp/
+/.pnp.js
+
+# If you use Storybook
+/node_modules/
+/storybook-static/
+
+# Misc
+*.log

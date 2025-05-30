@@ -1,0 +1,36 @@
+# --- Global Node.js ---
+node_modules/
+.env
+.env.local
+.env.*.local
+npm-debug.log*
+
+# --- Logs ---
+logs
+*.log
+log/
+*.log.*
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# --- OS files ---
+.DS_Store
+Thumbs.db
+
+# --- Frontend (Vite + React) ---
+frontend/dist/
+frontend/.vite/
+frontend/node_modules/
+frontend/.env
+frontend/.env.local
+
+# --- Backend (Express + Passport) ---
+server/server/node_modules/
+server/server/.env
+server/server/.env.local
+
+# --- Build folders ---
+build/
+dist/
