@@ -122,6 +122,7 @@ app.get("/auth/success", (req, res) => {
   }
 });
 
+//for google auth failure
 app.get("/auth/failure", (req, res) => {
   res.send(`
     <script>
