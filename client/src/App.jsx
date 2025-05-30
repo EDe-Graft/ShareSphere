@@ -5,6 +5,7 @@ import Footer from "./components/Footer";
 import HomePage from "./pages/HomePage";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
+import AllCategoriesViewPage from "./pages/AllCategoriesViewPage";
 import BooksViewPage from "./pages/BooksViewPage";
 import FurnitureViewPage from "./pages/FurnitureViewPage";
 import ClothingViewPage from "./pages/ClothingViewPage";
@@ -32,26 +33,33 @@ function App() {
           <Route path="/sign-up" element={<SignUpPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
-
-          <Route 
-            path="/books" 
+          <Route
+            path="/all-categories"
+            element={
+              <ProtectedRoute>
+                <AllCategoriesViewPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/books"
             element={
               <ProtectedRoute>
                 <BooksViewPage />
               </ProtectedRoute>
             }
           />
-          <Route 
-            path="/furniture" 
+          <Route
+            path="/furniture"
             element={
               <ProtectedRoute>
                 <FurnitureViewPage />
               </ProtectedRoute>
-            } 
+            }
           />
 
-          <Route 
-            path="/clothing" 
+          <Route
+            path="/clothing"
             element={
               <ProtectedRoute>
                 <ClothingViewPage />
@@ -59,25 +67,25 @@ function App() {
             }
           />
 
-          <Route 
-            path="/miscellaneous" 
+          <Route
+            path="/miscellaneous"
             element={
               <ProtectedRoute>
                 <MiscellaneousViewPage />
               </ProtectedRoute>
-              } 
+            }
           />
 
-          <Route 
+          <Route
             path="/favorites"
             element={
               <ProtectedRoute>
                 <FavoritesViewPage />
               </ProtectedRoute>
             }
-          /> 
+          />
 
-          <Route 
+          <Route
             path="/posts"
             element={
               <ProtectedRoute>
@@ -86,47 +94,49 @@ function App() {
             }
           />
 
-          <Route 
-            path="/books-form" 
+          <Route
+            path="/books-form"
             element={
               <ProtectedRoute>
                 <BooksForm />
               </ProtectedRoute>
-              } 
+            }
           />
 
-          <Route 
-            path="/clothing-form" 
+          <Route
+            path="/clothing-form"
             element={
               <ProtectedRoute>
                 <ClothingForm />
               </ProtectedRoute>
-            } 
+            }
           />
-          
-          <Route 
-            path="/furniture-form" 
+
+          <Route
+            path="/furniture-form"
             element={
               <ProtectedRoute>
                 <FurnitureForm />
               </ProtectedRoute>
-              } 
+            }
           />
 
-          <Route path="/miscellaneous-form" element={
-            <ProtectedRoute>
-              <MiscellaneousForm />
-            </ProtectedRoute>
-          } 
+          <Route
+            path="/miscellaneous-form"
+            element={
+              <ProtectedRoute>
+                <MiscellaneousForm />
+              </ProtectedRoute>
+            }
           />
 
           <Route
             path="*"
             element={
-            <ProtectedRoute>
-              <NoPageFound />
-            </ProtectedRoute>
-          }
+              <ProtectedRoute>
+                <NoPageFound />
+              </ProtectedRoute>
+            }
           />
         </Routes>
         <Footer />

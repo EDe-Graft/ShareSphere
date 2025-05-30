@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 
 const HomePage = () => {
-  const {authSuccess, user} = useAuth();
+  const { authSuccess, user } = useAuth();
   const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
   const categoriesSectionRef = useRef(null);
@@ -56,8 +56,18 @@ const HomePage = () => {
     return () => clearTimeout(timeout);
   }, [displayedText, isDeleting, currentPhraseIndex]);
 
-  // Items consisting each item object
+  // Items consisting each item object and all categories
   const items = [
+    {
+      itemType: "All Categories",
+      details: {
+        name: "All Categories",
+        description:
+          "Browse all available items across books, furniture, clothing, and miscellaneous categories.",
+        imageUrl:
+          "https://images.unsplash.com/photo-1586953208448-b95a79798f07?q=80&w=2070&auto=format&fit=crop",
+      },
+    },
     {
       itemType: "Books",
       details: {
