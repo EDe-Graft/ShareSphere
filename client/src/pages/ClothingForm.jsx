@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import ImageUploadField from "@/components/ImageUploadField";
-import { formatFormData } from "@/lib/utils";
+import { formatData } from "@/lib/utils";
 import axios from "axios";
 
 // Define constants for file validation
@@ -143,7 +143,7 @@ export default function ClothingForm() {
       condition: data.condition || "Good",
       images: data.images
     };
-    const clothingFormData = formatFormData(clothingProcessedData);
+    const clothingFormData = formatData(clothingProcessedData);
 
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
     const axiosConfig = {

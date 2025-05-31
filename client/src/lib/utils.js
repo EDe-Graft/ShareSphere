@@ -49,7 +49,19 @@ export const CATEGORY_OPTIONS = {
 
 //Helper functions and constants
 
-export function formatFormData(processedData) {
+export function toTitleCase(str) {
+  return str
+    .toLowerCase()
+    .replace(/\b\w+/g, function(word) {
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    });
+}
+      
+export function capitalizeFirst(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+export function formatData(processedData) {
   const formData = new FormData();
 
   // Helper functions
@@ -74,8 +86,7 @@ export function formatFormData(processedData) {
           const numericValue = parseFloat(value.replace(/[^0-9.]/g, ''));
           processedValue = isNaN(numericValue) ? "N/A" : `$${numericValue.toFixed(2)}`;
           break;
-          
-        case "year":
+
         case "age":
           processedValue = value.toLowerCase() === "n/a" ? "N/A" : value;
           break;
@@ -88,6 +99,15 @@ export function formatFormData(processedData) {
           processedValue = formatCondition(value);
           break;
           
+        //for edited data formatting
+        case "itemCategory":
+          processedValue = value;
+          break;
+
+        case "itemId":
+          processedValue = value;
+          break;
+
         default:
           processedValue = shouldTitleCase(key) ? toTitleCase(value) : value;
           break;
@@ -95,6 +115,7 @@ export function formatFormData(processedData) {
     }
 
     if (key !== "images") {
+      console.log(key, processedValue)
       formData.append(key, processedValue);
     }
   }
@@ -109,18 +130,6 @@ export function formatFormData(processedData) {
   return formData;
 }
 
-export function toTitleCase(str) {
-  return str
-    .toLowerCase()
-    .split(" ")
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}
-      
-export function capitalizeFirst(str) {
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
-// Format condition value to camelCase
 
 // Helper function to format condition values
 function formatCondition(condition) {

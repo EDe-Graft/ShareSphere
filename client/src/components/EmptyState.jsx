@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { BookX, Shirt, Sofa, Package, Star, Plus, Heart } from "lucide-react";
+import { BookX, Shirt, Sofa, Package, Star, Plus, Heart, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const EmptyState = ({ category }) => {
@@ -62,7 +62,7 @@ const EmptyState = ({ category }) => {
           icon: <Gift className="h-12 w-12 text-muted-foreground" />,
           title: "Nothing Here Yet",
           description: "There are no items matching your current filters, or no items have been posted yet.",
-          actionText: "Explore Items"
+          actionText: "Post an Item"
         };
     }
   };

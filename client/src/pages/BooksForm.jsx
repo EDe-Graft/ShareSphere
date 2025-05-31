@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { formatFormData, CATEGORY_OPTIONS } from "@/lib/utils";
+import { formatData, CATEGORY_OPTIONS } from "@/lib/utils";
 import ImageUploadField from "@/components/ImageUploadField";
 import axios from "axios";
 
@@ -104,7 +104,7 @@ const BooksForm = () => {
       images: data.images,
     };
 
-    const booksFormData = formatFormData(booksProcessedData);
+    const booksFormData = formatData(booksProcessedData);
 
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
     const axiosConfig = {

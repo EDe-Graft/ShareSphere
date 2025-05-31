@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import ConditionBadge from "./ConditionBadge";
 import LikeButton from "./LikeButton";
 
-export default function ItemCard ({ item, onViewDetails, likes, isLiked, onLikeToggle, mode, onDelete }) {
+export default function ItemCard ({ item, onViewDetails, likes, isLiked, onLikeToggle}) {
 
   let itemValues;
   if (item.generalCategory === 'Book') {
@@ -13,7 +13,7 @@ export default function ItemCard ({ item, onViewDetails, likes, isLiked, onLikeT
   }
   
   else {
-    itemValues = [item.name, item.type, item.brand, item.age]
+    itemValues = [item.name, item.type, item.brand, item.material || item.gender || item.age]
   }
 
   return (

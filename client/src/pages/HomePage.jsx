@@ -57,9 +57,11 @@ const HomePage = () => {
   }, [displayedText, isDeleting, currentPhraseIndex]);
 
   // Items consisting each item object and all categories
-  const items = [
+  const categories = [
     {
-      itemType: "All Categories",
+      category: "All Categories",
+      viewRoute: "/all-categories",
+      uploadRoute: "/",
       details: {
         name: "All Categories",
         description:
@@ -69,7 +71,9 @@ const HomePage = () => {
       },
     },
     {
-      itemType: "Books",
+      category: "Books",
+      viewRoute: "/books",
+      uploadRoute: "/books-form",
       details: {
         name: "Books",
         description:
@@ -79,7 +83,9 @@ const HomePage = () => {
       },
     },
     {
-      itemType: "Furniture",
+      category: "Furniture",
+      viewRoute: "/furniture",
+      uploadRoute: "/furniture-form",
       details: {
         name: "Furniture",
         description:
@@ -89,7 +95,9 @@ const HomePage = () => {
       },
     },
     {
-      itemType: "Clothing",
+      category: "Clothing",
+      viewRoute: "/clothing",
+      uploadRoute: "/clothing-form",
       details: {
         name: "Clothing",
         description:
@@ -99,7 +107,9 @@ const HomePage = () => {
       },
     },
     {
-      itemType: "Miscellaneous",
+      category: "Miscellaneous",
+      viewRoute: "/miscellaneous",
+      uploadRoute: "/miscellaneous-form",
       details: {
         name: "Miscellaneous",
         description:
@@ -196,7 +206,7 @@ const HomePage = () => {
             </p>
           </div>
           <div className="relative px-4 sm:px-8">
-            <CategoryCarousel items={items} isVisible={isVisible} />
+            <CategoryCarousel items={categories} isVisible={isVisible} />
           </div>
         </div>
       </section>

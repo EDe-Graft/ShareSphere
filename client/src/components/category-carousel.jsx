@@ -41,8 +41,10 @@ export function CategoryCarousel({ items, isVisible }) {
               className="h-full"
             >
               <SharedInfoCard
-                itemType={item.itemType}
-                items={item.details.name}
+                itemCategory={item.category}
+                itemViewRoute = {item.viewRoute}
+                itemUploadRoute = {item.uploadRoute}
+                name={item.details.name}
                 description={item.details.description}
                 imageUrl={item.details.imageUrl}
               />

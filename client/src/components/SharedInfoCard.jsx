@@ -10,17 +10,17 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Heart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-const SharedInfoCard = ({ itemType, items, description, imageUrl }) => {
+const SharedInfoCard = ({ itemCategory, itemViewRoute, itemUploadRoute, name, description, imageUrl }) => {
   const navigate = useNavigate();
 
   // Navigate to each category page
   const handleViewItems = () => {
-    navigate(`/${itemType.toLowerCase()}`);
+    navigate(`${itemViewRoute}`);
     window.scrollTo(0, 0);
   };
 
-  const handleDonateItems = () => {
-    navigate(`/${itemType.toLowerCase()}-form`);
+  const handleUploadItem = () => {
+    navigate(`${itemUploadRoute}`);
     window.scrollTo(0, 0);
   };
 
@@ -29,7 +29,7 @@ const SharedInfoCard = ({ itemType, items, description, imageUrl }) => {
       <div className="relative h-[180px] sm:h-[200px] md:h-[220px] overflow-hidden">
         <img
           src={imageUrl || "https://via.placeholder.com/400x200"}
-          alt={items}
+          alt={name}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
         />
@@ -37,12 +37,12 @@ const SharedInfoCard = ({ itemType, items, description, imageUrl }) => {
           variant="secondary"
           className="absolute top-3 right-3 bg-white/90 text-primary font-medium hover:bg-white shadow-sm"
         >
-          {itemType}
+          {itemCategory}
         </Badge>
       </div>
       <CardHeader className="pb-2 pt-3 px-3 sm:px-6">
         <CardTitle className="text-lg sm:text-xl font-bold tracking-tight">
-          {items}
+          {name}
         </CardTitle>
         <CardDescription className="text-sm text-muted-foreground line-clamp-3">
           {description}
@@ -53,7 +53,7 @@ const SharedInfoCard = ({ itemType, items, description, imageUrl }) => {
           variant="outline"
           size="sm"
           className="text-xs flex-1 sm:flex-initial border-primary text-primary hover:bg-primary hover:text-white transition-colors"
-          onClick={handleDonateItems}
+          onClick={handleUploadItem}
         >
           <Heart className="h-3 w-3" />
           Donate

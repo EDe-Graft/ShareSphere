@@ -277,7 +277,6 @@ app.get("/user-posts", async (req, res) => {
 
 app.post("/update-post", async (req, res) => {
   const updateData = req.body.updateData;
-  console.log(updateData)
   const convertedData = toSnakeCase(updateData);
   const { item_id: itemId, item_category: itemCategory } = convertedData;
   let tableName = getTableName(itemCategory);

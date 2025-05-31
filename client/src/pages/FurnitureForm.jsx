@@ -33,7 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import ImageUploadField from "@/components/ImageUploadField";
-import { formatFormData } from "@/lib/utils";
+import { formatData } from "@/lib/utils";
 import axios from "axios";
 
 
@@ -105,7 +105,7 @@ const FurnitureForm = () => {
       condition: data.condition || "Good",
       images: data.images,
     };
-    const furnitureFormData = formatFormData(furnitureProcessedData);
+    const furnitureFormData = formatData(furnitureProcessedData);
 
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
     const axiosConfig = {

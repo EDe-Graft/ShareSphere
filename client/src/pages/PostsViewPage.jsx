@@ -18,6 +18,7 @@ import EmptyState from "@/components/EmptyState";
 import { useAuth } from "@/components/AuthContext";
 import LikeButton from "@/components/LikeButton";
 import axios from "axios";
+import { formatData } from "@/lib/utils";
 
 const PostsViewPage = () => {
   const { user } = useAuth();
@@ -102,18 +103,24 @@ const PostsViewPage = () => {
 
   const handleUpdatePost = async (updateData) => {
     try {
-      // Send only the changed fields + identifiers
-      console.log(updateData)
+      // formatData returns a FormData object
+      const formData = formatData(updateData);
+  
+      // Convert FormData to a plain JS object
+      const plainObject = {};
+      for (const [key, value] of formData.entries()) {
+        plainObject[key] = value;
+      }
+  
       const response = await axios.post(
         `${BACKEND_URL}/update-post`,
-        {updateData},
+        { updateData: plainObject }, // Ensure this is JSON serializable
         axiosConfig
       );
-      // console.log(response);
 
       if (response.data.updateSuccess) {
         toast.success("Post updated successfully", {
-          description: `Your ${updateData.itemCategory} post has been successfully updated on ShareSphere.`,
+          description: `Your ${updateData.itemCategory} post was successfully updated on ShareSphere.`,
         });
   
         setTimeout(() => {
