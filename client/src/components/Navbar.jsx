@@ -12,6 +12,7 @@ import {
   Shirt,
   Sofa,
   Package,
+  Grid3X3,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -33,10 +34,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const mainNavItems = [
   { name: "Home", path: "/", icon: <Home className="h-4 w-4 mr-2" /> },
@@ -49,6 +49,11 @@ const mainNavItems = [
 ];
 
 const resourceCategories = [
+  {
+    name: "All Categories",
+    path: "/all-categories",
+    icon: <Grid3X3 className="h-4 w-4" />,
+  },
   { name: "Books", path: "/books", icon: <BookOpen className="h-4 w-4" /> },
   {
     name: "Furniture",
@@ -68,7 +73,7 @@ const resourceCategories = [
 ];
 
 const Navbar = () => {
-  const {authSuccess, user, logout} = useAuth();
+  const { authSuccess, user, logout } = useAuth();
 
   const { setTheme } = useTheme();
   const location = useLocation();
@@ -183,7 +188,7 @@ const Navbar = () => {
                       <li key={category.name}>
                         <NavigationMenuLink asChild>
                           <Link
-                            to={authSuccess? category.path: "/sign-in"}
+                            to={authSuccess ? category.path : "/sign-in"}
                             onClick={(e) => {
                               e.preventDefault();
                               handleNavigation(category.path);
@@ -212,7 +217,7 @@ const Navbar = () => {
         {/* Right Side Actions */}
         <div className="flex items-center gap-2">
           {/* User Avatar and Theme Toggle  */}
-          
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Avatar className="cursor-pointer bg-white dark:bg-[hsl(224,71.4%,4.1%)]">
@@ -223,15 +228,14 @@ const Navbar = () => {
                         user.picture
                           ? user.picture
                           : user.photos
-                          ? user.photos[0]?.value
-                          : null
+                            ? user.photos[0]?.value
+                            : null
                       }
                     />
                     <AvatarFallback>
                       {user.displayName
                         ? user.displayName[0].toUpperCase()
-                        : user.name[0].toUpperCase()
-                      }
+                        : user.name[0].toUpperCase()}
                     </AvatarFallback>
                   </>
                 ) : (
@@ -244,44 +248,37 @@ const Navbar = () => {
                   </svg>
                 )}
               </Avatar>
-
-
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {
-                !user ?
-                (
+              {!user ? (
                 <DropdownMenuItem onClick={() => navigate("/sign-in")}>
                   Sign In
                 </DropdownMenuItem>
-                )
-                :
-                (
-                  <>
-                    <DropdownMenuItem onClick={() => navigate("/favorites")}>
-                      Favorites
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/posts")}>
-                      Posts
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={ async () => {
-                        console.log("Logging out...");
-                        const logoutSuccess = await logout();
-                        if (logoutSuccess) {navigate("/")}
-                      }}
-                    >
-                      Sign Out
-                    </DropdownMenuItem>
-                  
-                  </>
-                )
-              }
+              ) : (
+                <>
+                  <DropdownMenuItem onClick={() => navigate("/favorites")}>
+                    Favorites
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/posts")}>
+                    Posts
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={async () => {
+                      console.log("Logging out...");
+                      const logoutSuccess = await logout();
+                      if (logoutSuccess) {
+                        navigate("/");
+                      }
+                    }}
+                  >
+                    Sign Out
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
-
 
           <Button
             variant="outline"

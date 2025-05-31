@@ -7,10 +7,19 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Heart } from "lucide-react";
+import { Heart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-const SharedInfoCard = ({ itemCategory, itemViewRoute, itemUploadRoute, name, description, imageUrl }) => {
+const SharedInfoCard = ({
+  itemCategory,
+  itemViewRoute,
+  itemUploadRoute,
+  name,
+  description,
+  imageUrl,
+  isAllCategories,
+  onDonateClick,
+}) => {
   const navigate = useNavigate();
 
   // Navigate to each category page
@@ -20,8 +29,14 @@ const SharedInfoCard = ({ itemCategory, itemViewRoute, itemUploadRoute, name, de
   };
 
   const handleUploadItem = () => {
-    navigate(`${itemUploadRoute}`);
-    window.scrollTo(0, 0);
+    if (isAllCategories && onDonateClick) {
+      // For All Categories, use the custom donate handler to show dialog
+      onDonateClick();
+    } else {
+      // For other categories, navigate to form directly
+      navigate(`${itemUploadRoute}`);
+      window.scrollTo(0, 0);
+    }
   };
 
   return (

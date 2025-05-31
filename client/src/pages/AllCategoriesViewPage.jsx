@@ -34,6 +34,15 @@ import EmptyState from "@/components/EmptyState";
 import { useAuth } from "@/components/AuthContext";
 import LikeButton from "@/components/LikeButton";
 import axios from "axios";
+import { Plus, BookOpen, Shirt, Sofa, Package } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const AllCategoriesViewPage = () => {
   const { user } = useAuth();
@@ -51,6 +60,7 @@ const AllCategoriesViewPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isDonateDialogOpen, setIsDonateDialogOpen] = useState(false);
 
   const userMode = "view";
   const category = "all";
@@ -130,6 +140,7 @@ const AllCategoriesViewPage = () => {
           allItemsData.push(
             ...booksRes.data.items.map((item) => ({
               ...item,
+              generalCategory: "book",
             }))
           );
         }
@@ -137,6 +148,7 @@ const AllCategoriesViewPage = () => {
           allItemsData.push(
             ...furnitureRes.data.items.map((item) => ({
               ...item,
+              generalCategory: "furniture",
             }))
           );
         }
@@ -144,6 +156,7 @@ const AllCategoriesViewPage = () => {
           allItemsData.push(
             ...clothingRes.data.items.map((item) => ({
               ...item,
+              generalCategory: "clothing",
             }))
           );
         }
@@ -151,6 +164,7 @@ const AllCategoriesViewPage = () => {
           allItemsData.push(
             ...miscRes.data.items.map((item) => ({
               ...item,
+              generalCategory: "miscellaneous",
             }))
           );
         }
@@ -193,7 +207,6 @@ const AllCategoriesViewPage = () => {
           item.type?.toLowerCase().includes(query) ||
           item.brand?.toLowerCase().includes(query) ||
           item.author?.toLowerCase().includes(query) ||
-          item.color?.toLowerCase().includes(query) ||
           item.description?.toLowerCase().includes(query)
       );
     }
@@ -275,6 +288,17 @@ const AllCategoriesViewPage = () => {
     setSortBy("newest");
   };
 
+  const handleCategorySelection = (formPath) => {
+    setIsDonateDialogOpen(false);
+
+    if (user) {
+      navigate(formPath);
+    } else {
+      localStorage.setItem("redirectAfterLogin", formPath);
+      navigate("/sign-in");
+    }
+  };
+
   return (
     <main className="container mx-auto px-4 py-8">
       {/* Sonner Toaster Component */}
@@ -293,6 +317,80 @@ const AllCategoriesViewPage = () => {
           </div>
         </div>
         <div className="flex gap-2">
+          <Dialog
+            open={isDonateDialogOpen}
+            onOpenChange={setIsDonateDialogOpen}
+          >
+            <DialogTrigger asChild>
+              <Button className="bg-primary hover:bg-primary/90">
+                <Plus className="mr-2 h-4 w-4" />
+                Donate Item
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Choose Donation Category</DialogTitle>
+                <DialogDescription>
+                  Select the category that best describes the item you want to
+                  donate.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid grid-cols-1 gap-3 py-4">
+                <Button
+                  variant="outline"
+                  className="justify-start h-auto p-4 hover:bg-primary hover:text-white"
+                  onClick={() => handleCategorySelection("/books-form")}
+                >
+                  <BookOpen className="mr-3 h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-medium">Books</div>
+                    <div className="text-sm text-muted-foreground">
+                      Textbooks, novels, reference materials
+                    </div>
+                  </div>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="justify-start h-auto p-4 hover:bg-primary hover:text-white"
+                  onClick={() => handleCategorySelection("/furniture-form")}
+                >
+                  <Sofa className="mr-3 h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-medium">Furniture</div>
+                    <div className="text-sm text-muted-foreground">
+                      Chairs, desks, tables, storage
+                    </div>
+                  </div>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="justify-start h-auto p-4 hover:bg-primary hover:text-white"
+                  onClick={() => handleCategorySelection("/clothing-form")}
+                >
+                  <Shirt className="mr-3 h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-medium">Clothing</div>
+                    <div className="text-sm text-muted-foreground">
+                      Shirts, pants, jackets, accessories
+                    </div>
+                  </div>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="justify-start h-auto p-4 hover:bg-primary hover:text-white"
+                  onClick={() => handleCategorySelection("/miscellaneous-form")}
+                >
+                  <Package className="mr-3 h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-medium">Miscellaneous</div>
+                    <div className="text-sm text-muted-foreground">
+                      Electronics, supplies, tools, other items
+                    </div>
+                  </div>
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
           <Button onClick={() => navigate("/books")} variant="outline">
             View Books
           </Button>
@@ -429,6 +527,7 @@ const AllCategoriesViewPage = () => {
                   likes={likesById[item.itemId] || 0}
                   isLiked={isLikedById[item.itemId] || false}
                   onLikeToggle={handleLikeToggle}
+                  mode={userMode}
                   additionalBadges={[
                     <Badge
                       key="category"
