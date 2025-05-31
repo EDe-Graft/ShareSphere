@@ -110,7 +110,7 @@ export function CategoryCarousel({ items, isVisible }) {
           <div className="grid grid-cols-1 gap-3 py-4">
             <Button
               variant="outline"
-              className="justify-start h-auto p-4 hover:bg-primary hover:text-white"
+              className="justify-start h-auto p-4 "
               onClick={() => handleCategorySelection("/books-form")}
             >
               <BookOpen className="mr-3 h-5 w-5" />
@@ -123,7 +123,7 @@ export function CategoryCarousel({ items, isVisible }) {
             </Button>
             <Button
               variant="outline"
-              className="justify-start h-auto p-4 hover:bg-primary hover:text-white"
+              className="justify-start h-auto p-4 "
               onClick={() => handleCategorySelection("/furniture-form")}
             >
               <Sofa className="mr-3 h-5 w-5" />
@@ -136,7 +136,7 @@ export function CategoryCarousel({ items, isVisible }) {
             </Button>
             <Button
               variant="outline"
-              className="justify-start h-auto p-4 hover:bg-primary hover:text-white"
+              className="justify-start h-auto p-4 "
               onClick={() => handleCategorySelection("/clothing-form")}
             >
               <Shirt className="mr-3 h-5 w-5" />
@@ -149,7 +149,7 @@ export function CategoryCarousel({ items, isVisible }) {
             </Button>
             <Button
               variant="outline"
-              className="justify-start h-auto p-4 hover:bg-primary hover:text-white"
+              className="justify-start h-auto p-4 "
               onClick={() => handleCategorySelection("/miscellaneous-form")}
             >
               <Package className="mr-3 h-5 w-5" />
