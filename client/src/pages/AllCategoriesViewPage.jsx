@@ -1,3 +1,4 @@
+import { DialogTrigger } from "@/components/ui/dialog";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Grid3X3, Search, SlidersHorizontal } from "lucide-react";
@@ -34,14 +35,13 @@ import EmptyState from "@/components/EmptyState";
 import { useAuth } from "@/components/AuthContext";
 import LikeButton from "@/components/LikeButton";
 import axios from "axios";
-import { Plus, BookOpen, Shirt, Sofa, Package } from "lucide-react";
+import { Plus, BookOpen, Shirt, Sofa, Package, Gift } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 
 const AllCategoriesViewPage = () => {
@@ -61,6 +61,7 @@ const AllCategoriesViewPage = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isDonateDialogOpen, setIsDonateDialogOpen] = useState(false);
+  const [isPostDialogOpen, setIsPostDialogOpen] = useState(false);
 
   const userMode = "view";
   const category = "all";
@@ -290,6 +291,7 @@ const AllCategoriesViewPage = () => {
 
   const handleCategorySelection = (formPath) => {
     setIsDonateDialogOpen(false);
+    setIsPostDialogOpen(false);
 
     if (user) {
       navigate(formPath);
@@ -297,6 +299,51 @@ const AllCategoriesViewPage = () => {
       localStorage.setItem("redirectAfterLogin", formPath);
       navigate("/sign-in");
     }
+  };
+
+  // Custom EmptyState component that shows dialog instead of navigating
+  const CustomEmptyState = () => {
+    const getEmptyStateContent = () => {
+      if (selectedCategory !== "all") {
+        // If a specific category is selected, use that category for EmptyState
+        return <EmptyState category={selectedCategory} />;
+      } else {
+        // If "all" categories, show custom empty state with dialog
+        return (
+          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+            <div className="bg-muted/50 rounded-full p-6 mb-4">
+              <Gift className="h-12 w-12 text-muted-foreground" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">No Items Found</h3>
+            <p className="text-muted-foreground max-w-md mb-6">
+              {searchQuery ||
+              selectedCondition !== "all" ||
+              selectedAvailability !== "all"
+                ? "No items match your current filters. Try adjusting your search criteria or be the first to post an item!"
+                : "No items have been posted yet. Be the first to share something with the community!"}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              {(searchQuery ||
+                selectedCondition !== "all" ||
+                selectedAvailability !== "all") && (
+                <Button onClick={resetFilters} variant="outline">
+                  Reset Filters
+                </Button>
+              )}
+              <Button
+                onClick={() => setIsPostDialogOpen(true)}
+                className="bg-primary hover:bg-primary/90"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Post an Item
+              </Button>
+            </div>
+          </div>
+        );
+      }
+    };
+
+    return getEmptyStateContent();
   };
 
   return (
@@ -316,94 +363,78 @@ const AllCategoriesViewPage = () => {
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Dialog
-            open={isDonateDialogOpen}
-            onOpenChange={setIsDonateDialogOpen}
-          >
-            <DialogTrigger asChild>
-              <Button className="bg-primary hover:bg-primary/90">
-                <Plus className="mr-2 h-4 w-4" />
-                Donate Item
+        {/* Donate Item Dialog */}
+        <Dialog open={isDonateDialogOpen} onOpenChange={setIsDonateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-primary hover:bg-primary/90">
+              <Plus className="mr-2 h-4 w-4" />
+              Donate Item
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Choose Donation Category</DialogTitle>
+              <DialogDescription>
+                Select the category that best describes the item you want to
+                donate.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-1 gap-3 py-4">
+              <Button
+                variant="outline"
+                className="justify-start h-auto p-4 "
+                onClick={() => handleCategorySelection("/books-form")}
+              >
+                <BookOpen className="mr-3 h-5 w-5" />
+                <div className="text-left">
+                  <div className="font-medium">Books</div>
+                  <div className="text-sm text-muted-foreground">
+                    Textbooks, novels, reference materials
+                  </div>
+                </div>
               </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Choose Donation Category</DialogTitle>
-                <DialogDescription>
-                  Select the category that best describes the item you want to
-                  donate.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid grid-cols-1 gap-3 py-4">
-                <Button
-                  variant="outline"
-                  className="justify-start h-auto p-4"
-                  onClick={() => handleCategorySelection("/books-form")}
-                >
-                  <BookOpen className="mr-3 h-5 w-5" />
-                  <div className="text-left">
-                    <div className="font-medium">Books</div>
-                    <div className="text-sm text-muted-foreground">
-                      Textbooks, novels, reference materials
-                    </div>
+              <Button
+                variant="outline"
+                className="justify-start h-auto p-4 "
+                onClick={() => handleCategorySelection("/furniture-form")}
+              >
+                <Sofa className="mr-3 h-5 w-5" />
+                <div className="text-left">
+                  <div className="font-medium">Furniture</div>
+                  <div className="text-sm text-muted-foreground">
+                    Chairs, desks, tables, storage
                   </div>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="justify-start h-auto p-4 "
-                  onClick={() => handleCategorySelection("/furniture-form")}
-                >
-                  <Sofa className="mr-3 h-5 w-5" />
-                  <div className="text-left">
-                    <div className="font-medium">Furniture</div>
-                    <div className="text-sm text-muted-foreground">
-                      Chairs, desks, tables, storage
-                    </div>
+                </div>
+              </Button>
+              <Button
+                variant="outline"
+                className="justify-start h-auto p-4 "
+                onClick={() => handleCategorySelection("/clothing-form")}
+              >
+                <Shirt className="mr-3 h-5 w-5" />
+                <div className="text-left">
+                  <div className="font-medium">Clothing</div>
+                  <div className="text-sm text-muted-foreground">
+                    Shirts, pants, jackets, accessories
                   </div>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="justify-start h-auto p-4 "
-                  onClick={() => handleCategorySelection("/clothing-form")}
-                >
-                  <Shirt className="mr-3 h-5 w-5" />
-                  <div className="text-left">
-                    <div className="font-medium">Clothing</div>
-                    <div className="text-sm text-muted-foreground">
-                      Shirts, pants, jackets, accessories
-                    </div>
+                </div>
+              </Button>
+              <Button
+                variant="outline"
+                className="justify-start h-auto p-4 "
+                onClick={() => handleCategorySelection("/miscellaneous-form")}
+              >
+                <Package className="mr-3 h-5 w-5" />
+                <div className="text-left">
+                  <div className="font-medium">Miscellaneous</div>
+                  <div className="text-sm text-muted-foreground">
+                    Electronics, supplies, tools, other items
                   </div>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="justify-start h-auto p-4 "
-                  onClick={() => handleCategorySelection("/miscellaneous-form")}
-                >
-                  <Package className="mr-3 h-5 w-5" />
-                  <div className="text-left">
-                    <div className="font-medium">Miscellaneous</div>
-                    <div className="text-sm text-muted-foreground">
-                      Electronics, supplies, tools, other items
-                    </div>
-                  </div>
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-          <Button onClick={() => navigate("/books")} variant="outline">
-            View Books
-          </Button>
-          <Button onClick={() => navigate("/furniture")} variant="outline">
-            View Furniture
-          </Button>
-          <Button onClick={() => navigate("/clothing")} variant="outline">
-            View Clothing
-          </Button>
-          <Button onClick={() => navigate("/miscellaneous")} variant="outline">
-            View Misc
-          </Button>
-        </div>
+                </div>
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Tabs defaultValue="grid" className="mb-8">
@@ -541,7 +572,7 @@ const AllCategoriesViewPage = () => {
               ))}
             </div>
           ) : (
-            <EmptyState category={category} />
+            <CustomEmptyState />
           )}
         </TabsContent>
 
@@ -655,15 +686,76 @@ const AllCategoriesViewPage = () => {
               ))}
             </div>
           ) : (
-            <EmptyState
-              title="No Items Found"
-              description="No items match your current filters. Try adjusting your search criteria."
-              actionText="Reset Filters"
-              category={category}
-            />
+            <CustomEmptyState />
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Post Item Dialog */}
+      <Dialog open={isPostDialogOpen} onOpenChange={setIsPostDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Choose Item Category</DialogTitle>
+            <DialogDescription>
+              Select the category that best describes the item you want to post.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 gap-3 py-4">
+            <Button
+              variant="outline"
+              className="justify-start h-auto p-4 "
+              onClick={() => handleCategorySelection("/books-form")}
+            >
+              <BookOpen className="mr-3 h-5 w-5" />
+              <div className="text-left">
+                <div className="font-medium">Books</div>
+                <div className="text-sm text-muted-foreground">
+                  Textbooks, novels, reference materials
+                </div>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="justify-start h-auto p-4 "
+              onClick={() => handleCategorySelection("/furniture-form")}
+            >
+              <Sofa className="mr-3 h-5 w-5" />
+              <div className="text-left">
+                <div className="font-medium">Furniture</div>
+                <div className="text-sm text-muted-foreground">
+                  Chairs, desks, tables, storage
+                </div>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="justify-start h-auto p-4"
+              onClick={() => handleCategorySelection("/clothing-form")}
+            >
+              <Shirt className="mr-3 h-5 w-5" />
+              <div className="text-left">
+                <div className="font-medium">Clothing</div>
+                <div className="text-sm text-muted-foreground">
+                  Shirts, pants, jackets, accessories
+                </div>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="justify-start h-auto p-4 "
+              onClick={() => handleCategorySelection("/miscellaneous-form")}
+            >
+              <Package className="mr-3 h-5 w-5" />
+              <div className="text-left">
+                <div className="font-medium">Miscellaneous</div>
+                <div className="text-sm text-muted-foreground">
+                  Electronics, supplies, tools, other items
+                </div>
+              </div>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <ItemDetailsDialog
         item={selectedItem}
