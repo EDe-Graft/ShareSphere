@@ -1,17 +1,23 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, CircleDot, Circle, BookOpen } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  CircleDot,
+  Circle,
+  BookOpen,
+} from "lucide-react";
 import LikeButton from "./LikeButton";
 
 const ImageCarousel = ({ item, images, isLiked, likes, onLikeToggle }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const goToPrevious = () =>
-    setCurrentIndex(prev => (prev === 0 ? images.length - 1 : prev - 1));
+    setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
 
   const goToNext = () =>
-    setCurrentIndex(prev => (prev === images.length - 1 ? 0 : prev + 1));
+    setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
 
   const goToSlide = (index) => setCurrentIndex(index);
 
@@ -46,23 +52,32 @@ const ImageCarousel = ({ item, images, isLiked, likes, onLikeToggle }) => {
             variant="ghost"
             size="icon"
             className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black hover:bg-slate-800 rounded-full h-8 w-8"
-            onClick={(e) => { e.stopPropagation(); goToPrevious(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              goToPrevious();
+            }}
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft className="h-5 w-5 text-white" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
             className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black hover:bg-slate-800 rounded-full h-8 w-8"
-            onClick={(e) => { e.stopPropagation(); goToNext(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              goToNext();
+            }}
           >
-            <ChevronRight className="h-5 w-5" />
+            <ChevronRight className="h-5 w-5 text-white" />
           </Button>
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-1.5">
             {images.map((_, i) => (
               <button
                 key={i}
-                onClick={(e) => { e.stopPropagation(); goToSlide(i); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goToSlide(i);
+                }}
                 className="focus:outline-none"
               >
                 {i === currentIndex ? (
@@ -77,7 +92,7 @@ const ImageCarousel = ({ item, images, isLiked, likes, onLikeToggle }) => {
       )}
 
       <div className="mt-3 flex items-center justify-center">
-        <LikeButton 
+        <LikeButton
           itemId={item.itemId}
           isLiked={isLiked}
           likes={likes}
