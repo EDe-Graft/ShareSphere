@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Carousel,
   CarouselContent,
@@ -10,7 +10,14 @@ import SharedInfoCard from "./SharedInfoCard";
 import { motion } from "framer-motion";
 import { useMediaQuery } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Shirt, Sofa, Package } from "lucide-react";
+import {
+  BookOpen,
+  Shirt,
+  Sofa,
+  Package,
+  Circle,
+  CircleDot,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,6 +27,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/components/AuthContext";
+import { cn } from "@/lib/utils";
 
 export function CategoryCarousel({ items, isVisible }) {
   const navigate = useNavigate();
@@ -27,6 +35,26 @@ export function CategoryCarousel({ items, isVisible }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const isMobile = useMediaQuery("(max-width: 640px)");
   const isTablet = useMediaQuery("(min-width: 641px) and (max-width: 1024px)");
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [api, setApi] = useState(null);
+
+  // Set up carousel API to track current slide
+  useEffect(() => {
+    if (!api) return;
+
+    const handleSelect = () => {
+      setCurrentIndex(api.selectedScrollSnap());
+    };
+
+    api.on("select", handleSelect);
+
+    // Initial position
+    setCurrentIndex(api.selectedScrollSnap());
+
+    return () => {
+      api.off("select", handleSelect);
+    };
+  }, [api]);
 
   // Determine how many items to show based on screen size
   const getItemsPerSlide = () => {
@@ -50,6 +78,12 @@ export function CategoryCarousel({ items, isVisible }) {
     setIsDialogOpen(true);
   };
 
+  const goToSlide = (index) => {
+    if (api) {
+      api.scrollTo(index);
+    }
+  };
+
   return (
     <>
       <Carousel
@@ -58,6 +92,7 @@ export function CategoryCarousel({ items, isVisible }) {
           loop: true,
         }}
         className="w-full"
+        setApi={setApi}
       >
         <CarouselContent className="-ml-2 md:-ml-4 py-2 px-[0.18rem]">
           {items.map((item, index) => (
@@ -91,9 +126,33 @@ export function CategoryCarousel({ items, isVisible }) {
             </CarouselItem>
           ))}
         </CarouselContent>
-        <div className="flex justify-center mt-6 gap-2">
-          <CarouselPrevious className="relative sm:absolute" />
-          <CarouselNext className="relative sm:absolute" />
+        {/* Navigation Controls */}
+        <div className="flex flex-col items-center gap-4 mt-6">
+          <div className="flex justify-center gap-2">
+            <CarouselPrevious className="relative sm:absolute" />
+            <CarouselNext className="relative sm:absolute" />
+          </div>
+
+          {/* Pagination Dots */}
+          <div className="flex items-center justify-center gap-2 mt-2">
+            {items.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => goToSlide(index)}
+                className={cn(
+                  "transition-all focus:outline-none",
+                  currentIndex === index ? "scale-125" : "opacity-70"
+                )}
+                aria-label={`Go to slide ${index + 1}`}
+              >
+                {currentIndex === index ? (
+                  <CircleDot className="h-4 w-4 text-primary" />
+                ) : (
+                  <Circle className="h-4 w-4 text-muted-foreground" />
+                )}
+              </button>
+            ))}
+          </div>
         </div>
       </Carousel>
 
