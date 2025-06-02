@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { AvatarImage } from "@radix-ui/react-avatar";
 
 const AboutPage = () => {
   return (
@@ -129,6 +130,9 @@ const AboutPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="flex flex-col items-center text-center space-y-4">
                 <Avatar className="h-24 w-24">
+                  <AvatarImage 
+                    src={import.meta.env.VITE_DEGRAFT_PROFILE_IMAGE}
+                  />
                   <AvatarFallback>ED</AvatarFallback>
                 </Avatar>
                 <div>
@@ -160,6 +164,9 @@ const AboutPage = () => {
               </div>
               <div className="flex flex-col items-center text-center space-y-4">
                 <Avatar className="h-24 w-24">
+                  <AvatarImage 
+                    src={import.meta.env.VITE_NARAYAN_PROFILE_IMAGE}
+                  />
                   <AvatarFallback>NK</AvatarFallback>
                 </Avatar>
                 <div>
