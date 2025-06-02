@@ -6,7 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormControl, FormLabel, FormMessage } from "@/components/ui/form";
 
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const ACCEPTED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+];
 const MAX_FILES = 3;
 
 export default function ImageUploadField({ field, fieldState, setValue }) {
@@ -47,12 +52,16 @@ export default function ImageUploadField({ field, fieldState, setValue }) {
         <div>
           {canAddMore && (
             <div
-              className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-8 cursor-pointer hover:border-violet-500 hover:bg-[hsl(224,71.4%,4.1%)] transition-colors"
+              className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-8 cursor-pointer hover:border-violet-500 hover:bg-slate-50 hover:dark:bg-[hsl(224,71.4%,4.1%)] transition-colors"
               onClick={() => fileInputRef.current?.click()}
             >
               <Upload className="h-12 w-12 text-violet-500 mb-2" />
-              <p className="text-base font-medium text-gray-700">Click to upload up to 3 photos</p>
-              <p className="mt-1 text-sm text-gray-500">JPG, PNG, WebP up to 7MB each</p>
+              <p className="text-base font-medium text-gray-700 dark:text-white/60">
+                Click to upload up to 3 photos
+              </p>
+              <p className="mt-1 text-sm text-gray-500">
+                JPG, PNG, WebP up to 7MB each
+              </p>
               <Input
                 ref={fileInputRef}
                 type="file"
