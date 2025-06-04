@@ -21,6 +21,7 @@ import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
 import FavoritesViewPage from "./pages/FavoritesViewPage";
 import PostsViewPage from "./pages/PostsViewPage";
+import ReportsManagementPage from "./pages/ReportsManagement";
 
 function App() {
   return (
@@ -126,6 +127,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <MiscellaneousForm />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/reports-management"
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <ReportsManagementPage />
               </ProtectedRoute>
             }
           />

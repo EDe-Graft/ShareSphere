@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Trash2, Edit2, Save, X } from "lucide-react";
+import { Trash2, Edit2, Save, X, Flag } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,8 @@ import {
 import ImageCarousel from "./ImageCarousel";
 import ConditionBadge from "./ConditionBadge";
 import { RequestItemDialog } from "./RequestItemDialog";
+import { ReportDialog } from "./ReportDialog";
+import { useAuth } from "@/components/AuthContext";
 import { CATEGORY_OPTIONS } from "@/lib/utils";
 
 export default function ItemDetailsDialog({
@@ -29,14 +31,16 @@ export default function ItemDetailsDialog({
   onUpdate,
 }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const dialogRef = useRef(null);
   const overlayRef = useRef(null);
 
   const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState({ ...item });
-  
+
   const originalParentCategory = useRef(item?.parentCategory);
 
   // Initialize editedData with proper fallbacks
@@ -109,6 +113,10 @@ export default function ItemDetailsDialog({
 
   const handleRequestDialogClose = () => {
     setIsRequestDialogOpen(false);
+  };
+
+  const handleReport = () => {
+    setIsReportDialogOpen(true);
   };
 
   const handleEditToggle = () => {
@@ -333,8 +341,11 @@ export default function ItemDetailsDialog({
     selectToChange,
     selectOptions,
   } = getFieldConfigurations();
-  
+
   const conditionOptions = ["Like-New", "Good", "Fair"];
+
+  // Check if current user owns this item
+  const isOwnItem = user && item.uploadedBy === (user.displayName || user.name);
 
   if (!isOpen) return null;
 
@@ -628,46 +639,66 @@ export default function ItemDetailsDialog({
               </p>
             )}
           </div>
-          <div className="flex justify-end items-center mt-4">
-            {mode === "edit" && !isEditing ? (
+
+          {/* Updated Footer with Report Button */}
+          <div className="flex justify-between items-center mt-4">
+            {/* Report button on the left - only show if not editing and not own item */}
+            {mode !== "edit" && !isEditing && !isOwnItem && (
               <Button
-                variant="destructive"
-                className="mt-4 hover:bg-red-600 transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(item.itemId, item.generalCategory);
-                }}
+                variant="outline"
+                onClick={handleReport}
+                className="text-red-600 border-red-200 hover:bg-red-50"
               >
-                <Trash2 className="mr-2 h-4 w-4" /> Delete This Post
-              </Button>
-            ) : isEditing ? (
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={handleCancelEdit}
-                  className="hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition-colors"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  className="bg-primary hover:bg-primary/90 transition-colors"
-                  onClick={handleSaveEdit}
-                >
-                  Save Changes
-                </Button>
-              </div>
-            ) : item.available === "true" ? (
-              <Button
-                className="bg-primary hover:bg-primary/90 transition-colors"
-                onClick={handleRequestItem}
-              >
-                Request This Item
-              </Button>
-            ) : (
-              <Button variant="outline" disabled>
-                Currently Unavailable
+                <Flag className="mr-2 h-4 w-4" />
+                Report
               </Button>
             )}
+
+            {/* Spacer div to push main actions to the right */}
+            <div></div>
+
+            {/* Main action buttons on the right */}
+            <div>
+              {mode === "edit" && !isEditing ? (
+                <Button
+                  variant="destructive"
+                  className="hover:bg-red-600 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(item.itemId, item.generalCategory);
+                  }}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" /> Delete This Post
+                </Button>
+              ) : isEditing ? (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleCancelEdit}
+                    className="hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition-colors"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className="bg-primary hover:bg-primary/90 transition-colors"
+                    onClick={handleSaveEdit}
+                  >
+                    Save Changes
+                  </Button>
+                </div>
+              ) : item.available === "true" ? (
+                <Button
+                  className="bg-primary hover:bg-primary/90 transition-colors"
+                  onClick={handleRequestItem}
+                >
+                  Request This Item
+                </Button>
+              ) : (
+                <Button variant="outline" disabled>
+                  Currently Unavailable
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -680,6 +711,17 @@ export default function ItemDetailsDialog({
           onClose={handleRequestDialogClose}
         />
       )}
+
+      {/* Report Dialog */}
+      <ReportDialog
+        isOpen={isReportDialogOpen}
+        onClose={() => setIsReportDialogOpen(false)}
+        reportedUser={{
+          id: item.uploaderId || "unknown",
+          name: item.uploadedBy || "Unknown User",
+        }}
+        reportedItem={item}
+      />
     </>
   );
 }

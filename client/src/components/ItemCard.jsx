@@ -1,75 +1,158 @@
-import { motion } from "framer-motion";
-import { Badge, BookOpen, Trash2 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { MoreVertical, Flag, Eye } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import ConditionBadge from "./ConditionBadge";
 import LikeButton from "./LikeButton";
+import { ReportDialog } from "./ReportDialog";
+import { useAuth } from "@/components/AuthContext";
 
-export default function ItemCard ({ item, onViewDetails, likes, isLiked, onLikeToggle}) {
+const ItemCard = ({
+  item,
+  onViewDetails,
+  likes,
+  isLiked,
+  onLikeToggle,
+  mode,
+  additionalBadges = [],
+  onEdit,
+  onDelete,
+}) => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
 
-  let itemValues;
-  if (item.generalCategory === 'Book') {
-    itemValues = [item.title, item.author, item.parentCategory, item.year]
-  }
-  
-  else {
-    itemValues = [item.name, item.type, item.brand, item.material || item.gender || item.age]
-  }
+  const handleViewDetails = () => {
+    onViewDetails(item);
+  };
+
+  const handleReport = () => {
+    setIsReportDialogOpen(true);
+  };
+
+  const isOwnItem = user && item.uploadedBy === (user.displayName || user.name);
 
   return (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.3 }}
-    className="h-full"
-  >
-    <Card className="h-full flex flex-col overflow-hidden hover:shadow-md transition-shadow duration-300">
-      <div className="relative h-[200px] overflow-hidden bg-muted">
-        {item.displayImage ? (
+    <>
+      <Card className="overflow-hidden border-0 shadow-md transition-all duration-300 hover:shadow-lg group h-full">
+        <div className="relative h-[200px] overflow-hidden">
           <img
-            src={item.displayImage}
-            alt={item.generalCategory}
-            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+            src={item.displayImage || item.images?.[0] || "/placeholder.svg"}
+            alt={item.name || item.title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
           />
-        ) : (
-          <BookOpen className="h-12 w-12 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-muted-foreground/50" />
-        )}
-        {!item.available && (
-          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-            <Badge variant="destructive" className="text-sm font-medium px-3 py-1">
-              Borrowed
-            </Badge>
+          <div className="absolute top-3 right-3 flex gap-2">
+            {additionalBadges.map((badge, index) => (
+              <div key={index}>{badge}</div>
+            ))}
+            <ConditionBadge condition={item.condition?.toLowerCase()} />
           </div>
-        )}
-      </div>
-      <CardHeader className="p-4 pb-2 flex-grow">
-        <CardTitle className="text-lg line-clamp-1">{itemValues[0]}</CardTitle>
-        <CardDescription className="line-clamp-1">{itemValues[1]}</CardDescription>
-      </CardHeader>
-      <CardContent className="px-4 py-0 space-y-2">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">{itemValues[2]}</span>
+
+          {/* More options menu */}
+          <div className="absolute top-3 left-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="h-8 w-8 bg-white/90 hover:bg-white"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem onClick={handleViewDetails}>
+                  <Eye className="mr-2 h-4 w-4" />
+                  View Details
+                </DropdownMenuItem>
+                {!isOwnItem && (
+                  <DropdownMenuItem
+                    onClick={handleReport}
+                    className="text-red-600"
+                  >
+                    <Flag className="mr-2 h-4 w-4" />
+                    Report User
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {!item.available && (
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+              <Badge
+                variant="destructive"
+                className="text-sm font-medium px-3 py-1"
+              >
+                Reserved
+              </Badge>
+            </div>
+          )}
         </div>
-      </CardContent>
-      <CardFooter className="p-4 pt-3 flex flex-col gap-2">
-        <div className="flex items-center justify-between w-full">
-          <ConditionBadge condition={item.condition} />
-          <LikeButton 
+
+        <CardHeader className="pb-2 pt-3 px-3 sm:px-6">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h3 className="font-semibold text-lg line-clamp-1">
+                {item.name || item.title}
+              </h3>
+              <p className="text-muted-foreground text-sm">
+                {item.brand || item.author || "No brand"}
+              </p>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="px-3 sm:px-6 py-2">
+          <p className="text-sm text-muted-foreground line-clamp-2">
+            {item.description}
+          </p>
+        </CardContent>
+
+        <CardFooter className="flex items-center justify-between px-3 sm:px-6 pb-4">
+          <LikeButton
             itemId={item.itemId}
-            isLiked={isLiked}
             likes={likes}
+            isLiked={isLiked}
             onLikeToggle={onLikeToggle}
-          />          
-        </div>
-        <Button
-          variant="outline"
-          className="w-full border-primary text-primary hover:bg-primary hover:text-white"
-          onClick={() => onViewDetails(item)}
-        >
-          View Details
-        </Button>
-      </CardFooter>
-    </Card>
-  </motion.div>
-)};
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-primary text-primary hover:bg-primary hover:text-white"
+            onClick={handleViewDetails}
+          >
+            View Details
+          </Button>
+        </CardFooter>
+      </Card>
+
+      {/* Report Dialog */}
+      <ReportDialog
+        isOpen={isReportDialogOpen}
+        onClose={() => setIsReportDialogOpen(false)}
+        reportedUser={{
+          id: item.uploaderId || "unknown",
+          name: item.uploadedBy || "Unknown User",
+        }}
+        reportedItem={item}
+      />
+    </>
+  );
+};
+
+export default ItemCard;
