@@ -21,7 +21,7 @@ import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
 import FavoritesViewPage from "./pages/FavoritesViewPage";
 import PostsViewPage from "./pages/PostsViewPage";
-import ReportsManagementPage from "./pages/ReportsManagement";
+import ReportsManagementPage from "./pages/ReportsManagementPage";
 
 function App() {
   return (
