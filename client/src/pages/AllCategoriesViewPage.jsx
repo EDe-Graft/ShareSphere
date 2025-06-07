@@ -141,7 +141,6 @@ const AllCategoriesViewPage = () => {
           allItemsData.push(
             ...booksRes.data.items.map((item) => ({
               ...item,
-              generalCategory: "book",
             }))
           );
         }
@@ -149,7 +148,6 @@ const AllCategoriesViewPage = () => {
           allItemsData.push(
             ...furnitureRes.data.items.map((item) => ({
               ...item,
-              generalCategory: "furniture",
             }))
           );
         }
@@ -157,7 +155,6 @@ const AllCategoriesViewPage = () => {
           allItemsData.push(
             ...clothingRes.data.items.map((item) => ({
               ...item,
-              generalCategory: "clothing",
             }))
           );
         }
@@ -165,7 +162,6 @@ const AllCategoriesViewPage = () => {
           allItemsData.push(
             ...miscRes.data.items.map((item) => ({
               ...item,
-              generalCategory: "miscellaneous",
             }))
           );
         }

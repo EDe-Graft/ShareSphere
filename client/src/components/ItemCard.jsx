@@ -89,8 +89,8 @@ export default function ItemCard({
                       onClick={handleReport}
                       className="text-red-600 cursor-pointer"
                     >
+                      Report Post
                       <Flag className="mr-2 h-3 w-3" />
-                      Report User
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -147,8 +147,9 @@ export default function ItemCard({
         isOpen={isReportDialogOpen}
         onClose={() => setIsReportDialogOpen(false)}
         reportedUser={{
-          id: item.uploaderId || "unknown",
-          name: item.uploadedBy || "Unknown User",
+          id: item.uploaderId,
+          name: item.uploadedBy,
+          email: item.uploaderEmail
         }}
         reportedItem={item}
       />

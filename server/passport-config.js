@@ -39,15 +39,18 @@ export function configurePassport(passport, db) {
       console.log("Google strategy activated");
       const result = await db.query("SELECT * FROM users WHERE email = $1", [profile.email]);
       let userId;
+      let authStrategy;
 
       if (result.rows.length === 0) {
         const newUser = await db.query(
-          "INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *",
-          [profile.displayName, profile.email, "google"]
+          "INSERT INTO users (name, email, password, strategy, report_count) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+          [profile.displayName, profile.email, "google", "google", 0]
         );
         userId = newUser.rows[0].user_id;
+        authStrategy = newUser.rows[0].strategy
       } else {
         userId = result.rows[0].user_id;
+        authStrategy = result.rows[0].strategy;
       }
 
       profile.user_id = userId;
@@ -74,8 +77,8 @@ export function configurePassport(passport, db) {
 
       if (result.rows.length === 0) {
         const newUser = await db.query(
-          "INSERT INTO users (name, email, password, strategy) VALUES ($1, $2, $3, $4) RETURNING *",
-          [profile.displayName, profileUrl, "github", "github"]
+          "INSERT INTO users (name, email, password, strategy, report_count) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+          [profile.displayName, profileUrl, "github", "github", 0]
         );
         userId = newUser.rows[0].user_id;
         authStrategy = newUser.rows[0].strategy

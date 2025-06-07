@@ -4,6 +4,7 @@ CREATE TABLE users (
     email VARCHAR(35) UNIQUE,
     password VARCHAR NOT NULL,
     strategy VARCHAR(15)
+    report_count INTEGER NOT NULL,
 );
 
 CREATE TABLE items (
@@ -36,6 +37,7 @@ CREATE TABLE books (
     condition VARCHAR(10) NOT NULL,
     available VARCHAR(6) NOT NULL,
     uploaded_by VARCHAR (50) NOT NULL,
+    uploader_id INTEGER NOT NULL,
     uploader_email VARCHAR(40) NOT NULL,
     upload_date VARCHAR(40) NOT NULL,
     CONSTRAINT fk_items 
@@ -58,6 +60,7 @@ CREATE TABLE furniture (
     condition VARCHAR(10) NOT NULL,
     available VARCHAR(6) NOT NULL,
     uploaded_by VARCHAR (50) NOT NULL,
+    uploader_id INTEGER NOT NULL,
     uploader_email VARCHAR(40) NOT NULL,
     upload_date VARCHAR(40) NOT NULL,
     CONSTRAINT fk_items 
@@ -80,6 +83,7 @@ CREATE TABLE clothing (
     condition VARCHAR(10) NOT NULL,
     available VARCHAR(5) NOT NULL,
     uploaded_by VARCHAR (30) NOT NULL,
+    uploader_id INTEGER NOT NULL,
     uploader_email VARCHAR(40) NOT NULL,
     upload_date VARCHAR(40) NOT NULL,
     CONSTRAINT fk_items 
@@ -101,6 +105,7 @@ CREATE TABLE miscellaneous (
     condition VARCHAR(10) NOT NULL,
     available VARCHAR(6) NOT NULL,
     uploaded_by VARCHAR(30) NOT NULL,
+    uploader_id INTEGER NOT NULL,
     uploader_email VARCHAR(40) NOT NULL,
     upload_date VARCHAR(30) NOT NULL,
     CONSTRAINT fk_items 
@@ -129,6 +134,26 @@ CREATE TABLE favorites (
     CONSTRAINT fk_item 
         FOREIGN KEY (item_id) REFERENCES items(item_id)
 );
+
+CREATE TABLE reports (
+  id SERIAL PRIMARY KEY,
+  report_count INTEGER,
+  reporter_name TEXT NOT NULL,
+  reporter_email TEXT NOT NULL,
+  reported_user_id INTEGER,
+  reported_user_name TEXT NOT NULL,
+  reported_user_email TEXT NOT NULL,
+  report_reason TEXT NOT NULL,
+  report_description TEXT,
+  item_id INTEGER NOT NULL,
+  item_category TEXT NOT NULL,
+  item_condition TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_items 
+    FOREIGN KEY (item_id)
+    REFERENCES items(item_id)
+);
+
 
 -- Join images to items
 -- SELECT 

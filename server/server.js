@@ -9,7 +9,7 @@ import multer from "multer";
 import cors from "cors";
 import nodemailer from "nodemailer";
 import { configurePassport } from "./passport-config.js";
-import { uploadToCloudinary, saveItem, saveImage, updateImage, insertCategoryDetails, getTableName, getImages, getLikes, deletePost } from './database-utils.js';
+import { uploadToCloudinary, saveItem, saveImage, updateImage, insertCategoryDetails, getTableName, getImages, getLikes, deletePost, saveReport } from './database-utils.js';
 import { formatLocalISO, capitalizeFirst, toCamelCase, toSnakeCase } from "./format.js";
 
 // Express-app and environment creation
@@ -669,6 +669,8 @@ app.post("/send-request", async (req, res) => {
       itemCondition
     } = req.body;
 
+    
+    const logoUrl = process.env.SHARESPHERE_LOGO_URL;
     const currentYear = new Date().getFullYear();
 
     // Create a Nodemailer transporter
@@ -707,7 +709,7 @@ app.post("/send-request", async (req, res) => {
                           <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                             <tr>
                               <td style="text-align: center">
-                                <img src="${process.env.SHARESPHERE_LOGO_URL}?height=40&width=120&query=ShareSphere+Logo" 
+                                <img src="${logoUrl}?height=40&width=120&query=ShareSphere+Logo" 
                                     alt="ShareSphere" 
                                     width="120"  
                                     style="display: block; margin: 0 auto"/>
@@ -844,7 +846,7 @@ app.post("/send-request", async (req, res) => {
                             <!-- Logo in Footer -->
                             <tr>
                               <td style="text-align: center; padding-bottom: 20px">
-                                <img src="${process.env.SHARESPHERE_LOGO_URL}?height=40&width=120&query=ShareSphere+Logo" 
+                                <img src="${logoUrl}?height=40&width=120&query=ShareSphere+Logo" 
                                     alt="ShareSphere" 
                                     width="120"  
                                     style="display: block; margin: 0 auto"/>
@@ -889,6 +891,430 @@ app.post("/send-request", async (req, res) => {
     });
   }
 })
+
+
+app.post('/save-report', async (req, res) => {
+  try {
+    const newReport = await saveReport(db, req.body)
+
+    res.status(201).json({
+      saveSuccess: true,
+      message: 'Report submitted successfully',
+      report: newReport?.rows[0]
+    });
+  }  catch (error) {
+    console.error('Error saving report:', error);
+    res.status(500).json({
+      saveSuccess: false,
+      message: 'Failed to submit report',
+      error: error.message
+    });
+  }
+});
+
+
+
+app.post("/report-post", async (req, res) => {
+  try {
+    const {
+      reporterName,
+      reporterEmail,
+      reportedUserName,
+      reportedUserEmail,
+      reportReason,
+      reportDescription,
+      itemName,
+      itemImage,
+      itemCategory,
+      itemCondition
+    } = req.body;
+
+    const currentYear = new Date().getFullYear();
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.APP_USERNAME,
+        pass: process.env.APP_PASSWORD,
+      },
+    });
+
+    const fallbackImage = 'https://via.placeholder.com/150?text=No+Image';
+    const logoUrl = `${process.env.SHARESPHERE_LOGO_URL}?height=40&width=120&query=ShareSphere+Logo`;
+
+    // Email to Admin
+    const adminMailOptions = {
+      from: `"ShareSphere Report" <${process.env.APP_USERNAME}>`,
+      to: process.env.APP_USERNAME,
+      subject: `User Report: ${itemName} (${itemCategory}) flagged on ShareSphere`,
+      html: `
+        <html>
+        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f5f5f5; color: #333333;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f5f5f5">
+            <tr>
+              <td style="padding: 20px 0">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05)">
+                  
+                  <!-- Header with Logo -->
+                  <tr>
+                    <td style="background-color: #ffffff; padding: 10px 20px; text-align: center;">
+                      <img src="${process.env.SHARESPHERE_LOGO_URL}?height=40&width=120&query=ShareSphere+Logo" 
+                           alt="ShareSphere" 
+                           width="120"  
+                           style="display: block; margin: 0 auto"/>
+                    </td>
+                  </tr>
+
+                  <!-- Main Content -->
+                  <tr>
+                    <td style="padding: 15px">
+                      <h2 style="color: #dc2626; margin-top: 0; margin-bottom: 20px; font-size: 22px;">
+                        ⚠️ User Report for ${itemName} ${itemCategory}
+                      </h2>
+                      <p style="font-size: 16px; line-height: 1.5; margin-bottom: 25px;">
+                        A user has flagged this post. Please review the report details below.
+                      </p>
+
+                      <!-- Item Info -->
+                      <table width="100%" style="background-color: #f9fafb; border-radius: 8px; border-left: 4px solid #dc2626; margin-bottom: 25px;">
+                        <tr>
+                          <td style="padding: 15px">
+                            <table width="100%">
+                              <tr>
+                                <td width="150" style="vertical-align: top; padding-right: 15px;">
+                                  <img src="${itemImage || fallbackImage}" 
+                                       alt="${itemName}" 
+                                       width="150" 
+                                       style="display: block; border-radius: 6px; border: 1px solid #e5e7eb; max-width: 100%; height: auto;"/>
+                                </td>
+                                <td style="vertical-align: top">
+                                  <h3 style="margin: 0 0 10px; color: #111827; font-size: 18px;">${itemName}</h3>
+                                  <p style="margin: 0; font-size: 14px; color: #4b5563;">Category: ${itemCategory || 'Not specified'}</p>
+                                  <p style="margin: 5px 0 0; font-size: 14px; color: #4b5563;">Condition: ${itemCondition || 'Not specified'}</p>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <!-- Reporter Info -->
+                      <h3 style="color: #dc2626; font-size: 18px; margin-bottom: 15px;">Reporter Information</h3>
+                      <table width="100%" style="background-color: #f9fafb; border-radius: 8px; margin-bottom: 25px;">
+                        <tr>
+                          <td style="padding: 15px">
+                            <table width="100%">
+                              <tr>
+                                <td width="100" style="font-weight: bold; padding-bottom: 8px">Name:</td>
+                                <td style="padding-bottom: 8px">${capitalizeFirst(reporterName)}</td>
+                              </tr>
+                              <tr>
+                                <td width="100" style="font-weight: bold;">Email:</td>
+                                <td>
+                                  <a href="mailto:${reporterEmail}" style="color: #4f46e5; text-decoration: none;">
+                                    ${reporterEmail}
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <!-- Report Reason -->
+                      <h3 style="color: #dc2626; font-size: 18px; margin-bottom: 10px;">Reason Selected</h3>
+                      <p style="background-color: #f3f4f6; padding: 12px 16px; border-radius: 8px; font-size: 15px;">
+                        ${capitalizeFirst(reportReason)}
+                      </p>
+
+                      <!-- Description -->
+                      <h3 style="color: #dc2626; font-size: 18px; margin-top: 25px; margin-bottom: 10px;">User's Description</h3>
+                      <p style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; font-size: 15px; line-height: 1.6;">
+                        ${capitalizeFirst(reportDescription).replace(/\n/g, '<br />')}
+                      </p>
+
+                      <!-- Footer -->
+                      <p style="font-size: 14px; color: #6b7280; text-align: center; margin-top: 40px;">
+                        © ${currentYear} ShareSphere. All rights reserved.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+    };
+
+    // Confirmation Email to Reporter
+    const receivedMailOptions = {
+      from: `"ShareSphere" <${process.env.APP_USERNAME}>`,
+      to: reporterEmail,
+      subject: `We Received Your Report on ${reportedUserName}`,
+      html: `
+      <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f5f5f5; color: #333333;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f5f5f5">
+          <tr>
+            <td style="padding: 20px 0">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05)">
+                
+                <!-- Header with Logo -->
+                <tr>
+                  <td style="background-color: #ffffff; padding: 10px 20px; text-align: center;">
+                    <table role="presentation" width="100%">
+                      <tr>
+                        <td style="text-align: center">
+                          <img src="${logoUrl}?height=40&width=120&query=ShareSphere+Logo" 
+                               alt="ShareSphere" 
+                               width="120" 
+                               style="display: block; margin: 0 auto" />
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+    
+                <!-- Main Content -->
+                <tr>
+                  <td style="padding: 15px">
+                    <table role="presentation" width="100%">
+                      <tr>
+                        <td>
+                          <h2 style="color: #4f46e5; margin-top: 0; margin-bottom: 20px; font-size: 22px;">
+                            Thank You for Reporting a User
+                          </h2>
+                          <p style="font-size: 16px; line-height: 1.5; margin-bottom: 25px;">
+                            Dear ${reporterName},<br /><br />
+                            We’ve received your report regarding <strong>${reportedUserName}</strong>. Thank you for taking the time to help us maintain a safe and respectful community.
+                          </p>
+                        </td>
+                      </tr>
+    
+                      <!-- Item Details -->
+                      <tr>
+                        <td>
+                          <table width="100%" style="background-color: #f9fafb; border-radius: 8px; border-left: 4px solid #dc2626; margin-bottom: 25px;">
+                            <tr>
+                              <td style="padding: 15px">
+                                <table width="100%">
+                                  <tr>
+                                    <td width="150" style="vertical-align: top; padding-right: 15px;">
+                                      <img src="${itemImage || fallbackImage}" 
+                                          alt="${itemName}" 
+                                          width="150" 
+                                          style="display: block; border-radius: 6px; border: 1px solid #e5e7eb; max-width: 100%; height: auto;"/>
+                                    </td>
+                                    <td style="vertical-align: top">
+                                      <h3 style="margin: 0 0 10px; color: #111827; font-size: 18px;">${itemName}</h3>
+                                      <p style="margin: 0; font-size: 14px; color: #4b5563;">Category: ${itemCategory || 'Not specified'}</p>
+                                      <p style="margin: 5px 0 0; font-size: 14px; color: #4b5563;">Condition: ${itemCondition || 'Not specified'}</p>
+                                    </td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+    
+                      <!-- Report Details -->
+                      <tr>
+                        <td style="padding-bottom: 25px">
+                          <h3 style="color: #4f46e5; margin-top: 0; margin-bottom: 15px; font-size: 18px;">
+                            Report Details
+                          </h3>
+                          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 8px">
+                            <tr>
+                              <td style="padding: 15px">
+                                <table role="presentation" width="100%">
+                                  <tr>
+                                    <td width="120" style="font-weight: bold; padding-bottom: 8px">Reported User:</td>
+                                    <td style="padding-bottom: 8px">${capitalizeFirst(reportedUserName)}</td>
+                                  </tr>
+                                  <tr>
+                                    <td width="120" style="font-weight: bold;">Report Reason:</td>
+                                    <td>${capitalizeFirst(reportReason).replace(/\n/g, '<br />')}</td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+    
+                      <!-- Message -->
+                      <tr>
+                        <td style="padding-bottom: 25px">
+                          <p style="font-size: 16px; line-height: 1.5;">
+                            Our team will review the report and take appropriate action if necessary. Please note that we do not disclose outcomes for privacy reasons.
+                          </p>
+                          <p style="font-size: 16px; line-height: 1.5;">
+                            If you have further concerns, feel free to contact us directly.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+    
+                <!-- Footer -->
+                <tr>
+                  <td style="padding: 20px 30px; background-color: #f9fafb; border-top: 1px solid #e5e7eb;">
+                    <table role="presentation" width="100%">
+                      <tr>
+                        <td style="text-align: center; padding-bottom: 20px">
+                          <img src="${logoUrl}?height=40&width=120&query=ShareSphere+Logo" 
+                               alt="ShareSphere" 
+                               width="120" 
+                               style="display: block; margin: 0 auto" />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="text-align: center; padding-bottom: 15px">
+                          <p style="margin: 0; font-size: 14px; color: #6b7280">
+                            This email was sent via ShareSphere. Do not reply to this email.
+                          </p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="text-align: center">
+                          <p style="margin: 0; font-size: 14px; color: #6b7280">
+                            © ${new Date().getFullYear()} ShareSphere. All rights reserved.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+    
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      `
+    };
+    
+
+    // Third email to the reported user
+    const warningMailOptions = {
+      from: `"ShareSphere Moderation" <${process.env.APP_USERNAME}>`,
+      to: reportedUserEmail,
+      subject: "⚠️ Warning: Your ShareSphere post has been reported",
+      html: `
+        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #fef2f2; color: #7f1d1d;">
+          <table width="100%" style="background-color: #fef2f2; padding: 20px 0;">
+            <tr>
+              <td align="center">
+                <table width="600" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); padding: 20px;">
+                  <tr>
+                    <td align="center">
+                      <img src="${logoUrl}" alt="ShareSphere Logo" width="120" />
+                      <h2 style="color: #dc2626; margin-top: 20px;">Your listing was reported</h2>
+                      <p style="font-size: 16px; color: #444;">Dear ${reportedUserName},</p>
+                      <p style="font-size: 15px; color: #444;">
+                        Your post below <strong>"${itemName}"</strong> was flagged by a user for the following reason:
+                      </p>
+                      <!-- Item Image -->
+                      <table width="100%" style="background-color: #f9fafb; border-radius: 8px; border-left: 4px solid #dc2626; margin-bottom: 25px;">
+                        <tr>
+                          <td style="padding: 15px">
+                            <table width="100%">
+                              <tr>
+                                <td width="150" style="vertical-align: top; padding-right: 15px;">
+                                  <img src="${itemImage || fallbackImage}" 
+                                       alt="${itemName}" 
+                                       width="150" 
+                                       style="display: block; border-radius: 6px; border: 1px solid #e5e7eb; max-width: 100%; height: auto;"/>
+                                </td>
+                                <td style="vertical-align: top">
+                                  <h3 style="margin: 0 0 10px; color: #111827; font-size: 18px;">${itemName}</h3>
+                                  <p style="margin: 0; font-size: 14px; color: #4b5563;">Category: ${itemCategory || 'Not specified'}</p>
+                                  <p style="margin: 5px 0 0; font-size: 14px; color: #4b5563;">Condition: ${itemCondition || 'Not specified'}</p>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                      <p style="background-color: #fee2e2; padding: 12px 16px; border-left: 4px solid #dc2626; border-radius: 4px; font-size: 15px; color: #7f1d1d;">
+                        ${capitalizeFirst(reportReason)}
+                      </p>
+                      <p style="margin-botton: 10px; font-size: 15px; color: #444;">Please review your listing and ensure it complies with ShareSphere’s community guidelines within 3 days of receipt of this email</p>
+                      <p style="font-size: 15px; color: #dc2626;">Failure to do so will result in the termination of your account</p>
+                      <p style="margin-top: 40px; margin-botton: 15px; font-size: 14px; color: #9ca3af;">This is an automated message. If you believe this was a mistake, please contact support with the link below.</p>
+                      
+                      <a href="mailto:sharesphereapp@gmail.com?subject=Support%20Request%20Regarding%20Reported%20Listing" style="margin-bottom: 14px; font-size: 14px; color: #4f46e5; text-decoration: none;">
+                        Contact Customer Support
+                      </a>
+
+
+                      <!-- Footer -->
+                      <tr>
+                        <td style="padding: 20px 30px; background-color: #f9fafb; border-top: 1px solid #e5e7eb;">
+                          <table role="presentation" width="100%">
+                            <tr>
+                              <td style="text-align: center; padding-bottom: 20px">
+                                <img src="${logoUrl}?height=40&width=120&query=ShareSphere+Logo" 
+                                    alt="ShareSphere" 
+                                    width="120" 
+                                    style="display: block; margin: 0 auto" />
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="text-align: center; padding-bottom: 15px">
+                                <p style="margin: 0; font-size: 14px; color: #6b7280">
+                                  This email was sent via ShareSphere.
+                                </p>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="text-align: center">
+                                <p style="margin: 0; font-size: 14px; color: #6b7280">
+                                  © ${new Date().getFullYear()} ShareSphere. All rights reserved.
+                                </p>
+                              </td>
+                            </tr>
+
+                          </table>
+                        </td>
+                      </tr>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+      `
+    };
+
+    await transporter.sendMail(adminMailOptions);
+    console.log("Report sent to admin");
+
+    await transporter.sendMail(receivedMailOptions);
+    console.log("Confirmation sent to reporter");
+    
+    await transporter.sendMail(warningMailOptions);
+    console.log("Warning sent to reported user")
+
+    return res.status(200).json({
+      reportSuccess: true,
+      message: 'Report and warning emails sent successfully'
+    });
+
+  } catch (error) {
+    console.error('Error sending report emails:', error);
+    return res.status(500).json({
+      reportSuccess: false,
+      message: error.response?.message || 'Failed to send report or warning email'
+    });
+  }
+});
+
+
 
 app.post("/change-availability", async (req, res) => {
   const {itemId, itemCategory, newAvailability} = req.body;
@@ -935,8 +1361,8 @@ app.post("/register", async (req, res) => {
               console.error("Error hashing password:", err);
           } else {
               const result = await db.query(
-              "INSERT INTO users (name, email, password, strategy) VALUES ($1, $2, $3, $4) RETURNING *",
-              [displayName, email, hash, "credentials"]
+              "INSERT INTO users (name, email, password, strategy, report_count) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+              [displayName, email, hash, "credentials", 0]
               );
               const user = result.rows[0];
               console.log(user);

@@ -649,8 +649,8 @@ export default function ItemDetailsDialog({
                 onClick={handleReport}
                 className="text-red-500 hover:text-red-600"
               >
+                Report Post
                 <Flag className="mr-2 h-4 w-4" />
-                Report
               </Button>
             )}
 
@@ -717,8 +717,9 @@ export default function ItemDetailsDialog({
         isOpen={isReportDialogOpen}
         onClose={() => setIsReportDialogOpen(false)}
         reportedUser={{
-          id: item.uploaderId || "unknown",
-          name: item.uploadedBy || "Unknown User",
+          id: item.uploaderId,
+          name: item.uploadedBy,
+          email: item.uploaderEmail
         }}
         reportedItem={item}
       />

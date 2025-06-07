@@ -59,30 +59,3 @@ export function toSnakeCase(obj) {
   }, {});
 }
 
-
-
-// export function toSnakeCase(obj) {
-//   if (typeof obj !== 'object' || obj === null) return obj;
-
-//   if (Array.isArray(obj)) {
-//     return obj.map(item => camelToSnake(item));
-//   }
-
-//   return Object.entries(obj).reduce((acc, [key, value]) => {
-//     // Convert camelCase to snake_case
-//     const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-    
-//     // Recursively process nested objects and arrays
-//     let processedValue = value;
-//     if (typeof value === 'object' && value !== null) {
-//       processedValue = Array.isArray(value) 
-//         ? value.map(item => camelToSnake(item)) 
-//         : camelToSnake(value);
-//     }
-    
-//     return {
-//       ...acc,
-//       [snakeKey]: processedValue
-//     };
-//   }, {});
-// }
