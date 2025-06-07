@@ -1,14 +1,17 @@
+// "use client"
+
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Badge, BookOpen, MoreVertical, Flag } from "lucide-react";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardFooter,
   CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { MoreVertical, Flag, Eye } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,24 +23,27 @@ import LikeButton from "./LikeButton";
 import { ReportDialog } from "./ReportDialog";
 import { useAuth } from "@/components/AuthContext";
 
-const ItemCard = ({
+export default function ItemCard({
   item,
   onViewDetails,
   likes,
   isLiked,
   onLikeToggle,
-  mode,
-  additionalBadges = [],
-  onEdit,
-  onDelete,
-}) => {
-  const navigate = useNavigate();
+}) {
   const { user } = useAuth();
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
 
-  const handleViewDetails = () => {
-    onViewDetails(item);
-  };
+  let itemValues;
+  if (item.generalCategory === "Book") {
+    itemValues = [item.title, item.author, item.parentCategory, item.year];
+  } else {
+    itemValues = [
+      item.name,
+      item.type,
+      item.brand,
+      item.material || item.gender || item.age,
+    ];
+  }
 
   const handleReport = () => {
     setIsReportDialogOpen(true);
@@ -47,99 +53,94 @@ const ItemCard = ({
 
   return (
     <>
-      <Card className="overflow-hidden border-0 shadow-md transition-all duration-300 hover:shadow-lg group h-full">
-        <div className="relative h-[200px] overflow-hidden">
-          <img
-            src={item.displayImage || item.images?.[0] || "/placeholder.svg"}
-            alt={item.name || item.title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            loading="lazy"
-          />
-          <div className="absolute top-3 right-3 flex gap-2">
-            {additionalBadges.map((badge, index) => (
-              <div key={index}>{badge}</div>
-            ))}
-            <ConditionBadge condition={item.condition?.toLowerCase()} />
-          </div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="h-full"
+      >
+        <Card className="h-full flex flex-col overflow-hidden hover:shadow-md transition-shadow duration-300">
+          <div className="relative h-[200px] overflow-hidden bg-muted group">
+            {item.displayImage ? (
+              <img
+                src={item.displayImage || "/placeholder.svg"}
+                alt={item.generalCategory}
+                className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                loading="lazy"
+              />
+            ) : (
+              <BookOpen className="h-12 w-12 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-muted-foreground/50" />
+            )}
 
-          {/* More options menu */}
-          <div className="absolute top-3 left-3">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="h-8 w-8 bg-white/90 hover:bg-white"
+            {!isOwnItem && (
+              <div className="absolute top-2 right-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="h-7 w-7 bg-background/80 backdrop-blur-sm border shadow-sm hover:bg-background"
+                    >
+                      <MoreVertical className="h-3 w-3 text-foreground" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={handleReport}
+                      className="text-red-600 cursor-pointer"
+                    >
+                      <Flag className="mr-2 h-3 w-3" />
+                      Report User
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
+
+            {!item.available && (
+              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                <Badge
+                  variant="destructive"
+                  className="text-sm font-medium px-3 py-1"
                 >
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                <DropdownMenuItem onClick={handleViewDetails}>
-                  <Eye className="mr-2 h-4 w-4" />
-                  View Details
-                </DropdownMenuItem>
-                {!isOwnItem && (
-                  <DropdownMenuItem
-                    onClick={handleReport}
-                    className="text-red-600"
-                  >
-                    <Flag className="mr-2 h-4 w-4" />
-                    Report User
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  Borrowed
+                </Badge>
+              </div>
+            )}
           </div>
-
-          {!item.available && (
-            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-              <Badge
-                variant="destructive"
-                className="text-sm font-medium px-3 py-1"
-              >
-                Reserved
-              </Badge>
+          <CardHeader className="p-4 pb-2 flex-grow">
+            <CardTitle className="text-lg line-clamp-1">
+              {itemValues[0]}
+            </CardTitle>
+            <CardDescription className="line-clamp-1">
+              {itemValues[1]}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="px-4 py-0 space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">{itemValues[2]}</span>
             </div>
-          )}
-        </div>
-
-        <CardHeader className="pb-2 pt-3 px-3 sm:px-6">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h3 className="font-semibold text-lg line-clamp-1">
-                {item.name || item.title}
-              </h3>
-              <p className="text-muted-foreground text-sm">
-                {item.brand || item.author || "No brand"}
-              </p>
+          </CardContent>
+          <CardFooter className="p-4 pt-3 flex flex-col gap-2">
+            <div className="flex items-center justify-between w-full">
+              <ConditionBadge condition={item.condition} />
+              <LikeButton
+                itemId={item.itemId}
+                isLiked={isLiked}
+                likes={likes}
+                onLikeToggle={onLikeToggle}
+              />
             </div>
-          </div>
-        </CardHeader>
-
-        <CardContent className="px-3 sm:px-6 py-2">
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {item.description}
-          </p>
-        </CardContent>
-
-        <CardFooter className="flex items-center justify-between px-3 sm:px-6 pb-4">
-          <LikeButton
-            itemId={item.itemId}
-            likes={likes}
-            isLiked={isLiked}
-            onLikeToggle={onLikeToggle}
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            className="border-primary text-primary hover:bg-primary hover:text-white"
-            onClick={handleViewDetails}
-          >
-            View Details
-          </Button>
-        </CardFooter>
-      </Card>
+            <Button
+              variant="outline"
+              className="w-full border-primary text-primary hover:bg-primary hover:text-white"
+              onClick={() => onViewDetails(item)}
+            >
+              View Details
+            </Button>
+          </CardFooter>
+        </Card>
+      </motion.div>
 
       {/* Report Dialog */}
       <ReportDialog
@@ -153,6 +154,4 @@ const ItemCard = ({
       />
     </>
   );
-};
-
-export default ItemCard;
+}

@@ -641,13 +641,13 @@ export default function ItemDetailsDialog({
           </div>
 
           {/* Updated Footer with Report Button */}
-          <div className="flex justify-between items-center mt-4">
+          <div className="flex justify-between items-center mt-4 ">
             {/* Report button on the left - only show if not editing and not own item */}
             {mode !== "edit" && !isEditing && !isOwnItem && (
               <Button
                 variant="outline"
                 onClick={handleReport}
-                className="text-red-600 border-red-200 hover:bg-red-50"
+                className="text-red-500 hover:text-red-600"
               >
                 <Flag className="mr-2 h-4 w-4" />
                 Report

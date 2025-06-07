@@ -1,13 +1,37 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Search, Plus, BookMarked, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  BookOpen,
+  Search,
+  Plus,
+  BookMarked,
+  SlidersHorizontal,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import ItemCard from "@/components/ItemCard";
@@ -33,19 +57,17 @@ const BooksViewPage = () => {
   const [selectedCondition, setSelectedCondition] = useState("all");
   const [selectedAvailability, setSelectedAvailability] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedBook, setSelectedBook] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  
-  const userMode = 'view'; //for itemdetailsdialog display;
-  const category = 'book'; //for empty state handling
 
+  const userMode = "view"; //for itemdetailsdialog display;
+  const category = "book"; //for empty state handling
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   const axiosConfig = {
     headers: { "Content-Type": "application/json" },
-    withCredentials: true
+    withCredentials: true,
   };
-
 
   const getUserFavorites = async () => {
     if (!user) return;
@@ -58,8 +80,8 @@ const BooksViewPage = () => {
 
       if (response.data.getSuccess) {
         const favorites = response.data.userFavorites;
-        const newLikedStatus = {...isLikedById};
-        favorites.forEach(itemId => {
+        const newLikedStatus = { ...isLikedById };
+        favorites.forEach((itemId) => {
           newLikedStatus[itemId] = true;
         });
         setIsLikedById(newLikedStatus);
@@ -79,13 +101,13 @@ const BooksViewPage = () => {
       );
 
       if (res.data.toggleSuccess) {
-        setLikesById(prev => ({
+        setLikesById((prev) => ({
           ...prev,
-          [itemId]: res.data.newLikeCount
+          [itemId]: res.data.newLikeCount,
         }));
-        setIsLikedById(prev => ({
+        setIsLikedById((prev) => ({
           ...prev,
-          [itemId]: res.data.isLiked
+          [itemId]: res.data.isLiked,
         }));
       }
     } catch (error) {
@@ -98,21 +120,24 @@ const BooksViewPage = () => {
   useEffect(() => {
     const loadBooks = async () => {
       try {
-        const response = await axios.get(`${BACKEND_URL}/items?category=book`, axiosConfig);
+        const response = await axios.get(
+          `${BACKEND_URL}/items?category=book`,
+          axiosConfig
+        );
         if (response.data.getSuccess) {
           const items = response.data.items;
           setBooks(items);
           setFilteredBooks(items);
-          
+
           const initialLikes = {};
           const initialLikedStatus = {};
-          items.forEach(item => {
+          items.forEach((item) => {
             initialLikes[item.itemId] = item.likes;
             initialLikedStatus[item.itemId] = false;
           });
           setLikesById(initialLikes);
           setIsLikedById(initialLikedStatus);
-          
+
           if (user) {
             getUserFavorites();
           }
@@ -126,64 +151,85 @@ const BooksViewPage = () => {
     loadBooks();
   }, [user]);
 
- // Update your filtering useEffect to be more defensive
-useEffect(() => {
-  let result = [...books];
-  
-  if (searchQuery) {
-    const query = searchQuery.toLowerCase();
-    result = result.filter(book => 
-      (book.title?.toLowerCase() || '').includes(query) || 
-      (book.subCategory?.toLowerCase() || '').includes(query) ||
-      (book.author?.toLowerCase() || '').includes(query)
-    );
-  }
+  // Update your filtering useEffect to be more defensive
+  useEffect(() => {
+    let result = [...books];
 
-  if (selectedCategory !== "all") {
-    result = result.filter(book => 
-      (book.parentCategory?.toLowerCase() || '') === selectedCategory
-    );
-    if (selectedSubcategory !== "all") {
-      result = result.filter(book => 
-        (book.subCategory?.toLowerCase() || '') === selectedSubcategory
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (book) =>
+          (book.title?.toLowerCase() || "").includes(query) ||
+          (book.subCategory?.toLowerCase() || "").includes(query) ||
+          (book.author?.toLowerCase() || "").includes(query)
       );
     }
-  }
 
-  if (selectedCondition !== "all") {
-    result = result.filter(book => 
-      (book.condition?.toLowerCase() || '') === selectedCondition
-    );
-  }
+    if (selectedCategory !== "all") {
+      result = result.filter(
+        (book) =>
+          (book.parentCategory?.toLowerCase() || "") === selectedCategory
+      );
+      if (selectedSubcategory !== "all") {
+        result = result.filter(
+          (book) =>
+            (book.subCategory?.toLowerCase() || "") === selectedSubcategory
+        );
+      }
+    }
 
-  if (selectedAvailability !== "all") {
-    console.log(selectedAvailability);
-    const isAvailable = selectedAvailability === "available";
-    result = result.filter(book => 
-      String(book.available) === String(isAvailable)
-    );
-  }
+    if (selectedCondition !== "all") {
+      result = result.filter(
+        (book) => (book.condition?.toLowerCase() || "") === selectedCondition
+      );
+    }
 
-  // Sorting logic remains the same
-  switch (sortBy) {
-    case "newest": result.sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate)); break;
-    case "oldest": result.sort((a, b) => new Date(a.uploadDate) - new Date(b.uploadDate)); break;
-    case "title-asc": result.sort((a, b) => (a.title || '').localeCompare(b.title || '')); break;
-    case "title-desc": result.sort((a, b) => (b.title || '').localeCompare(a.title || '')); break;
-    case "most-liked": result.sort((a, b) => (b.likes || 0) - (a.likes || 0)); break;
-    default: break;
-  }
+    if (selectedAvailability !== "all") {
+      console.log(selectedAvailability);
+      const isAvailable = selectedAvailability === "available";
+      result = result.filter(
+        (book) => String(book.available) === String(isAvailable)
+      );
+    }
 
-  setFilteredBooks(result);
-}, [books, searchQuery, selectedCategory, selectedSubcategory, selectedCondition, 
-    selectedAvailability, sortBy]);
+    // Sorting logic remains the same
+    switch (sortBy) {
+      case "newest":
+        result.sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
+        break;
+      case "oldest":
+        result.sort((a, b) => new Date(a.uploadDate) - new Date(b.uploadDate));
+        break;
+      case "title-asc":
+        result.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+        break;
+      case "title-desc":
+        result.sort((a, b) => (b.title || "").localeCompare(a.title || ""));
+        break;
+      case "most-liked":
+        result.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+        break;
+      default:
+        break;
+    }
+
+    setFilteredBooks(result);
+  }, [
+    books,
+    searchQuery,
+    selectedCategory,
+    selectedSubcategory,
+    selectedCondition,
+    selectedAvailability,
+    sortBy,
+  ]);
 
   useEffect(() => {
     setSelectedSubcategory("all");
   }, [selectedCategory]);
 
-   // Handle view details
-   const handleViewDetails = (item) => {
+  // Handle view details
+  const handleViewDetails = (item) => {
     setSelectedBook(item);
     setIsDetailsOpen(true);
   };
@@ -208,11 +254,18 @@ useEffect(() => {
         <div className="flex items-center">
           <BookMarked className="h-8 w-8 text-primary mr-3" />
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Books Donations</h1>
-            <p className="text-muted-foreground">Browse and request donated books from our community</p>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+              Books Donations
+            </h1>
+            <p className="text-muted-foreground">
+              Browse and request donated books from our community
+            </p>
           </div>
         </div>
-        <Button onClick={() => navigate("/books-form")} className="bg-primary hover:bg-primary/90">
+        <Button
+          onClick={() => navigate("/books-form")}
+          className="bg-primary hover:bg-primary/90"
+        >
           <Plus className="mr-2 h-4 w-4" /> Donate a Book
         </Button>
       </div>
@@ -241,7 +294,9 @@ useEffect(() => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-[200px]">
-                <DropdownMenuItem onClick={resetFilters}>Reset all filters</DropdownMenuItem>
+                <DropdownMenuItem onClick={resetFilters}>
+                  Reset all filters
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -249,7 +304,9 @@ useEffect(() => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger><SelectValue placeholder="Category" /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
               <SelectItem value="textbook">Textbooks</SelectItem>
@@ -258,19 +315,27 @@ useEffect(() => {
             </SelectContent>
           </Select>
 
-          {["textbook", "fiction", "non-fiction"].includes(selectedCategory) && (
-            <Select value={selectedSubcategory} onValueChange={setSelectedSubcategory}>
+          {["textbook", "fiction", "non-fiction"].includes(
+            selectedCategory
+          ) && (
+            <Select
+              value={selectedSubcategory}
+              onValueChange={setSelectedSubcategory}
+            >
               <SelectTrigger>
                 <SelectValue placeholder={`All ${selectedCategory}`} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All {selectedCategory}</SelectItem>
                 {CATEGORY_OPTIONS[
-                  selectedCategory === "non-fiction" 
-                    ? "Non-Fiction" 
+                  selectedCategory === "non-fiction"
+                    ? "Non-Fiction"
                     : toTitleCase(selectedCategory)
-                ].map(subcategory => (
-                  <SelectItem key={subcategory} value={subcategory.toLowerCase()}>
+                ].map((subcategory) => (
+                  <SelectItem
+                    key={subcategory}
+                    value={subcategory.toLowerCase()}
+                  >
                     {subcategory}
                   </SelectItem>
                 ))}
@@ -278,8 +343,13 @@ useEffect(() => {
             </Select>
           )}
 
-          <Select value={selectedCondition} onValueChange={setSelectedCondition}>
-            <SelectTrigger><SelectValue placeholder="Condition" /></SelectTrigger>
+          <Select
+            value={selectedCondition}
+            onValueChange={setSelectedCondition}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Condition" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Conditions</SelectItem>
               <SelectItem value="like-new">Like New</SelectItem>
@@ -288,8 +358,13 @@ useEffect(() => {
             </SelectContent>
           </Select>
 
-          <Select value={selectedAvailability} onValueChange={setSelectedAvailability}>
-            <SelectTrigger><SelectValue placeholder="Availability" /></SelectTrigger>
+          <Select
+            value={selectedAvailability}
+            onValueChange={setSelectedAvailability}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Availability" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Books</SelectItem>
               <SelectItem value="available">Available</SelectItem>
@@ -301,25 +376,27 @@ useEffect(() => {
         <TabsContent value="grid" className="mt-0">
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {Array(8).fill(0).map((_, i) => (
-                <Card key={i} className="overflow-hidden">
-                  <Skeleton className="h-[200px] w-full" />
-                  <CardHeader className="p-4 pb-2">
-                    <Skeleton className="h-5 w-3/4 mb-2" />
-                    <Skeleton className="h-4 w-1/2" />
-                  </CardHeader>
-                  <CardContent className="px-4 py-2">
-                    <Skeleton className="h-4 w-full" />
-                  </CardContent>
-                  <CardFooter className="p-4">
-                    <Skeleton className="h-9 w-full" />
-                  </CardFooter>
-                </Card>
-              ))}
+              {Array(8)
+                .fill(0)
+                .map((_, i) => (
+                  <Card key={i} className="overflow-hidden">
+                    <Skeleton className="h-[200px] w-full" />
+                    <CardHeader className="p-4 pb-2">
+                      <Skeleton className="h-5 w-3/4 mb-2" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </CardHeader>
+                    <CardContent className="px-4 py-2">
+                      <Skeleton className="h-4 w-full" />
+                    </CardContent>
+                    <CardFooter className="p-4">
+                      <Skeleton className="h-9 w-full" />
+                    </CardFooter>
+                  </Card>
+                ))}
             </div>
           ) : filteredBooks.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {filteredBooks.map(book => (
+              {filteredBooks.map((book) => (
                 <ItemCard
                   key={book.itemId}
                   item={book}
@@ -327,36 +404,36 @@ useEffect(() => {
                   likes={likesById[book.itemId] || 0}
                   isLiked={isLikedById[book.itemId] || false}
                   onLikeToggle={handleLikeToggle}
-              />
+                />
               ))}
             </div>
           ) : (
-            <EmptyState
-              category = {category}
-            />
+            <EmptyState category={category} />
           )}
         </TabsContent>
 
         <TabsContent value="list" className="mt-0">
           {isLoading ? (
             <div className="space-y-4">
-              {Array(5).fill(0).map((_, i) => (
-                <Card key={i} className="overflow-hidden">
-                  <div className="flex flex-col sm:flex-row">
-                    <Skeleton className="h-[150px] sm:w-[150px] w-full" />
-                    <div className="p-4 flex-1">
-                      <Skeleton className="h-6 w-3/4 mb-2" />
-                      <Skeleton className="h-4 w-1/2 mb-4" />
-                      <Skeleton className="h-4 w-full mb-2" />
-                      <Skeleton className="h-4 w-full" />
+              {Array(5)
+                .fill(0)
+                .map((_, i) => (
+                  <Card key={i} className="overflow-hidden">
+                    <div className="flex flex-col sm:flex-row">
+                      <Skeleton className="h-[150px] sm:w-[150px] w-full" />
+                      <div className="p-4 flex-1">
+                        <Skeleton className="h-6 w-3/4 mb-2" />
+                        <Skeleton className="h-4 w-1/2 mb-4" />
+                        <Skeleton className="h-4 w-full mb-2" />
+                        <Skeleton className="h-4 w-full" />
+                      </div>
                     </div>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                ))}
             </div>
           ) : filteredBooks.length > 0 ? (
             <div className="space-y-4">
-              {filteredBooks.map(book => (
+              {filteredBooks.map((book) => (
                 <motion.div
                   key={book.itemId}
                   initial={{ opacity: 0, y: 20 }}
@@ -378,7 +455,10 @@ useEffect(() => {
                         )}
                         {!book.available && (
                           <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                            <Badge variant="destructive" className="text-sm font-medium px-3 py-1">
+                            <Badge
+                              variant="destructive"
+                              className="text-sm font-medium px-3 py-1"
+                            >
                               Borrowed
                             </Badge>
                           </div>
@@ -389,27 +469,35 @@ useEffect(() => {
                         <div className="flex justify-between items-start">
                           <div>
                             <div className="flex items-center gap-2">
-                              <h3 className="font-semibold text-lg">{book.title}</h3>
+                              <h3 className="font-semibold text-lg">
+                                {book.title}
+                              </h3>
                               <Badge variant="outline" className="text-xs">
-                              {book.subCategory}
+                                {book.subCategory}
                               </Badge>
                             </div>
-                            <p className="text-muted-foreground">{book.author}</p>
+                            <p className="text-muted-foreground">
+                              {book.author}
+                            </p>
                           </div>
-                          <ConditionBadge condition={book.condition.toLowerCase()} />
+                          <ConditionBadge
+                            condition={book.condition.toLowerCase()}
+                          />
                         </div>
 
-                        <p className="text-sm mt-2 line-clamp-2">{book.description}</p>
+                        <p className="text-sm mt-2 line-clamp-2">
+                          {book.description}
+                        </p>
                         <div className="flex items-center justify-between mt-4">
                           <div className="text-sm text-muted-foreground">
                             {book.edition} • {book.year}
                           </div>
                           <div className="flex items-center gap-2">
-                            <LikeButton 
-                              itemId={book.itemId} 
+                            <LikeButton
+                              itemId={book.itemId}
                               likes={likesById[book.itemId] || 0}
                               isLiked={isLikedById[book.itemId] || false}
-                              onLikeToggle={handleLikeToggle} 
+                              onLikeToggle={handleLikeToggle}
                             />
                             <Button
                               variant="outline"
@@ -428,9 +516,7 @@ useEffect(() => {
               ))}
             </div>
           ) : (
-            <EmptyState
-              category={category}
-            />
+            <EmptyState category={category} />
           )}
         </TabsContent>
       </Tabs>
@@ -441,11 +527,19 @@ useEffect(() => {
             <Button variant="outline" size="icon" disabled>
               <ChevronLeft className="h-5 w-5" />
             </Button>
-            <Button variant="outline" size="sm" className="bg-primary text-white hover:bg-primary/90">
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-primary text-white hover:bg-primary/90"
+            >
               1
             </Button>
-            <Button variant="outline" size="sm">2</Button>
-            <Button variant="outline" size="sm">3</Button>
+            <Button variant="outline" size="sm">
+              2
+            </Button>
+            <Button variant="outline" size="sm">
+              3
+            </Button>
             <Button variant="outline" size="icon">
               <ChevronRight className="h-5 w-5" />
             </Button>
@@ -453,18 +547,19 @@ useEffect(() => {
         </div>
       )}
 
-    <ItemDetailsDialog
-      item={selectedBook}
-      isOpen={!!selectedBook}
-      onClose={() => setSelectedBook(null)}
-      likes={selectedBook ? likesById[selectedBook.itemId] || 0 : 0}
-      isLiked={selectedBook ? isLikedById[selectedBook.itemId] || false : false}
-      onLikeToggle={handleLikeToggle}
-      mode = {userMode}
-    />
+      <ItemDetailsDialog
+        item={selectedBook}
+        isOpen={!!selectedBook}
+        onClose={() => setSelectedBook(null)}
+        likes={selectedBook ? likesById[selectedBook.itemId] || 0 : 0}
+        isLiked={
+          selectedBook ? isLikedById[selectedBook.itemId] || false : false
+        }
+        onLikeToggle={handleLikeToggle}
+        mode={userMode}
+      />
     </main>
   );
 };
 
 export default BooksViewPage;
-
