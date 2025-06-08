@@ -125,20 +125,17 @@ export function ReportDialog({
         withCredentials: true
       };
 
-      const saveRes = await axios.post(`${BACKEND_URL}/save-report`, reportData, axiosConfig);
-      if (saveRes.data.saveSuccess) {
-        const reportRes = await axios.post(`${BACKEND_URL}/report-post`, reportData, axiosConfig)
+      const reportRes = await axios.post(`${BACKEND_URL}/report-post`, reportData, axiosConfig)
 
-        if (reportRes.data.reportSuccess) {
-          toast.success(
-            "Report submitted successfully. Our team will review it shortly."
-          );
-    
-          setSelectedReason("");
-          setDescription("");
-          setEmail("");
-          onClose();
-        }
+      if (reportRes.data.reportSuccess) {
+        toast.success(
+          "Report submitted successfully. Our team will review it shortly."
+        );
+  
+        setSelectedReason("");
+        setDescription("");
+        setEmail("");
+        onClose();
       }
     } catch (error) {
       console.error("Error submitting report:", error);

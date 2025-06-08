@@ -636,7 +636,7 @@ const AllCategoriesViewPage = () => {
                                 variant="secondary"
                                 className="text-xs capitalize"
                               >
-                                {item.generalCategory}
+                                {item.size || item.brand || item.estimatedValue || item.subCategory}
                               </Badge>
                             </div>
                             <p className="text-muted-foreground">
