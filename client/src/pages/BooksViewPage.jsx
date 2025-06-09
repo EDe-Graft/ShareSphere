@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  BookOpen,
   Search,
   Plus,
   BookMarked,
@@ -9,7 +8,6 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -461,6 +459,7 @@ const BooksViewPage = () => {
                   likes={likesById[book.itemId] || 0}
                   isLiked={isLikedById[book.itemId] || false}
                   onLikeToggle={handleLikeToggle}
+                  viewMode="grid"
                 />
               ))}
             </div>
@@ -469,7 +468,7 @@ const BooksViewPage = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="list" className="mt-0">
+        {/* <TabsContent value="list" className="mt-0">
           {isLoading ? (
             <div className="space-y-4">
               {Array(5)
@@ -570,6 +569,44 @@ const BooksViewPage = () => {
                     </div>
                   </Card>
                 </motion.div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState category={category} />
+          )}
+        </TabsContent> */}
+
+        <TabsContent value="list" className="mt-0">
+          {isLoading ? (
+            <div className="space-y-4">
+              {Array(5)
+                .fill(0)
+                .map((_, i) => (
+                  <Card key={i} className="overflow-hidden">
+                    <div className="flex flex-col sm:flex-row">
+                      <Skeleton className="h-[150px] sm:w-[150px] w-full" />
+                      <div className="p-4 flex-1">
+                        <Skeleton className="h-6 w-3/4 mb-2" />
+                        <Skeleton className="h-4 w-1/2 mb-4" />
+                        <Skeleton className="h-4 w-full mb-2" />
+                        <Skeleton className="h-4 w-full" />
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+            </div>
+          ) : filteredBooks.length > 0 ? (
+            <div className="space-y-4">
+              {filteredBooks.map((book) => (
+                <ItemCard
+                  key={book.itemId}
+                  item={book}
+                  onViewDetails={handleViewDetails}
+                  likes={likesById[book.itemId] || 0}
+                  isLiked={isLikedById[book.itemId] || false}
+                  onLikeToggle={handleLikeToggle}
+                  viewMode="list"
+                />
               ))}
             </div>
           ) : (

@@ -1,12 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Sofa,
-  Search,
-  Plus,
-  SlidersHorizontal,
-} from "lucide-react";
-import { motion } from "framer-motion";
+import { Sofa, Search, Plus, SlidersHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,10 +34,9 @@ import { useAuth } from "@/components/AuthContext";
 import LikeButton from "@/components/LikeButton";
 import axios from "axios";
 
-
 // Main FurnitureViewPage component
 const FurnitureViewPage = () => {
-  const {user} = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [furniture, setFurniture] = useState([]);
   const [filteredFurniture, setFilteredFurniture] = useState([]);
@@ -59,93 +52,96 @@ const FurnitureViewPage = () => {
   const [selectedFurniture, setSelectedFurniture] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-  const userMode = 'view'; //for itemdetailsdialog display;
-  const category = 'furniture'; //for empty state handling
+  const userMode = "view"; //for itemdetailsdialog display;
+  const category = "furniture"; //for empty state handling
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-    const axiosConfig = {
-      headers: { "Content-Type": "application/json" },
-      withCredentials: true
-    };
-  
-    const getUserFavorites = async () => {
-      if (!user) return;
-  
+  const axiosConfig = {
+    headers: { "Content-Type": "application/json" },
+    withCredentials: true,
+  };
+
+  const getUserFavorites = async () => {
+    if (!user) return;
+
+    try {
+      const response = await axios.get(
+        `${BACKEND_URL}/favorites?category=furniture`,
+        axiosConfig
+      );
+
+      if (response.data.getSuccess) {
+        const favorites = response.data.userFavorites;
+        const newLikedStatus = { ...isLikedById };
+        favorites.forEach((itemId) => {
+          newLikedStatus[itemId] = true;
+        });
+        setIsLikedById(newLikedStatus);
+      }
+    } catch (error) {
+      console.error("Failed to fetch user favorites:", error);
+    }
+  };
+
+  const handleLikeToggle = async (itemId) => {
+    setIsLikeLoading(true);
+    try {
+      const res = await axios.post(
+        `${BACKEND_URL}/favorites/toggle`,
+        { itemId },
+        axiosConfig
+      );
+
+      if (res.data.toggleSuccess) {
+        setLikesById((prev) => ({
+          ...prev,
+          [itemId]: res.data.newLikeCount,
+        }));
+        setIsLikedById((prev) => ({
+          ...prev,
+          [itemId]: res.data.isLiked,
+        }));
+      }
+    } catch (error) {
+      console.error("Error toggling like:", error);
+    } finally {
+      setIsLikeLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const loadFurniture = async () => {
       try {
         const response = await axios.get(
-          `${BACKEND_URL}/favorites?category=furniture`,
+          `${BACKEND_URL}/items?category=furniture`,
           axiosConfig
         );
-  
         if (response.data.getSuccess) {
-          const favorites = response.data.userFavorites;
-          const newLikedStatus = {...isLikedById};
-          favorites.forEach(itemId => {
-            newLikedStatus[itemId] = true;
+          const items = response.data.items;
+          setFurniture(items);
+          setFilteredFurniture(items);
+
+          const initialLikes = {};
+          const initialLikedStatus = {};
+          items.forEach((furniture) => {
+            initialLikes[furniture.itemId] = furniture.likes;
+            initialLikedStatus[furniture.itemId] = false;
           });
-          setIsLikedById(newLikedStatus);
-        }
-      } catch (error) {
-        console.error("Failed to fetch user favorites:", error);
-      }
-    };
-  
-    const handleLikeToggle = async (itemId) => {
-      setIsLikeLoading(true);
-      try {
-        const res = await axios.post(
-          `${BACKEND_URL}/favorites/toggle`,
-          { itemId },
-          axiosConfig
-        );
-  
-        if (res.data.toggleSuccess) {
-          setLikesById(prev => ({
-            ...prev,
-            [itemId]: res.data.newLikeCount
-          }));
-          setIsLikedById(prev => ({
-            ...prev,
-            [itemId]: res.data.isLiked
-          }));
-        }
-      } catch (error) {
-        console.error("Error toggling like:", error);
-      } finally {
-        setIsLikeLoading(false);
-      }
-    };
-  
-    useEffect(() => {
-      const loadFurniture = async () => {
-        try {
-          const response = await axios.get(`${BACKEND_URL}/items?category=furniture`, axiosConfig);
-          if (response.data.getSuccess) {
-            const items = response.data.items;
-            setFurniture(items);
-            setFilteredFurniture(items);
-            
-            const initialLikes = {};
-            const initialLikedStatus = {};
-            items.forEach(furniture => {
-              initialLikes[furniture.itemId] = furniture.likes;
-              initialLikedStatus[furniture.itemId] = false;
-            });
-            setLikesById(initialLikes);
-            setIsLikedById(initialLikedStatus);
-            
-            if (user) {
-              getUserFavorites();
-            }
+          setLikesById(initialLikes);
+          setIsLikedById(initialLikedStatus);
+
+          if (user) {
+            getUserFavorites();
           }
-        } catch (error) {
-          console.error("Error loading books:", error);
-        } finally {
-          setIsLoading(false);
         }
-      };
-      loadFurniture();
-    }, [user]);
+      } catch (error) {
+        console.error("Error loading books:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadFurniture();
+  }, [user]);
 
   // Filter furniture based on search query and filters
   useEffect(() => {
@@ -164,31 +160,33 @@ const FurnitureViewPage = () => {
 
     // Apply type filter
     if (selectedType !== "all") {
-      result = result.filter((item) => item.type.toLowerCase() === selectedType);
+      result = result.filter(
+        (item) => item.type.toLowerCase() === selectedType
+      );
     }
 
     // Apply condition filter
     if (selectedCondition !== "all") {
-      result = result.filter((item) => item.condition.toLowerCase() === selectedCondition);
+      result = result.filter(
+        (item) => item.condition.toLowerCase() === selectedCondition
+      );
     }
 
     // Apply availability filter
     if (selectedAvailability !== "all") {
       const isAvailable = selectedAvailability === "available";
-      result = result.filter((item) => item.available === isAvailable.toString());
+      result = result.filter(
+        (item) => item.available === isAvailable.toString()
+      );
     }
 
     // Apply sorting
     switch (sortBy) {
       case "newest":
-        result.sort(
-          (a, b) => new Date(b.uploadDate) - new Date(a.uploadDate)
-        );
+        result.sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
         break;
       case "oldest":
-        result.sort(
-          (a, b) => new Date(a.uploadDate) - new Date(b.uploadDate)
-        );
+        result.sort((a, b) => new Date(a.uploadDate) - new Date(b.uploadDate));
         break;
       case "name-asc":
         result.sort((a, b) => a.name.localeCompare(b.name));
@@ -223,7 +221,6 @@ const FurnitureViewPage = () => {
   const handleCloseDetails = () => {
     setIsDetailsOpen(false);
   };
-
 
   // Reset all filters
   const resetFilters = () => {
@@ -354,7 +351,9 @@ const FurnitureViewPage = () => {
         <TabsContent value="grid" className="mt-0">
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {Array(8).fill(0).map((_, index) => (
+              {Array(8)
+                .fill(0)
+                .map((_, index) => (
                   <Card key={index} className="overflow-hidden">
                     <Skeleton className="h-[200px] w-full" />
                     <CardHeader className="p-4 pb-2">
@@ -380,17 +379,16 @@ const FurnitureViewPage = () => {
                   likes={likesById[furniture.itemId] || 0}
                   isLiked={isLikedById[furniture.itemId] || false}
                   onLikeToggle={handleLikeToggle}
+                  viewMode="grid"
                 />
               ))}
             </div>
           ) : (
-            <EmptyState 
-              category = 'furniture'
-            />
+            <EmptyState category="furniture" />
           )}
         </TabsContent>
 
-        <TabsContent value="list" className="mt-0">
+        {/* <TabsContent value="list" className="mt-0">
           {isLoading ? (
             <div className="space-y-4">
               {Array(5)
@@ -496,6 +494,43 @@ const FurnitureViewPage = () => {
               category= {category}
             />
           )}
+        </TabsContent> */}
+        <TabsContent value="list" className="mt-0">
+          {isLoading ? (
+            <div className="space-y-4">
+              {Array(5)
+                .fill(0)
+                .map((_, i) => (
+                  <Card key={i} className="overflow-hidden">
+                    <div className="flex flex-col sm:flex-row">
+                      <Skeleton className="h-[150px] sm:w-[150px] w-full" />
+                      <div className="p-4 flex-1">
+                        <Skeleton className="h-6 w-3/4 mb-2" />
+                        <Skeleton className="h-4 w-1/2 mb-4" />
+                        <Skeleton className="h-4 w-full mb-2" />
+                        <Skeleton className="h-4 w-full" />
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+            </div>
+          ) : filteredFurniture.length > 0 ? (
+            <div className="space-y-4">
+              {filteredFurniture.map((furniture) => (
+                <ItemCard
+                  key={furniture.itemId}
+                  item={furniture}
+                  onViewDetails={handleViewDetails}
+                  likes={likesById[furniture.itemId] || 0}
+                  isLiked={isLikedById[furniture.itemId] || false}
+                  onLikeToggle={handleLikeToggle}
+                  viewMode="list"
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptyState category={category} />
+          )}
         </TabsContent>
       </Tabs>
 
@@ -558,10 +593,14 @@ const FurnitureViewPage = () => {
         isOpen={!!selectedFurniture}
         onClose={() => setSelectedFurniture(null)}
         likes={selectedFurniture ? likesById[selectedFurniture.itemId] || 0 : 0}
-        isLiked={selectedFurniture ? isLikedById[selectedFurniture.itemId] || false : false}
+        isLiked={
+          selectedFurniture
+            ? isLikedById[selectedFurniture.itemId] || false
+            : false
+        }
         onLikeToggle={handleLikeToggle}
-        mode = {userMode}
-    />
+        mode={userMode}
+      />
     </main>
   );
 };

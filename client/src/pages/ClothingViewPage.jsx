@@ -64,7 +64,7 @@ const SizeDisplay = ({ size }) => {
 
 // Main ClothingViewPage component
 const ClothingViewPage = () => {
-  const {user} = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [clothing, setClothing] = useState([]);
   const [filteredClothing, setFilteredClothing] = useState([]);
@@ -82,93 +82,154 @@ const ClothingViewPage = () => {
   const [selectedClothing, setSelectedClothing] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-  const userMode = 'view'; //for itemdetailsdialog display;
-  const category = 'clothing' //for empty state handling
+  const userMode = "view"; //for itemdetailsdialog display;
+  const category = "clothing"; //for empty state handling
+
+  // const clothingItems = {
+  //   clothingId: 1,
+  //   itemId: 7,
+  //   generalCategory: "Clothing",
+  //   name: "Running Shoes",
+  //   type: "Footwear",
+  //   size: "US 7",
+  //   brand: "Nike",
+  //   color: "White",
+  //   material: "Rubber",
+  //   gender: "Unisex",
+  //   description: "White sleek running shoes by adidas",
+  //   condition: "Like-New",
+  //   uploadedBy: "Narayan",
+  //   uploaderEmail: "narayankhanal435@gmail.com",
+  //   uploadDate: "2025-05-19T21:34:09-04:00",
+  //   available: "true",
+  //   uploaderId: 2,
+  //   images: [
+  //     "https://res.cloudinary.com/ds8yzpran/image/upload/b_black,c_pad,f_auto,h_200,q_auto:best,w_330/Clothing-9?_a=BAMAJaUq0",
+  //     "https://res.cloudinary.com/ds8yzpran/image/upload/b_black,c_pad,f_auto,h_200,q_auto:best,w_330/Clothing-8?_a=BAMAJaUq0",
+  //     "https://res.cloudinary.com/ds8yzpran/image/upload/b_black,c_pad,f_auto,h_200,q_auto:best,w_330/Clothing-7?_a=BAMAJaUq0",
+  //   ],
+  //   displayImage:
+  //     "https://res.cloudinary.com/ds8yzpran/image/upload/b_black,c_pad,f_auto,h_200,q_auto:best,w_330/Clothing-9?_a=BAMAJaUq0",
+  //   likes: 2,
+  // };
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-    const axiosConfig = {
-      headers: { "Content-Type": "application/json" },
-      withCredentials: true
-    };
-  
-    const getUserFavorites = async () => {
-      if (!user) return;
-  
+  const axiosConfig = {
+    headers: { "Content-Type": "application/json" },
+    withCredentials: true,
+  };
+
+  const getUserFavorites = async () => {
+    if (!user) return;
+
+    try {
+      const response = await axios.get(
+        `${BACKEND_URL}/favorites?category=clothing`,
+        axiosConfig
+      );
+
+      if (response.data.getSuccess) {
+        const favorites = response.data.userFavorites;
+        const newLikedStatus = { ...isLikedById };
+        favorites.forEach((itemId) => {
+          newLikedStatus[itemId] = true;
+        });
+        setIsLikedById(newLikedStatus);
+      }
+    } catch (error) {
+      console.error("Failed to fetch user favorites:", error);
+    }
+  };
+
+  const handleLikeToggle = async (itemId) => {
+    setIsLikeLoading(true);
+    try {
+      const res = await axios.post(
+        `${BACKEND_URL}/favorites/toggle`,
+        { itemId },
+        axiosConfig
+      );
+
+      if (res.data.toggleSuccess) {
+        setLikesById((prev) => ({
+          ...prev,
+          [itemId]: res.data.newLikeCount,
+        }));
+        setIsLikedById((prev) => ({
+          ...prev,
+          [itemId]: res.data.isLiked,
+        }));
+      }
+    } catch (error) {
+      console.error("Error toggling like:", error);
+    } finally {
+      setIsLikeLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const loadClothing = async () => {
       try {
         const response = await axios.get(
-          `${BACKEND_URL}/favorites?category=clothing`,
+          `${BACKEND_URL}/items?category=clothing`,
           axiosConfig
         );
-  
         if (response.data.getSuccess) {
-          const favorites = response.data.userFavorites;
-          const newLikedStatus = {...isLikedById};
-          favorites.forEach(itemId => {
-            newLikedStatus[itemId] = true;
+          const items = response.data.items;
+          setClothing(items);
+          setFilteredClothing(items);
+
+          const initialLikes = {};
+          const initialLikedStatus = {};
+          items.forEach((item) => {
+            initialLikes[item.itemId] = item.likes;
+            initialLikedStatus[item.itemId] = false;
           });
-          setIsLikedById(newLikedStatus);
-        }
-      } catch (error) {
-        console.error("Failed to fetch user favorites:", error);
-      }
-    };
-  
-    const handleLikeToggle = async (itemId) => {
-      setIsLikeLoading(true);
-      try {
-        const res = await axios.post(
-          `${BACKEND_URL}/favorites/toggle`,
-          { itemId },
-          axiosConfig
-        );
-  
-        if (res.data.toggleSuccess) {
-          setLikesById(prev => ({
-            ...prev,
-            [itemId]: res.data.newLikeCount
-          }));
-          setIsLikedById(prev => ({
-            ...prev,
-            [itemId]: res.data.isLiked
-          }));
-        }
-      } catch (error) {
-        console.error("Error toggling like:", error);
-      } finally {
-        setIsLikeLoading(false);
-      }
-    };
-  
-    useEffect(() => {
-      const loadClothing = async () => {
-        try {
-          const response = await axios.get(`${BACKEND_URL}/items?category=clothing`, axiosConfig);
-          if (response.data.getSuccess) {
-            const items = response.data.items;
-            setClothing(items);
-            setFilteredClothing(items);
-            
-            const initialLikes = {};
-            const initialLikedStatus = {};
-            items.forEach(item => {
-              initialLikes[item.itemId] = item.likes;
-              initialLikedStatus[item.itemId] = false;
-            });
-            setLikesById(initialLikes);
-            setIsLikedById(initialLikedStatus);
-            
-            if (user) {
-              getUserFavorites();
-            }
+          setLikesById(initialLikes);
+          setIsLikedById(initialLikedStatus);
+
+          if (user) {
+            getUserFavorites();
           }
-        } catch (error) {
-          console.error("Error loading clothing:", error);
-        } finally {
-          setIsLoading(false);
         }
-      };
-      loadClothing();
-    }, [user]);
+      } catch (error) {
+        console.error("Error loading clothing:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadClothing();
+  }, [user]);
+
+  // useEffect(() => {
+  //   const loadClothing = async () => {
+  //     try {
+  //       const items = [clothingItems];
+
+  //       setClothing(items);
+  //       setFilteredClothing(items);
+
+  //       const initialLikes = {};
+  //       const initialLikedStatus = {};
+  //       items.forEach((item) => {
+  //         initialLikes[item.itemId] = item.likes;
+  //         initialLikedStatus[item.itemId] = false;
+  //       });
+  //       setLikesById(initialLikes);
+  //       setIsLikedById(initialLikedStatus);
+
+  //       if (user) {
+  //         getUserFavorites();
+  //       }
+  //       // }
+  //     } catch (error) {
+  //       console.error("Error loading books:", error);
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   };
+  //   loadClothing();
+  // }, [user]);
 
   // Filter clothing based on search query and filters
   useEffect(() => {
@@ -189,41 +250,47 @@ const ClothingViewPage = () => {
 
     // Apply category filter
     if (selectedType !== "all") {
-      result = result.filter((item) => item.type.toLowerCase() === selectedType);
+      result = result.filter(
+        (item) => item.type.toLowerCase() === selectedType
+      );
     }
 
     // Apply size filter
     if (selectedSize !== "all") {
-      result = result.filter((item) => item.size.toLowerCase() === selectedSize);
+      result = result.filter(
+        (item) => item.size.toLowerCase() === selectedSize
+      );
     }
 
     // Apply gender filter
     if (selectedGender !== "all") {
-      result = result.filter((item) => item.gender.toLowerCase() === selectedGender);
+      result = result.filter(
+        (item) => item.gender.toLowerCase() === selectedGender
+      );
     }
 
     // Apply condition filter
     if (selectedCondition !== "all") {
-      result = result.filter((item) => item.condition.toLowerCase() === selectedCondition);
+      result = result.filter(
+        (item) => item.condition.toLowerCase() === selectedCondition
+      );
     }
 
     // Apply availability filter
     if (selectedAvailability !== "all") {
       const isAvailable = selectedAvailability === "available";
-      result = result.filter((item) => item.available === isAvailable.toString());
+      result = result.filter(
+        (item) => item.available === isAvailable.toString()
+      );
     }
 
     // Apply sorting
     switch (sortBy) {
       case "newest":
-        result.sort(
-          (a, b) => new Date(b.uploadDate) - new Date(a.uploadDate)
-        );
+        result.sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
         break;
       case "oldest":
-        result.sort(
-          (a, b) => new Date(a.uploadDate) - new Date(b.uploadDate)
-        );
+        result.sort((a, b) => new Date(a.uploadDate) - new Date(b.uploadDate));
         break;
       case "name-asc":
         result.sort((a, b) => a.name.localeCompare(b.name));
@@ -347,24 +414,27 @@ const ClothingViewPage = () => {
             </SelectContent>
           </Select>
 
-
-          <Select 
-            value={selectedSize} 
+          <Select
+            value={selectedSize}
             onValueChange={setSelectedSize}
             disabled={selectedType === "all"} // Disable if no category selected
           >
             <SelectTrigger>
-              <SelectValue placeholder={
-                selectedType === "all" ? "Select category first" : 
-                selectedType === "footwear" ? "Select shoe size" : "Select clothing size"
-              } />
+              <SelectValue
+                placeholder={
+                  selectedType === "all"
+                    ? "Select category first"
+                    : selectedType === "footwear"
+                      ? "Select shoe size"
+                      : "Select clothing size"
+                }
+              />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Sizes</SelectItem>
               {getSizeOptions(selectedType)}
             </SelectContent>
           </Select>
-  
 
           <Select value={selectedGender} onValueChange={setSelectedGender}>
             <SelectTrigger>
@@ -394,16 +464,19 @@ const ClothingViewPage = () => {
             </SelectContent>
           </Select>
 
-
-          <Select value={selectedAvailability} onValueChange={setSelectedAvailability}>
-            <SelectTrigger><SelectValue placeholder="Availability" /></SelectTrigger>
+          <Select
+            value={selectedAvailability}
+            onValueChange={setSelectedAvailability}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Availability" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Clothing</SelectItem>
               <SelectItem value="available">Available</SelectItem>
               <SelectItem value="borrowed">Reserved</SelectItem>
             </SelectContent>
           </Select>
-                  
 
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger>
@@ -422,7 +495,9 @@ const ClothingViewPage = () => {
         <TabsContent value="grid" className="mt-0">
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {Array(8).fill(0).map((_, index) => (
+              {Array(8)
+                .fill(0)
+                .map((_, index) => (
                   <Card key={index} className="overflow-hidden">
                     <Skeleton className="h-[200px] w-full" />
                     <CardHeader className="p-4 pb-2">
@@ -453,13 +528,11 @@ const ClothingViewPage = () => {
               ))}
             </div>
           ) : (
-            <EmptyState 
-              category={category}
-            />
+            <EmptyState category={category} />
           )}
         </TabsContent>
 
-        <TabsContent value="list" className="mt-0">
+        {/* <TabsContent value="list" className="mt-0">
           {isLoading ? (
             <div className="space-y-4">
               {Array(5)
@@ -565,6 +638,43 @@ const ClothingViewPage = () => {
           ) : (
             <EmptyState category="clothing" />
           )}
+        </TabsContent> */}
+        <TabsContent value="list" className="mt-0">
+          {isLoading ? (
+            <div className="space-y-4">
+              {Array(5)
+                .fill(0)
+                .map((_, i) => (
+                  <Card key={i} className="overflow-hidden">
+                    <div className="flex flex-col sm:flex-row">
+                      <Skeleton className="h-[150px] sm:w-[150px] w-full" />
+                      <div className="p-4 flex-1">
+                        <Skeleton className="h-6 w-3/4 mb-2" />
+                        <Skeleton className="h-4 w-1/2 mb-4" />
+                        <Skeleton className="h-4 w-full mb-2" />
+                        <Skeleton className="h-4 w-full" />
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+            </div>
+          ) : filteredClothing.length > 0 ? (
+            <div className="space-y-4">
+              {filteredClothing.map((item) => (
+                <ItemCard
+                  key={item.itemId}
+                  item={item}
+                  onViewDetails={handleViewDetails}
+                  likes={likesById[item.itemId] || 0}
+                  isLiked={isLikedById[item.itemId] || false}
+                  onLikeToggle={handleLikeToggle}
+                  viewMode="list"
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptyState category={category} />
+          )}
         </TabsContent>
       </Tabs>
 
@@ -627,14 +737,32 @@ const ClothingViewPage = () => {
         isOpen={isDetailsOpen}
         onClose={handleCloseDetails}
         likes={selectedClothing ? likesById[selectedClothing.itemId] || 0 : 0}
-        isLiked={selectedClothing ? isLikedById[selectedClothing.itemId] || false : false}
+        isLiked={
+          selectedClothing
+            ? isLikedById[selectedClothing.itemId] || false
+            : false
+        }
         onLikeToggle={handleLikeToggle}
-        mode = {userMode}
+        mode={userMode}
         additionalFields={[
-          { label: "Size", value: selectedClothing?.size ? <SizeDisplay size={selectedClothing.size} /> : "N/A" },
+          {
+            label: "Size",
+            value: selectedClothing?.size ? (
+              <SizeDisplay size={selectedClothing.size} />
+            ) : (
+              "N/A"
+            ),
+          },
           { label: "Color", value: selectedClothing?.color || "N/A" },
           { label: "Material", value: selectedClothing?.material || "N/A" },
-          { label: "Gender", value: selectedClothing?.gender ? <Badge gender={selectedClothing.gender} /> : "N/A" }
+          {
+            label: "Gender",
+            value: selectedClothing?.gender ? (
+              <Badge gender={selectedClothing.gender} />
+            ) : (
+              "N/A"
+            ),
+          },
         ]}
       />
     </main>

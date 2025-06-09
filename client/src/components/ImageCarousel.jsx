@@ -90,7 +90,7 @@ const ImageCarousel = ({ item, images, isLiked, likes, onLikeToggle }) => {
           <Button
             variant="ghost"
             size="icon"
-            className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/70 hover:bg-slate-800 text-white rounded-full h-8 w-8 transition-all duration-200"
+            className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/70 hover:bg-slate-800 text-white hover:text-white rounded-full h-8 w-8 transition-all duration-200"
             onClick={(e) => {
               e.stopPropagation();
               goToPrevious();
@@ -101,7 +101,7 @@ const ImageCarousel = ({ item, images, isLiked, likes, onLikeToggle }) => {
           <Button
             variant="ghost"
             size="icon"
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/70 hover:bg-slate-800 text-white rounded-full h-8 w-8 transition-all duration-200"
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/70 hover:bg-slate-800  text-white hover:text-white rounded-full h-8 w-8 transition-all duration-200"
             onClick={(e) => {
               e.stopPropagation();
               goToNext();
