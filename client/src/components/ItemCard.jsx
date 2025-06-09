@@ -282,8 +282,9 @@ export default function ItemCard({
         isOpen={isReportDialogOpen}
         onClose={() => setIsReportDialogOpen(false)}
         reportedUser={{
-          id: item.uploaderId || "unknown",
-          name: item.uploadedBy || "Unknown User",
+          id: item.uploaderId,
+          name: item.uploadedBy,
+          email: item.uploaderEmail,
         }}
         reportedItem={item}
         reportType="item"
