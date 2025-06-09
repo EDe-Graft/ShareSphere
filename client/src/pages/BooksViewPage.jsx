@@ -69,6 +69,33 @@ const BooksViewPage = () => {
     withCredentials: true,
   };
 
+  // const bookItems = {
+  //   bookId: 2,
+  //   itemId: 5,
+  //   title: "Fire And Blood",
+  //   author: "George Martin",
+  //   edition: "3rd Edition",
+  //   year: "2009",
+  //   generalCategory: "Book",
+  //   parentCategory: "Fiction",
+  //   subCategory: "Fantasy",
+  //   description: "A story about the battle for the Iron Throne.",
+  //   condition: "Good",
+  //   available: "true",
+  //   uploadedBy: "De-Graft",
+  //   uploaderEmail: "edgquansah@gmail.com",
+  //   uploadDate: "2025-05-18T16:30:21-04:00",
+  //   uploaderId: 2,
+  //   images: [
+  //     "https://res.cloudinary.com/ds8yzpran/image/upload/b_black,c_pad,f_auto,h_200,q_auto:best,w_330/Book-5?_a=BAMAJaUq0",
+  //     "https://res.cloudinary.com/ds8yzpran/image/upload/b_black,c_pad,f_auto,h_200,q_auto:best,w_330/Book-6?_a=BAMAJaUq0",
+  //     "https://res.cloudinary.com/ds8yzpran/image/upload/b_black,c_pad,f_auto,h_200,q_auto:best,w_330/Book-4?_a=BAMAJaUq0",
+  //   ],
+  //   displayImage:
+  //     "https://res.cloudinary.com/ds8yzpran/image/upload/b_black,c_pad,f_auto,h_200,q_auto:best,w_330/Book-5?_a=BAMAJaUq0",
+  //   likes: 3,
+  // };
+
   const getUserFavorites = async () => {
     if (!user) return;
 
@@ -150,6 +177,36 @@ const BooksViewPage = () => {
     };
     loadBooks();
   }, [user]);
+
+  // useEffect(() => {
+  //   const loadBooks = async () => {
+  //     try {
+  //       const items = [bookItems];
+
+  //       setBooks(items);
+  //       setFilteredBooks(items);
+
+  //       const initialLikes = {};
+  //       const initialLikedStatus = {};
+  //       items.forEach((item) => {
+  //         initialLikes[item.itemId] = item.likes;
+  //         initialLikedStatus[item.itemId] = false;
+  //       });
+  //       setLikesById(initialLikes);
+  //       setIsLikedById(initialLikedStatus);
+
+  //       if (user) {
+  //         getUserFavorites();
+  //       }
+  //       // }
+  //     } catch (error) {
+  //       console.error("Error loading books:", error);
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   };
+  //   loadBooks();
+  // }, [user]);
 
   // Update your filtering useEffect to be more defensive
   useEffect(() => {

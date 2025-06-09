@@ -1,5 +1,3 @@
-// "use client"
-
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Badge, BookOpen, MoreVertical, Flag } from "lucide-react";
@@ -84,7 +82,7 @@ export default function ItemCard({
                       <MoreVertical className="h-3 w-3 text-foreground" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" sideOffset={5} forceMount>
                     <DropdownMenuItem
                       onClick={handleReport}
                       className="text-red-600 cursor-pointer"
@@ -149,7 +147,7 @@ export default function ItemCard({
         reportedUser={{
           id: item.uploaderId,
           name: item.uploadedBy,
-          email: item.uploaderEmail
+          email: item.uploaderEmail,
         }}
         reportedItem={item}
       />
