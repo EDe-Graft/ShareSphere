@@ -12,11 +12,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import ItemCard from "@/components/ItemCard";
-import ConditionBadge from "@/components/ConditionBadge";
+import {ConditionBadge} from "@/components/CustomBadges";
 import ItemDetailsDialog from "@/components/ItemDetailsDialog";
 import EmptyState from "@/components/EmptyState";
 import { useAuth } from "@/components/AuthContext";
-import LikeButton from "@/components/LikeButton";
 import axios from "axios";
 
 const FavoritesViewPage = () => {
@@ -281,21 +280,23 @@ const FavoritesViewPage = () => {
         <TabsContent value="grid" className="mt-0">
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {Array(8).fill(0).map((_, i) => (
-                <Card key={i} className="overflow-hidden">
-                  <Skeleton className="h-[200px] w-full" />
-                  <CardHeader className="p-4 pb-2">
-                    <Skeleton className="h-5 w-3/4 mb-2" />
-                    <Skeleton className="h-4 w-1/2" />
-                  </CardHeader>
-                  <CardContent className="px-4 py-2">
-                    <Skeleton className="h-4 w-full" />
-                  </CardContent>
-                  <CardFooter className="p-4">
-                    <Skeleton className="h-9 w-full" />
-                  </CardFooter>
-                </Card>
-              ))}
+              {Array(8)
+                .fill(0)
+                .map((_, i) => (
+                  <Card key={i} className="overflow-hidden">
+                    <Skeleton className="h-[200px] w-full" />
+                    <CardHeader className="p-4 pb-2">
+                      <Skeleton className="h-5 w-3/4 mb-2" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </CardHeader>
+                    <CardContent className="px-4 py-2">
+                      <Skeleton className="h-4 w-full" />
+                    </CardContent>
+                    <CardFooter className="p-4">
+                      <Skeleton className="h-9 w-full" />
+                    </CardFooter>
+                  </Card>
+                ))}
             </div>
           ) : filteredFavorites.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -307,109 +308,50 @@ const FavoritesViewPage = () => {
                   likes={likesById[item.itemId] || 0}
                   isLiked={isLikedById[item.itemId] || false}
                   onLikeToggle={handleLikeToggle}
-                  mode={userMode}
+                  viewMode="grid"
                 />
               ))}
             </div>
           ) : (
-            <EmptyState 
-              category={category}
-            />
+            <EmptyState category={category} />
           )}
         </TabsContent>
 
         <TabsContent value="list" className="mt-0">
           {isLoading ? (
             <div className="space-y-4">
-              {Array(5).fill(0).map((_, i) => (
-                <Card key={i} className="overflow-hidden">
-                  <div className="flex flex-col sm:flex-row">
-                    <Skeleton className="h-[150px] sm:w-[150px] w-full" />
-                    <div className="p-4 flex-1">
-                      <Skeleton className="h-6 w-3/4 mb-2" />
-                      <Skeleton className="h-4 w-1/2 mb-4" />
-                      <Skeleton className="h-4 w-full mb-2" />
-                      <Skeleton className="h-4 w-full" />
+              {Array(5)
+                .fill(0)
+                .map((_, i) => (
+                  <Card key={i} className="overflow-hidden">
+                    <div className="flex flex-col sm:flex-row">
+                      <Skeleton className="h-[150px] sm:w-[150px] w-full" />
+                      <div className="p-4 flex-1">
+                        <Skeleton className="h-6 w-3/4 mb-2" />
+                        <Skeleton className="h-4 w-1/2 mb-4" />
+                        <Skeleton className="h-4 w-full mb-2" />
+                        <Skeleton className="h-4 w-full" />
+                      </div>
                     </div>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                ))}
             </div>
           ) : filteredFavorites.length > 0 ? (
             <div className="space-y-4">
               {filteredFavorites.map((item) => (
-                <motion.div
+                <ItemCard
                   key={item.itemId}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Card className="overflow-hidden hover:shadow-md transition-shadow duration-300">
-                    <div className="flex flex-col sm:flex-row">
-                      <div className="relative h-[150px] sm:w-[150px] overflow-hidden bg-muted">
-                        {item.images ? (
-                          <img
-                            src={item.displayImage || "/placeholder.svg"}
-                            alt={item.name}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
-                        ) : (
-                          <Heart className="h-8 w-8 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-muted-foreground/50" fill="#FF0000" />
-                        )}
-                        {!item.available && (
-                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                            <Badge variant="destructive" className="text-sm font-medium px-3 py-1">
-                              Reserved
-                            </Badge>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="p-4 flex-1">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-semibold text-lg">{item.name}</h3>
-                            <p className="text-muted-foreground">{item.brand || "No brand"}</p>
-                          </div>
-                          <ConditionBadge condition={item.condition.toLowerCase()} />
-                        </div>
-
-                        <p className="text-sm mt-2 line-clamp-2">{item.description}</p>
-                        <div className="flex items-center justify-between mt-4">
-                          <div className="text-sm text-muted-foreground">
-                            {item.category} • {item.available === "true" ? "Available" : "Reserved"}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <LikeButton 
-                              itemId={item.itemId} 
-                              likes={likesById[item.itemId] || 0}
-                              isLiked={isLikedById[item.itemId] || false}
-                              onLikeToggle={handleLikeToggle} 
-                            />
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="border-primary text-primary hover:bg-primary hover:text-white"
-                              onClick={() => handleViewDetails(item)}
-                            >
-                              View Details
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                </motion.div>
+                  item={item}
+                  onViewDetails={handleViewDetails}
+                  likes={likesById[item.itemId] || 0}
+                  isLiked={isLikedById[item.itemId] || false}
+                  onLikeToggle={handleLikeToggle}
+                  viewMode="list"
+                />
               ))}
             </div>
           ) : (
-            <EmptyState 
-              title="No Favorites Yet"
-              description="You haven't liked any items yet. Start exploring and add items to your favorites!"
-              actionText="Explore Items"
-              category={category}
-            />
+            <EmptyState category={category} />
           )}
         </TabsContent>
       </Tabs>

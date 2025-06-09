@@ -25,4 +25,26 @@ const ConditionBadge = ({ condition }) => {
   );
 };
 
-export default ConditionBadge;
+const TypeBadge = ({text}) => {
+  return (
+    <Badge 
+      variant="secondary"
+      className="bg-green-200 text-gray-800"
+    >
+      {text}
+    </Badge>
+  )
+}
+
+const AvailabilityBadge = ({text}) => {
+  return (
+    <Badge 
+      variant={text === "Available" ? "destructive" : "secondary"}
+      className= {text === "Available" ? "bg-green-200 text-gray-800" : "text-sm font-medium px-3 py-1"}
+    >
+      {text}
+    </Badge>
+  )
+}
+
+export {ConditionBadge, AvailabilityBadge, TypeBadge};

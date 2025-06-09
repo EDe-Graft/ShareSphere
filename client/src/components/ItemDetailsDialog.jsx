@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import ImageCarousel from "./ImageCarousel";
-import ConditionBadge from "./ConditionBadge";
+import {ConditionBadge} from "./CustomBadges";
 import { RequestItemDialog } from "./RequestItemDialog";
 import { ReportDialog } from "./ReportDialog";
 import { useAuth } from "@/components/AuthContext";

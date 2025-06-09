@@ -28,7 +28,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import ItemCard from "@/components/ItemCard";
-import ConditionBadge from "@/components/ConditionBadge";
+import {ConditionBadge} from "@/components/CustomBadges";
 import ItemDetailsDialog from "@/components/ItemDetailsDialog";
 import EmptyState from "@/components/EmptyState";
 import { useAuth } from "@/components/AuthContext";
@@ -414,8 +414,7 @@ const PostsViewPage = () => {
                   likes={likesById[item.itemId] || 0}
                   isLiked={isLikedById[item.itemId] || false}
                   onLikeToggle={handleLikeToggle}
-                  mode={userMode}
-                  onDelete={handleDeletePost}
+                  viewMode="grid"
                 />
               ))}
             </div>
@@ -446,90 +445,16 @@ const PostsViewPage = () => {
           ) : filteredPosts.length > 0 ? (
             <div className="space-y-4">
               {filteredPosts.map((item) => (
-                <motion.div
+                <ItemCard
                   key={item.itemId}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Card className="overflow-hidden hover:shadow-md transition-shadow duration-300">
-                    <div className="flex flex-col sm:flex-row">
-                      <div className="relative h-[150px] sm:w-[150px] overflow-hidden bg-muted">
-                        {item.images ? (
-                          <img
-                            src={item.displayImage || "/placeholder.svg"}
-                            alt={item.name}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
-                        ) : (
-                          <Package className="h-8 w-8 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-muted-foreground/50" />
-                        )}
-                        {!item.available && (
-                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                            <Badge
-                              variant="destructive"
-                              className="text-sm font-medium px-3 py-1"
-                            >
-                              Reserved
-                            </Badge>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="p-4 flex-1">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-semibold text-lg">
-                              {item.name || item.title}
-                            </h3>
-                            <p className="text-muted-foreground">
-                              {item.parentCategory || item.brand || "No brand"}
-                            </p>
-                          </div>
-                          <ConditionBadge
-                            condition={item.condition.toLowerCase()}
-                          />
-                        </div>
-
-                        <p className="text-sm mt-2 line-clamp-2">
-                          {item.description}
-                        </p>
-                        <div className="flex items-center justify-between mt-4">
-                          <div className="text-sm text-muted-foreground">
-                            {item.category} •{" "}
-                            {item.available === "true"
-                              ? "Available"
-                              : "Reserved"}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <LikeButton
-                              itemId={item.itemId}
-                              likes={likesById[item.itemId] || 0}
-                              isLiked={isLikedById[item.itemId] || false}
-                              onLikeToggle={handleLikeToggle}
-                            />
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="border-primary text-primary hover:bg-primary hover:text-white"
-                              onClick={() => handleViewDetails(item)}
-                            >
-                              View Details
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleDeletePost(item.itemId)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                </motion.div>
+                  item={item}
+                  onViewDetails={handleViewDetails}
+                  likes={likesById[item.itemId] || 0}
+                  isLiked={isLikedById[item.itemId] || false}
+                  onLikeToggle={handleLikeToggle}
+                  viewMode="list"
+                  viewPage="posts"
+                />
               ))}
             </div>
           ) : (

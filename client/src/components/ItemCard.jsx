@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Badge, BookOpen, MoreVertical, Flag } from "lucide-react";
+import { Badge, BookOpen, MoreVertical, Flag, Trash2Icon } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -16,7 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import ConditionBadge from "./ConditionBadge";
+import { ConditionBadge, AvailabilityBadge, TypeBadge } from "./CustomBadges";
 import LikeButton from "./LikeButton";
 import { ReportDialog } from "./ReportDialog";
 import { useAuth } from "@/components/AuthContext";
@@ -27,8 +27,9 @@ export default function ItemCard({
   likes,
   isLiked,
   onLikeToggle,
-  viewMode = "grid", // "grid"
+  viewMode,
   additionalBadges = [],
+  viewPage
 }) {
   const { user } = useAuth();
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
@@ -168,7 +169,7 @@ export default function ItemCard({
     );
   }
 
-  // List View Layout
+  // if viewMode === "list": List View Layout.
   return (
     <>
       <motion.div
@@ -190,15 +191,42 @@ export default function ItemCard({
                 <BookOpen className="h-8 w-8 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-muted-foreground/50" />
               )}
 
-              {/* Report menu - only show for items not owned by current user */}
+
+              {!item.available && (
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                  <TypeBadge
+                    variant="destructive"
+                    className="text-sm font-medium px-3 py-1"
+                  >
+                    {item.available === "false" ? "Reserved" : "Borrowed"}
+                  </TypeBadge>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 flex-1">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-semibold text-lg">{itemValues[0]}</h3>
+                    <TypeBadge text = {item.size || item.brand || item.estimatedValue || item.subCategory} />
+                    <AvailabilityBadge text={item.available === "true" ? "Available" : "Reserved"} />
+                  </div>
+                  <p className="text-muted-foreground">{itemValues[1]}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <ConditionBadge condition={item.condition?.toLowerCase()} />
+                </div>
+
+                {/* Report menu - only show for items not owned by current user */}
               {!isOwnItem && (
-                <div className="absolute top-2 right-2">
+                <div>
                   <DropdownMenu modal={false}>
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="secondary"
                         size="icon"
-                        className="h-7 w-7 bg-background/80 backdrop-blur-sm border shadow-sm hover:bg-background"
+                        className="h-6 w-7 ml-3 bg-background/80 backdrop-blur-sm border shadow-sm hover:bg-background"
                         aria-label="More options"
                       >
                         <MoreVertical className="h-3 w-3 text-foreground" />
@@ -216,34 +244,24 @@ export default function ItemCard({
                         <Flag className="mr-2 h-3 w-3" />
                         Report Post
                       </DropdownMenuItem>
+
+                      {viewPage === "posts" && 
+                        (
+                          <DropdownMenuItem
+                          onClick={handleReport}
+                          className="text-red-600 cursor-pointer"
+                        >
+                          <Trash2Icon className="mr-2 h-3 w-3" />
+                          Delete Post
+                        </DropdownMenuItem>
+                        )
+                      }
+                      
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
               )}
 
-              {!item.available && (
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                  <Badge
-                    variant="destructive"
-                    className="text-sm font-medium px-3 py-1"
-                  >
-                    {item.available === "false" ? "Reserved" : "Borrowed"}
-                  </Badge>
-                </div>
-              )}
-            </div>
-
-            <div className="p-4 flex-1">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-semibold text-lg">{itemValues[0]}</h3>
-                  </div>
-                  <p className="text-muted-foreground">{itemValues[1]}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <ConditionBadge condition={item.condition?.toLowerCase()} />
-                </div>
               </div>
 
               <p className="text-sm mt-2 line-clamp-2">{item.description}</p>
@@ -253,7 +271,7 @@ export default function ItemCard({
                   {item.generalCategory === "Book" ||
                   item.generalCategory === "book"
                     ? `${item.edition || "Unknown Edition"} • ${item.year || "Unknown Year"}`
-                    : `${item.generalCategory} • ${item.available === "true" ? "Available" : "Reserved"}`}
+                    : `${item.brand} • ${item.color || item.age || item.gender}`}
                 </div>
                 <div className="flex items-center gap-2">
                   <LikeButton

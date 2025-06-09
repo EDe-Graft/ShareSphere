@@ -29,7 +29,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import ItemCard from "@/components/ItemCard";
-import ConditionBadge from "@/components/ConditionBadge";
+import {ConditionBadge} from "@/components/CustomBadges";
 import ItemDetailsDialog from "@/components/ItemDetailsDialog";
 import EmptyState from "@/components/EmptyState";
 import { useAuth } from "@/components/AuthContext";
@@ -297,50 +297,6 @@ const AllCategoriesViewPage = () => {
     }
   };
 
-  // Custom EmptyState component that shows dialog instead of navigating
-  const CustomEmptyState = () => {
-    const getEmptyStateContent = () => {
-      if (selectedCategory !== "all") {
-        // If a specific category is selected, use that category for EmptyState
-        return <EmptyState category={selectedCategory} />;
-      } else {
-        // If "all" categories, show custom empty state with dialog
-        return (
-          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-            <div className="bg-muted/50 rounded-full p-6 mb-4">
-              <Gift className="h-12 w-12 text-muted-foreground" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">No Items Found</h3>
-            <p className="text-muted-foreground max-w-md mb-6">
-              {searchQuery ||
-              selectedCondition !== "all" ||
-              selectedAvailability !== "all"
-                ? "No items match your current filters. Try adjusting your search criteria or be the first to post an item!"
-                : "No items have been posted yet. Be the first to share something with the community!"}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              {(searchQuery ||
-                selectedCondition !== "all" ||
-                selectedAvailability !== "all") && (
-                <Button onClick={resetFilters} variant="outline">
-                  Reset Filters
-                </Button>
-              )}
-              <Button
-                onClick={() => setIsPostDialogOpen(true)}
-                className="bg-primary hover:bg-primary/90"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Post an Item
-              </Button>
-            </div>
-          </div>
-        );
-      }
-    };
-
-    return getEmptyStateContent();
-  };
 
   return (
     <main className="container mx-auto px-4 py-8">
@@ -554,23 +510,15 @@ const AllCategoriesViewPage = () => {
                   likes={likesById[item.itemId] || 0}
                   isLiked={isLikedById[item.itemId] || false}
                   onLikeToggle={handleLikeToggle}
-                  mode={userMode}
-                  additionalBadges={[
-                    <Badge
-                      key="category"
-                      variant="secondary"
-                      className="text-xs capitalize"
-                    >
-                      {item.generalCategory}
-                    </Badge>,
-                  ]}
+                  viewMode="grid"
                 />
               ))}
             </div>
           ) : (
-            <CustomEmptyState />
+            <EmptyState category={category} />
           )}
         </TabsContent>
+
 
         <TabsContent value="list" className="mt-0">
           {isLoading ? (
@@ -594,98 +542,23 @@ const AllCategoriesViewPage = () => {
           ) : filteredItems.length > 0 ? (
             <div className="space-y-4">
               {filteredItems.map((item) => (
-                <motion.div
+                <ItemCard
                   key={item.itemId}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Card className="overflow-hidden hover:shadow-md transition-shadow duration-300">
-                    <div className="flex flex-col sm:flex-row">
-                      <div className="relative h-[150px] sm:w-[150px] overflow-hidden bg-muted">
-                        {item.images ? (
-                          <img
-                            src={item.displayImage || "/placeholder.svg"}
-                            alt={item.name || item.title}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
-                        ) : (
-                          <Grid3X3 className="h-8 w-8 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-muted-foreground/50" />
-                        )}
-                        {!item.available && (
-                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                            <Badge
-                              variant="destructive"
-                              className="text-sm font-medium px-3 py-1"
-                            >
-                              Reserved
-                            </Badge>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="p-4 flex-1">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-semibold text-lg">
-                                {item.name || item.title}
-                              </h3>
-                              <Badge
-                                variant="secondary"
-                                className="text-xs capitalize"
-                              >
-                                {item.size || item.brand || item.estimatedValue || item.subCategory}
-                              </Badge>
-                            </div>
-                            <p className="text-muted-foreground">
-                              {item.brand || item.author || "No brand"}
-                            </p>
-                          </div>
-                          <ConditionBadge
-                            condition={item.condition?.toLowerCase()}
-                          />
-                        </div>
-
-                        <p className="text-sm mt-2 line-clamp-2">
-                          {item.description}
-                        </p>
-                        <div className="flex items-center justify-between mt-4">
-                          <div className="text-sm text-muted-foreground">
-                            {item.generalCategory} •{" "}
-                            {item.available === "true"
-                              ? "Available"
-                              : "Reserved"}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <LikeButton
-                              itemId={item.itemId}
-                              likes={likesById[item.itemId] || 0}
-                              isLiked={isLikedById[item.itemId] || false}
-                              onLikeToggle={handleLikeToggle}
-                            />
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="border-primary text-primary hover:bg-primary hover:text-white"
-                              onClick={() => handleViewDetails(item)}
-                            >
-                              View Details
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                </motion.div>
+                  item={item}
+                  onViewDetails={handleViewDetails}
+                  likes={likesById[item.itemId] || 0}
+                  isLiked={isLikedById[item.itemId] || false}
+                  onLikeToggle={handleLikeToggle}
+                  viewMode="list"
+                />
               ))}
             </div>
           ) : (
-            <CustomEmptyState />
+            <EmptyState category={category} />
           )}
         </TabsContent>
       </Tabs>
+
 
       {/* Post Item Dialog */}
       <Dialog open={isPostDialogOpen} onOpenChange={setIsPostDialogOpen}>

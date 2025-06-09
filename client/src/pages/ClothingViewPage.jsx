@@ -28,11 +28,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import ItemCard from "@/components/ItemCard";
-import ConditionBadge from "@/components/ConditionBadge";
+import {ConditionBadge} from "@/components/CustomBadges";
 import ItemDetailsDialog from "@/components/ItemDetailsDialog";
 import EmptyState from "@/components/EmptyState";
 import { useAuth } from "@/components/AuthContext";
-import LikeButton from "@/components/LikeButton";
 import { getSizeOptions } from "./ClothingForm";
 import axios from "axios";
 
@@ -524,6 +523,7 @@ const ClothingViewPage = () => {
                   isLiked={isLikedById[item.itemId] || false}
                   onLikeToggle={handleLikeToggle}
                   sizeBadge={<SizeDisplay size={item.size} />}
+                  viewMode="grid"
                 />
               ))}
             </div>
@@ -532,113 +532,7 @@ const ClothingViewPage = () => {
           )}
         </TabsContent>
 
-        {/* <TabsContent value="list" className="mt-0">
-          {isLoading ? (
-            <div className="space-y-4">
-              {Array(5)
-                .fill(0)
-                .map((_, index) => (
-                  <Card key={index} className="overflow-hidden">
-                    <div className="flex flex-col sm:flex-row">
-                      <Skeleton className="h-[150px] sm:w-[150px] w-full" />
-                      <div className="p-4 flex-1">
-                        <Skeleton className="h-6 w-3/4 mb-2" />
-                        <Skeleton className="h-4 w-1/2 mb-4" />
-                        <Skeleton className="h-4 w-full mb-2" />
-                        <Skeleton className="h-4 w-full" />
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-            </div>
-          ) : filteredClothing.length > 0 ? (
-            <div className="space-y-4">
-              {filteredClothing.map((item) => (
-                <motion.div
-                  key={item.itemId}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Card className="overflow-hidden hover:shadow-md transition-shadow duration-300">
-                    <div className="flex flex-col sm:flex-row">
-                      <div className="relative h-[150px] sm:w-[150px] overflow-hidden bg-muted">
-                        {item.images ? (
-                          <img
-                            src={item.displayImage || "/placeholder.svg"}
-                            alt={item.name}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-muted">
-                            <Shirt className="h-8 w-8 text-muted-foreground/50" />
-                          </div>
-                        )}
-                        {!item.available && (
-                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                            <Badge
-                              variant="destructive"
-                              className="text-sm font-medium px-3 py-1"
-                            >
-                              Reserved
-                            </Badge>
-                          </div>
-                        )}
-                      </div>
-                      <div className="p-4 flex-1">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-semibold text-lg">
-                                {item.name}
-                              </h3>
-                              <Badge variant="outline" className="text-xs">
-                                <SizeDisplay size={item.size} />
-                              </Badge>
-                            </div>
-                            <p className="text-muted-foreground">
-                              {item.brand || "No brand"} • {item.color}
-                            </p>
-                          </div>
-                          <div className="flex gap-2">
-                            <ConditionBadge condition={item.condition.toLowerCase()} />
-                          </div>
-                        </div>
-                        <p className="text-sm mt-2 line-clamp-2">
-                          {item.description}
-                        </p>
-                        <div className="flex items-center justify-between mt-4">
-                          <div className="text-sm text-muted-foreground">
-                            {item.material || "Material not specified"}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <LikeButton
-                              itemId={item.itemId} 
-                              likes={likesById[item.itemId] || 0}
-                              isLiked={isLikedById[item.itemId] || false}
-                              onLikeToggle={handleLikeToggle} 
-                            />
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="border-primary text-primary hover:bg-primary hover:text-white"
-                              onClick={() => handleViewDetails(item)}
-                            >
-                              View Details
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-          ) : (
-            <EmptyState category="clothing" />
-          )}
-        </TabsContent> */}
+    
         <TabsContent value="list" className="mt-0">
           {isLoading ? (
             <div className="space-y-4">

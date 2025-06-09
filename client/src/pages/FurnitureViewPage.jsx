@@ -27,11 +27,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import ItemCard from "@/components/ItemCard";
-import ConditionBadge from "@/components/ConditionBadge";
+import {ConditionBadge} from "@/components/CustomBadges";
 import ItemDetailsDialog from "@/components/ItemDetailsDialog";
 import EmptyState from "@/components/EmptyState";
 import { useAuth } from "@/components/AuthContext";
-import LikeButton from "@/components/LikeButton";
 import axios from "axios";
 
 // Main FurnitureViewPage component
@@ -388,113 +387,7 @@ const FurnitureViewPage = () => {
           )}
         </TabsContent>
 
-        {/* <TabsContent value="list" className="mt-0">
-          {isLoading ? (
-            <div className="space-y-4">
-              {Array(5)
-                .fill(0)
-                .map((_, index) => (
-                  <Card key={index} className="overflow-hidden">
-                    <div className="flex flex-col sm:flex-row">
-                      <Skeleton className="h-[150px] sm:w-[150px] w-full" />
-                      <div className="p-4 flex-1">
-                        <Skeleton className="h-6 w-3/4 mb-2" />
-                        <Skeleton className="h-4 w-1/2 mb-4" />
-                        <Skeleton className="h-4 w-full mb-2" />
-                        <Skeleton className="h-4 w-full" />
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-            </div>
-          ) : filteredFurniture.length > 0 ? (
-            <div className="space-y-4">
-              {filteredFurniture.map((furniture) => (
-                <motion.div
-                  key={furniture.itemId}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Card className="overflow-hidden hover:shadow-md transition-shadow duration-300">
-                    <div className="flex flex-col sm:flex-row">
-                      <div className="relative h-[150px] sm:w-[150px] overflow-hidden bg-muted">
-                        {furniture.images ? (
-                          <img
-                            src={furniture.displayImage || "/placeholder.svg"}
-                            alt={furniture.name}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-muted">
-                            <Sofa className="h-8 w-8 text-muted-foreground/50" />
-                          </div>
-                        )}
-                        {!furniture.available && (
-                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                            <Badge
-                              variant="destructive"
-                              className="text-sm font-medium px-3 py-1"
-                            >
-                              Reserved
-                            </Badge>
-                          </div>
-                        )}
-                      </div>
-                      <div className="p-4 flex-1">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-semibold text-lg">
-                                {furniture.name}
-                              </h3>
-                              <Badge variant="outline" className="text-xs">
-                                {furniture.type}
-                              </Badge>
-                            </div>
-                            <p className="text-muted-foreground">
-                              {furniture.brand || "No brand specified"}
-                            </p>
-                          </div>
-                          <ConditionBadge condition={furniture.condition.toLowerCase()} />
-                        </div>
-                        <p className="text-sm mt-2 line-clamp-2">
-                          {furniture.description}
-                        </p>
-                        <div className="flex items-center justify-between mt-4">
-                          <div className="text-sm text-muted-foreground">
-                            {furniture.dimensions || "Dimensions N/A"}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <LikeButton
-                              itemId={furniture.itemId} 
-                              likes={likesById[furniture.itemId] || 0}
-                              isLiked={isLikedById[furniture.itemId] || false}
-                              onLikeToggle={handleLikeToggle} 
-                            />
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="border-primary text-primary hover:bg-primary hover:text-white"
-                              onClick={() => setSelectedFurniture(furniture)}
-                            >
-                              View Details
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-          ) : (
-            <EmptyState
-              category= {category}
-            />
-          )}
-        </TabsContent> */}
+        
         <TabsContent value="list" className="mt-0">
           {isLoading ? (
             <div className="space-y-4">
@@ -516,13 +409,13 @@ const FurnitureViewPage = () => {
             </div>
           ) : filteredFurniture.length > 0 ? (
             <div className="space-y-4">
-              {filteredFurniture.map((furniture) => (
+              {filteredFurniture.map((item) => (
                 <ItemCard
-                  key={furniture.itemId}
-                  item={furniture}
+                  key={item.itemId}
+                  item={item}
                   onViewDetails={handleViewDetails}
-                  likes={likesById[furniture.itemId] || 0}
-                  isLiked={isLikedById[furniture.itemId] || false}
+                  likes={likesById[item.itemId] || 0}
+                  isLiked={isLikedById[item.itemId] || false}
                   onLikeToggle={handleLikeToggle}
                   viewMode="list"
                 />
