@@ -33,7 +33,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import ItemCard from "@/components/ItemCard";
-import {ConditionBadge} from "@/components/CustomBadges";
+import { ConditionBadge } from "@/components/CustomBadges";
 import ItemDetailsDialog from "@/components/ItemDetailsDialog";
 import EmptyState from "@/components/EmptyState";
 import LikeButton from "@/components/LikeButton";
@@ -176,35 +176,35 @@ const BooksViewPage = () => {
     loadBooks();
   }, [user]);
 
-  // useEffect(() => {
-  //   const loadBooks = async () => {
-  //     try {
-  //       const items = [bookItems];
+  useEffect(() => {
+    const loadBooks = async () => {
+      try {
+        const items = [bookItems];
 
-  //       setBooks(items);
-  //       setFilteredBooks(items);
+        setBooks(items);
+        setFilteredBooks(items);
 
-  //       const initialLikes = {};
-  //       const initialLikedStatus = {};
-  //       items.forEach((item) => {
-  //         initialLikes[item.itemId] = item.likes;
-  //         initialLikedStatus[item.itemId] = false;
-  //       });
-  //       setLikesById(initialLikes);
-  //       setIsLikedById(initialLikedStatus);
+        const initialLikes = {};
+        const initialLikedStatus = {};
+        items.forEach((item) => {
+          initialLikes[item.itemId] = item.likes;
+          initialLikedStatus[item.itemId] = false;
+        });
+        setLikesById(initialLikes);
+        setIsLikedById(initialLikedStatus);
 
-  //       if (user) {
-  //         getUserFavorites();
-  //       }
-  //       // }
-  //     } catch (error) {
-  //       console.error("Error loading books:", error);
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  //   };
-  //   loadBooks();
-  // }, [user]);
+        if (user) {
+          getUserFavorites();
+        }
+        // }
+      } catch (error) {
+        console.error("Error loading books:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadBooks();
+  }, [user]);
 
   // Update your filtering useEffect to be more defensive
   useEffect(() => {
@@ -467,7 +467,6 @@ const BooksViewPage = () => {
             <EmptyState category={category} />
           )}
         </TabsContent>
-
 
         <TabsContent value="list" className="mt-0">
           {isLoading ? (

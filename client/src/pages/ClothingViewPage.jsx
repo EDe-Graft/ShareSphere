@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Shirt, Search, Plus, SlidersHorizontal } from "lucide-react";
-import { motion } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +27,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import ItemCard from "@/components/ItemCard";
-import {ConditionBadge} from "@/components/CustomBadges";
 import ItemDetailsDialog from "@/components/ItemDetailsDialog";
 import EmptyState from "@/components/EmptyState";
 import { useAuth } from "@/components/AuthContext";
@@ -532,7 +530,6 @@ const ClothingViewPage = () => {
           )}
         </TabsContent>
 
-    
         <TabsContent value="list" className="mt-0">
           {isLoading ? (
             <div className="space-y-4">

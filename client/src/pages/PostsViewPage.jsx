@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Package, Search, Plus, SlidersHorizontal, Trash2 } from "lucide-react";
-import { motion } from "framer-motion";
 import { Toaster, toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,11 +26,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import ItemCard from "@/components/ItemCard";
-import {ConditionBadge} from "@/components/CustomBadges";
 import ItemDetailsDialog from "@/components/ItemDetailsDialog";
 import EmptyState from "@/components/EmptyState";
 import { useAuth } from "@/components/AuthContext";
-import LikeButton from "@/components/LikeButton";
 import axios from "axios";
 import { formatData } from "@/lib/utils";
 

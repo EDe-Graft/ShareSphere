@@ -29,10 +29,13 @@ export default function ItemCard({
   onLikeToggle,
   viewMode,
   additionalBadges = [],
-  viewPage
+  viewPage,
+  onDelete,
 }) {
   const { user } = useAuth();
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   let itemValues;
   if (item.generalCategory === "Book" || item.generalCategory === "book") {
@@ -48,6 +51,22 @@ export default function ItemCard({
 
   const handleReport = () => {
     setIsReportDialogOpen(true);
+  };
+
+  const handleDeleteClick = () => {
+    setIsDeleteDialogOpen(true);
+  };
+  const handleDeleteConfirm = async () => {
+    if (onDelete) {
+      setIsDeleting(true);
+      try {
+        await onDelete(item.itemId, item.generalCategory);
+      } catch (error) {
+        console.error("Error deleting item:", error);
+      } finally {
+        setIsDeleting(false);
+      }
+    }
   };
 
   const isOwnItem = user && item.uploadedBy === (user.displayName || user.name);
@@ -191,7 +210,6 @@ export default function ItemCard({
                 <BookOpen className="h-8 w-8 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-muted-foreground/50" />
               )}
 
-
               {!item.available && (
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                   <TypeBadge
@@ -209,8 +227,19 @@ export default function ItemCard({
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-semibold text-lg">{itemValues[0]}</h3>
-                    <TypeBadge text = {item.size || item.brand || item.estimatedValue || item.subCategory} />
-                    <AvailabilityBadge text={item.available === "true" ? "Available" : "Reserved"} />
+                    <TypeBadge
+                      text={
+                        item.size ||
+                        item.brand ||
+                        item.estimatedValue ||
+                        item.subCategory
+                      }
+                    />
+                    <AvailabilityBadge
+                      text={
+                        item.available === "true" ? "Available" : "Reserved"
+                      }
+                    />
                   </div>
                   <p className="text-muted-foreground">{itemValues[1]}</p>
                 </div>
@@ -219,49 +248,45 @@ export default function ItemCard({
                 </div>
 
                 {/* Report menu - only show for items not owned by current user */}
-              {!isOwnItem && (
-                <div>
-                  <DropdownMenu modal={false}>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        className="h-6 w-7 ml-3 bg-background/80 backdrop-blur-sm border shadow-sm hover:bg-background"
-                        aria-label="More options"
+                {!isOwnItem && (
+                  <div>
+                    <DropdownMenu modal={false}>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="h-6 w-7 ml-3 bg-background/80 backdrop-blur-sm border shadow-sm hover:bg-background"
+                          aria-label="More options"
+                        >
+                          <MoreVertical className="h-3 w-3 text-foreground" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        sideOffset={5}
+                        onCloseAutoFocus={(e) => e.preventDefault()}
                       >
-                        <MoreVertical className="h-3 w-3 text-foreground" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      sideOffset={5}
-                      onCloseAutoFocus={(e) => e.preventDefault()}
-                    >
-                      <DropdownMenuItem
-                        onClick={handleReport}
-                        className="text-red-600 cursor-pointer"
-                      >
-                        <Flag className="mr-2 h-3 w-3" />
-                        Report Post
-                      </DropdownMenuItem>
-
-                      {viewPage === "posts" && 
-                        (
-                          <DropdownMenuItem
+                        <DropdownMenuItem
                           onClick={handleReport}
                           className="text-red-600 cursor-pointer"
                         >
-                          <Trash2Icon className="mr-2 h-3 w-3" />
-                          Delete Post
+                          <Flag className="mr-2 h-3 w-3" />
+                          Report Post
                         </DropdownMenuItem>
-                        )
-                      }
-                      
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              )}
 
+                        {viewPage === "posts" && (
+                          <DropdownMenuItem
+                            onClick={handleDeleteClick}
+                            className="text-red-600 cursor-pointer"
+                          >
+                            <Trash2Icon className="mr-2 h-3 w-3" />
+                            Delete Post
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                )}
               </div>
 
               <p className="text-sm mt-2 line-clamp-2">{item.description}</p>
@@ -306,6 +331,16 @@ export default function ItemCard({
         }}
         reportedItem={item}
         reportType="item"
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDeleteDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        itemName={itemValues[0]}
+        itemType={item.generalCategory}
+        isDeleting={isDeleting}
       />
     </>
   );
