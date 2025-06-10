@@ -1,13 +1,14 @@
-<div id = "top" align="center" >
+<div id="top" align="center">
   <div style="display: flex; align-items: center; justify-content: center;">
-    <img src="client/public/ShareSphereLogo.png" alt="ShareSphere Logo" width="100" style="margin-right:-18px;"/>
+    <img src="client/public/ShareSphereLogo.png" alt="ShareSphere Logo" width="100" style="transform: translateX(15px);" />
     <h1 style="margin: 0;">ShareSphere</h1>
   </div>
   <p><em>Connect, Share, and Collaborate</em></p>
-  
-  [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
-  [![React](https://img.shields.io/badge/React-18+-blue.svg)](https://reactjs.org/)
-  [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-13+-blue.svg)](https://postgresql.org/)
+
+[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
+[![React](https://img.shields.io/badge/React-18+-blue.svg)](https://reactjs.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-13+-blue.svg)](https://postgresql.org/)
+
 </div>
 
 ---
@@ -87,30 +88,26 @@
 
 ## Contributors
 
-<div align="center">
-  <table>
-    <tr>
-      <td align="center">
-        <a href="https://github.com/Nkhanal2002">
-          <img src="https://github.com/Nkhanal2002.png" width="100px;" alt="Narayan Khanal"/>
-          <br />
-          <sub><b>Narayan Khanal</b></sub>
-          <br />
-          <sub>Frontend Developer</sub>
-        </a>
-      </td>
-      <td align="center">
-        <a href="https://github.com/EDe-Graft">
-          <img src="https://github.com/EDe-Graft.png" width="100px;" alt="Edward De-Graft Quansah"/>
-          <br />
-          <sub><b>Edward De-Graft Quansah</b></sub>
-          <br />
-          <sub>Backend Developer</sub>
-        </a>
-      </td>
-    </tr>
-  </table>
+<div align="center" style="display: flex; justify-content: center; gap: 50px; flex-wrap: wrap; margin-top: 20px;">
+
+  <div style="text-align: center;">
+    <a href="https://github.com/Nkhanal2002" target="_blank" style="text-decoration: none; color: inherit;">
+      <img src="https://github.com/Nkhanal2002.png" width="120px" style="border-radius: 50%; border: 2px solid #ccc;" alt="Narayan Khanal"/>
+      <h5 style="margin: 10px 0 5px;">Narayan Khanal</h3>
+      <p style="margin: 0; font-weight: bold;">Frontend Developer</p>
+    </a>
+  </div>
+
+  <div style="text-align: center;">
+    <a href="https://github.com/EDe-Graft" target="_blank" style="text-decoration: none; color: inherit;">
+      <img src="https://github.com/EDe-Graft.png" width="120px" style="border-radius: 50%; border: 2px solid #ccc;" alt="Edward De-Graft Quansah"/>
+      <h5 style="margin: 10px 0 5px;">Edward De-Graft Quansah</h3>
+      <p style="margin: 0; font-weight: bold;">Backend Developer</p>
+    </a>
+  </div>
+
 </div>
+<br>
 
 If you have any questions, please contact us at sharesphere@gmail.com.
 
