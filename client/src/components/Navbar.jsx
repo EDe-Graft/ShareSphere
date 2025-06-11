@@ -218,7 +218,23 @@ const Navbar = () => {
         {/* Right Side Actions */}
         <div className="flex items-center gap-2">
           {/* User Avatar and Theme Toggle  */}
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() =>
+              setTheme(
+                document.documentElement.classList.contains("dark")
+                  ? "light"
+                  : "dark"
+              )
+            }
+            aria-label="Toggle theme"
+          >
+            <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+          </Button>
 
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Avatar className="cursor-pointer bg-white dark:bg-[hsl(224,71.4%,4.1%)]">
@@ -277,21 +293,6 @@ const Navbar = () => {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() =>
-              setTheme(
-                document.documentElement.classList.contains("dark")
-                  ? "light"
-                  : "dark"
-              )
-            }
-            aria-label="Toggle theme"
-          >
-            <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          </Button>
 
           {/* Mobile Menu */}
           <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>

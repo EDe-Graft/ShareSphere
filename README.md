@@ -109,7 +109,7 @@
 </div>
 <br>
 
-If you have any questions, please contact us at sharesphere@gmail.com.
+If you have any questions, please contact us at sharesphereapp@gmail.com.
 
 ---
 

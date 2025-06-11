@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ConditionBadge, AvailabilityBadge, TypeBadge } from "./CustomBadges";
 import LikeButton from "./LikeButton";
+import { ConfirmDeleteDialog } from "./ConfirmDeleteDialgo";
 import { ReportDialog } from "./ReportDialog";
 import { useAuth } from "@/components/AuthContext";
 

@@ -390,33 +390,6 @@ app.post("/update-post", async (req, res) => {
 });
 
 
-app.delete("/items/:itemId/:itemCategory", async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
-
-  try {
-    const { itemId, itemCategory } = req.params;
-    const tableName = getTableName(itemCategory);
-
-    await deletePost(db, itemId, tableName);
-
-    res.status(200).json({
-      deleteSuccess: true, 
-      message: `Removed post #${itemId} in category: ${itemCategory}` 
-    });
-
-  } catch (error) {
-    console.error("Failed to delete post:", error);
-    res.status(500).json({ 
-      deleteSuccess: false,
-      error: "Internal server error" 
-    });
-  }
-});
-
-
-
 app.get("/favorites", async (req, res) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ error: "Not authenticated" });
@@ -940,6 +913,31 @@ app.post("/logout/user", (req, res) => {
         message: "User logged out successfully",
         user: null
       })
+    });
+  }
+});
+
+app.delete("/items/:itemId/:itemCategory", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
+  try {
+    const { itemId, itemCategory } = req.params;
+    const tableName = getTableName(itemCategory);
+
+    await deletePost(db, itemId, tableName);
+
+    res.status(200).json({
+      deleteSuccess: true, 
+      message: `Removed post #${itemId} in category: ${itemCategory}` 
+    });
+
+  } catch (error) {
+    console.error("Failed to delete post:", error);
+    res.status(500).json({ 
+      deleteSuccess: false,
+      error: "Internal server error" 
     });
   }
 });
