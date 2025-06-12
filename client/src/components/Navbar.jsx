@@ -234,7 +234,6 @@ const Navbar = () => {
             <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
           </Button>
 
-          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Avatar className="cursor-pointer bg-white dark:bg-[hsl(224,71.4%,4.1%)]">
@@ -292,7 +291,6 @@ const Navbar = () => {
               )}
             </DropdownMenuContent>
           </DropdownMenu>
-
 
           {/* Mobile Menu */}
           <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>

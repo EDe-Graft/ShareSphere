@@ -55,7 +55,7 @@ const BooksViewPage = () => {
   const [selectedCondition, setSelectedCondition] = useState("all");
   const [selectedAvailability, setSelectedAvailability] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedBook, setSelectedBook] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
