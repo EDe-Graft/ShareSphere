@@ -18,6 +18,7 @@ import { RequestItemDialog } from "./RequestItemDialog";
 import { ReportDialog } from "./ReportDialog";
 import { useAuth } from "@/components/AuthContext";
 import { CATEGORY_OPTIONS } from "@/lib/utils";
+import { ConfirmDeleteDialog } from "./ConfirmDeleteDialgo";
 
 export default function ItemDetailsDialog({
   item,
@@ -38,10 +39,13 @@ export default function ItemDetailsDialog({
 
   const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState({ ...item });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const originalParentCategory = useRef(item?.parentCategory);
+
 
   // Initialize editedData with proper fallbacks
   useEffect(() => {
@@ -155,6 +159,22 @@ export default function ItemDetailsDialog({
     }));
   };
 
+  const handleDeleteClick = () => {
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (onDelete) {
+      setIsDeleting(true);
+      try {
+        await onDelete(item.itemId, item.generalCategory);
+      } catch (error) {
+        console.error("Error deleting item:", error);
+      } finally {
+        setIsDeleting(false);
+      }
+    }
+  };
   const handleDialogClose = () => {
     setIsEditing(false);
     setEditedData({ ...item });
@@ -345,7 +365,7 @@ export default function ItemDetailsDialog({
   const conditionOptions = ["Like-New", "Good", "Fair"];
 
   // Check if current user owns this item
-  const isOwnItem = user && item.uploadedBy === (user.displayName || user.name);
+  const isOwnItem = (item.uploaderId === user.userId);
 
   if (!isOpen) return null;
 
@@ -659,14 +679,11 @@ export default function ItemDetailsDialog({
 
             {/* Main action buttons on the right */}
             <div>
-              {mode === "edit" && !isEditing ? (
+              {(mode === "edit" && !isEditing) || isOwnItem ? (
                 <Button
                   variant="destructive"
                   className="hover:bg-red-600 transition-colors"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(item.itemId, item.generalCategory);
-                  }}
+                  onClick={handleDeleteClick}
                 >
                   <Trash2 className="mr-2 h-4 w-4" /> Delete This Post
                 </Button>
@@ -722,6 +739,16 @@ export default function ItemDetailsDialog({
           email: item.uploaderEmail
         }}
         reportedItem={item}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDeleteDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        itemName={item.name || item.title}
+        itemType={item.generalCategory}
+        isDeleting={isDeleting}
       />
     </>
   );

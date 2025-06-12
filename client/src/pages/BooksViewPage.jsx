@@ -55,9 +55,11 @@ const BooksViewPage = () => {
   const [selectedCondition, setSelectedCondition] = useState("all");
   const [selectedAvailability, setSelectedAvailability] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedBook, setSelectedBook] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
 
   const userMode = "view"; //for itemdetailsdialog display;
   const category = "book"; //for empty state handling
@@ -66,33 +68,6 @@ const BooksViewPage = () => {
     headers: { "Content-Type": "application/json" },
     withCredentials: true,
   };
-
-  // const bookItems = {
-  //   bookId: 2,
-  //   itemId: 5,
-  //   title: "Fire And Blood",
-  //   author: "George Martin",
-  //   edition: "3rd Edition",
-  //   year: "2009",
-  //   generalCategory: "Book",
-  //   parentCategory: "Fiction",
-  //   subCategory: "Fantasy",
-  //   description: "A story about the battle for the Iron Throne.",
-  //   condition: "Good",
-  //   available: "true",
-  //   uploadedBy: "De-Graft",
-  //   uploaderEmail: "edgquansah@gmail.com",
-  //   uploadDate: "2025-05-18T16:30:21-04:00",
-  //   uploaderId: 2,
-  //   images: [
-  //     "https://res.cloudinary.com/ds8yzpran/image/upload/b_black,c_pad,f_auto,h_200,q_auto:best,w_330/Book-5?_a=BAMAJaUq0",
-  //     "https://res.cloudinary.com/ds8yzpran/image/upload/b_black,c_pad,f_auto,h_200,q_auto:best,w_330/Book-6?_a=BAMAJaUq0",
-  //     "https://res.cloudinary.com/ds8yzpran/image/upload/b_black,c_pad,f_auto,h_200,q_auto:best,w_330/Book-4?_a=BAMAJaUq0",
-  //   ],
-  //   displayImage:
-  //     "https://res.cloudinary.com/ds8yzpran/image/upload/b_black,c_pad,f_auto,h_200,q_auto:best,w_330/Book-5?_a=BAMAJaUq0",
-  //   likes: 3,
-  // };
 
   const getUserFavorites = async () => {
     if (!user) return;
@@ -294,6 +269,33 @@ const BooksViewPage = () => {
     setIsDetailsOpen(false);
   };
 
+const handleDeletePost = async (itemId, itemCategory) => {
+  setIsDeleting(true);
+
+  try {
+    console.log("Attempting to delete:", itemId, itemCategory);
+    const response = await axios.delete(
+      `${BACKEND_URL}/items/${itemId}/${itemCategory}`,
+      axiosConfig
+    );
+
+    if (response.data.deleteSuccess) {
+      toast.success("Post deleted successfully", {
+        description: `Your ${itemCategory} has been successfully removed from ShareSphere.`,
+      });
+
+      setTimeout(() => {
+        window.location.reload(); // refreshes the current page
+      }, 2000);
+    }
+  } catch (error) {
+    console.error("Failed to delete post:", error);
+    toast.error("Failed to delete post. Please try again.");
+  } finally {
+    setIsDeleting(false);
+  }
+};
+
   const resetFilters = () => {
     setSearchQuery("");
     setSelectedCategory("all");
@@ -456,6 +458,7 @@ const BooksViewPage = () => {
                   key={item.itemId}
                   item={item}
                   onViewDetails={handleViewDetails}
+                  onDelete={handleDeletePost}
                   likes={likesById[item.itemId] || 0}
                   isLiked={isLikedById[item.itemId] || false}
                   onLikeToggle={handleLikeToggle}
@@ -494,6 +497,7 @@ const BooksViewPage = () => {
                   key={item.itemId}
                   item={item}
                   onViewDetails={handleViewDetails}
+                  onDelete={handleDeletePost}
                   likes={likesById[item.itemId] || 0}
                   isLiked={isLikedById[item.itemId] || false}
                   onLikeToggle={handleLikeToggle}

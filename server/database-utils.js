@@ -10,9 +10,10 @@ export async function uploadToCloudinary(encodedImage, itemCategory, imageId) {
   });
 
   try {
+    const publicId = `${itemCategory}-${imageId}`
     const uploadResult = await cloudinary.uploader.upload(
       encodedImage, {
-        public_id: `${itemCategory}-${imageId}`,
+        public_id: publicId,
       }
     );
     
@@ -29,7 +30,7 @@ export async function uploadToCloudinary(encodedImage, itemCategory, imageId) {
       ]
     });
     
-    return formattedImageURL;
+    return [formattedImageURL, publicId];
   } catch (error) {
     console.error('Error uploading to Cloudinary:', error);
     throw error;
@@ -40,8 +41,8 @@ export async function uploadToCloudinary(encodedImage, itemCategory, imageId) {
 export async function saveImage(db, imageData) {
   try {
     const imageResult = await db.query(
-      "INSERT INTO images (image_url, image_type, item_id) VALUES ($1, $2, $3) RETURNING image_id",
-      [imageData.imageUrl, imageData.imageType, imageData.itemId]
+      "INSERT INTO images (image_url, public_id, image_type, item_id) VALUES ($1, $2, $3, $4) RETURNING image_id",
+      [imageData.imageUrl, imageData.publicId, imageData.imageType, imageData.itemId]
     );
     return imageResult.rows[0].image_id;
   } catch (error) {
@@ -52,8 +53,8 @@ export async function saveImage(db, imageData) {
 
 export async function updateImage(db, updateData) {
   try {
-    const {imageUrl, imageId} = updateData;
-    await db.query("UPDATE images SET image_url = ($1) WHERE image_id = ($2)", [imageUrl, imageId]) 
+    const {imageUrl, imageId, publicId} = updateData;
+    await db.query("UPDATE images SET image_url = ($1) AND public_id = ($2) WHERE image_id = ($3)", [imageUrl, publicId, imageId]) 
   } catch (error) {
     console.error('Error updating image')
   }
@@ -173,11 +174,6 @@ export async function insertCategoryDetails(db, {req, itemId, category, uploadDa
   }
 }
 
-
-export default function updateCategoryDetails(category) {
-
-}
-
 export function getTableName(itemCategory) {
   itemCategory = itemCategory.toLowerCase();
   let tableName;
@@ -217,24 +213,60 @@ export async function getLikes(db, itemId) {
 }
 
 export async function deletePost(db, itemId, tableName) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
+    api_key: process.env.CLOUDINARY_API_KEY, 
+    api_secret: process.env.CLOUDINARY_API_SECRET 
+  });
+
   try {
-    // Update availability in items table
-    await db.query(
-      "UPDATE items SET available = $1 WHERE item_id = $2",  // Fixed "to" -> "="
-      [false, itemId]
+
+    // 1. Get all Cloudinary public_ids for this item's images
+    const imagesResult = await db.query(
+      "SELECT public_id FROM images WHERE item_id = $1",
+      [itemId]
     );
 
-    // Update availability in category-specific table
+    // 2. Delete images from Cloudinary
+    const deletePromises = imagesResult.rows.map(image => {
+      return cloudinary.uploader.destroy(image.public_id)
+        .catch(error => {
+          console.error(`Failed to delete image ${image.public_id} from Cloudinary:`, error);
+          // Continue even if one fails
+        });
+    });
+
+    await Promise.all(deletePromises);
+
+    // 3. Delete from images table
     await db.query(
-      `UPDATE ${tableName} SET available = $1 WHERE item_id = $2`,
-      [false, itemId]
+      "DELETE FROM images WHERE item_id = $1",
+      [itemId]
+    );
+
+    //4. Delete from favorites table
+    await db.query(
+      "DELETE FROM favorites WHERE item_id = $1",
+      [itemId]
+    )
+
+    // 5. Delete from category-specific table
+    await db.query(
+      `DELETE FROM ${tableName} WHERE item_id = $1`,
+      [itemId]
+    );
+
+    // 6. Delete from items table
+    await db.query(
+      "DELETE FROM items WHERE item_id = $1",
+      [itemId]
     );
 
     return true;
 
   } catch (error) {
     console.error("Error in deletePost:", error);
-    throw error; // Propagate the error to the route handler
+    throw error;
   }
 }
 

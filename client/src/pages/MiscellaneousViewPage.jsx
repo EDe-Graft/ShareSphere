@@ -73,6 +73,7 @@ const MiscellaneousViewPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const userMode = "view"; //for itemdetailsdialog display;
   const category = "miscellaneous"; //for empty state handling
@@ -130,6 +131,33 @@ const MiscellaneousViewPage = () => {
       setIsLikeLoading(false);
     }
   };
+
+    const handleDeletePost = async (itemId, itemCategory) => {
+      setIsDeleting(true);
+  
+      try {
+        console.log("Attempting to delete:", itemId, itemCategory);
+        const response = await axios.delete(
+          `${BACKEND_URL}/items/${itemId}/${itemCategory}`,
+          axiosConfig
+        );
+  
+        if (response.data.deleteSuccess) {
+          toast.success("Post deleted successfully", {
+            description: `Your ${itemCategory} has been successfully removed from ShareSphere.`,
+          });
+  
+          setTimeout(() => {
+            window.location.reload(); // refreshes the current page
+          }, 2000);
+        }
+      } catch (error) {
+        console.error("Failed to delete post:", error);
+        toast.error("Failed to delete post. Please try again.");
+      } finally {
+        setIsDeleting(false);
+      }
+    };
 
   useEffect(() => {
     const loadItems = async () => {
@@ -427,6 +455,7 @@ const MiscellaneousViewPage = () => {
                   key={item.itemId}
                   item={item}
                   onViewDetails={handleViewDetails}
+                  onDelete={handleDeletePost}
                   likes={likesById[item.itemId] || 0}
                   isLiked={isLikedById[item.itemId] || false}
                   onLikeToggle={handleLikeToggle}
@@ -466,6 +495,7 @@ const MiscellaneousViewPage = () => {
                   key={item.itemId}
                   item={item}
                   onViewDetails={handleViewDetails}
+                  onDelete={handleDeletePost}
                   likes={likesById[item.itemId] || 0}
                   isLiked={isLikedById[item.itemId] || false}
                   onLikeToggle={handleLikeToggle}

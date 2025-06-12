@@ -407,10 +407,12 @@ const PostsViewPage = () => {
                   key={item.itemId}
                   item={item}
                   onViewDetails={handleViewDetails}
+                  onDelete={handleDeletePost}
                   likes={likesById[item.itemId] || 0}
                   isLiked={isLikedById[item.itemId] || false}
                   onLikeToggle={handleLikeToggle}
                   viewMode="grid"
+                  viewPage="posts"
                 />
               ))}
             </div>
@@ -445,6 +447,7 @@ const PostsViewPage = () => {
                   key={item.itemId}
                   item={item}
                   onViewDetails={handleViewDetails}
+                  onDelete={handleDeletePost}
                   likes={likesById[item.itemId] || 0}
                   isLiked={isLikedById[item.itemId] || false}
                   onLikeToggle={handleLikeToggle}

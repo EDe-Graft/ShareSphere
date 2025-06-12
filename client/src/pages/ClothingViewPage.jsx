@@ -78,37 +78,12 @@ const ClothingViewPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedClothing, setSelectedClothing] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const userMode = "view"; //for itemdetailsdialog display;
   const category = "clothing"; //for empty state handling
 
-  // const clothingItems = {
-  //   clothingId: 1,
-  //   itemId: 7,
-  //   generalCategory: "Clothing",
-  //   name: "Running Shoes",
-  //   type: "Footwear",
-  //   size: "US 7",
-  //   brand: "Nike",
-  //   color: "White",
-  //   material: "Rubber",
-  //   gender: "Unisex",
-  //   description: "White sleek running shoes by adidas",
-  //   condition: "Like-New",
-  //   uploadedBy: "Narayan",
-  //   uploaderEmail: "narayankhanal435@gmail.com",
-  //   uploadDate: "2025-05-19T21:34:09-04:00",
-  //   available: "true",
-  //   uploaderId: 2,
-  //   images: [
-  //     "https://res.cloudinary.com/ds8yzpran/image/upload/b_black,c_pad,f_auto,h_200,q_auto:best,w_330/Clothing-9?_a=BAMAJaUq0",
-  //     "https://res.cloudinary.com/ds8yzpran/image/upload/b_black,c_pad,f_auto,h_200,q_auto:best,w_330/Clothing-8?_a=BAMAJaUq0",
-  //     "https://res.cloudinary.com/ds8yzpran/image/upload/b_black,c_pad,f_auto,h_200,q_auto:best,w_330/Clothing-7?_a=BAMAJaUq0",
-  //   ],
-  //   displayImage:
-  //     "https://res.cloudinary.com/ds8yzpran/image/upload/b_black,c_pad,f_auto,h_200,q_auto:best,w_330/Clothing-9?_a=BAMAJaUq0",
-  //   likes: 2,
-  // };
+
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   const axiosConfig = {
@@ -198,35 +173,33 @@ const ClothingViewPage = () => {
     loadClothing();
   }, [user]);
 
-  // useEffect(() => {
-  //   const loadClothing = async () => {
-  //     try {
-  //       const items = [clothingItems];
 
-  //       setClothing(items);
-  //       setFilteredClothing(items);
+  const handleDeletePost = async (itemId, itemCategory) => {
+    setIsDeleting(true);
 
-  //       const initialLikes = {};
-  //       const initialLikedStatus = {};
-  //       items.forEach((item) => {
-  //         initialLikes[item.itemId] = item.likes;
-  //         initialLikedStatus[item.itemId] = false;
-  //       });
-  //       setLikesById(initialLikes);
-  //       setIsLikedById(initialLikedStatus);
+    try {
+      console.log("Attempting to delete:", itemId, itemCategory);
+      const response = await axios.delete(
+        `${BACKEND_URL}/items/${itemId}/${itemCategory}`,
+        axiosConfig
+      );
 
-  //       if (user) {
-  //         getUserFavorites();
-  //       }
-  //       // }
-  //     } catch (error) {
-  //       console.error("Error loading books:", error);
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  //   };
-  //   loadClothing();
-  // }, [user]);
+      if (response.data.deleteSuccess) {
+        toast.success("Post deleted successfully", {
+          description: `Your ${itemCategory} has been successfully removed from ShareSphere.`,
+        });
+
+        setTimeout(() => {
+          window.location.reload(); // refreshes the current page
+        }, 2000);
+      }
+    } catch (error) {
+      console.error("Failed to delete post:", error);
+      toast.error("Failed to delete post. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // Filter clothing based on search query and filters
   useEffect(() => {
@@ -517,6 +490,7 @@ const ClothingViewPage = () => {
                   key={item.itemId}
                   item={item}
                   onViewDetails={handleViewDetails}
+                  onDelete={handleDeletePost}
                   likes={likesById[item.itemId] || 0}
                   isLiked={isLikedById[item.itemId] || false}
                   onLikeToggle={handleLikeToggle}
@@ -556,6 +530,7 @@ const ClothingViewPage = () => {
                   key={item.itemId}
                   item={item}
                   onViewDetails={handleViewDetails}
+                  onDelete={handleDeletePost}
                   likes={likesById[item.itemId] || 0}
                   isLiked={isLikedById[item.itemId] || false}
                   onLikeToggle={handleLikeToggle}

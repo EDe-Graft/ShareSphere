@@ -80,6 +80,7 @@ const FurnitureForm = () => {
     defaultValues: {
       name: "",
       type: "",
+      color: "",
       brand: "",
       age: "",
       dimensions: "",
@@ -97,6 +98,7 @@ const FurnitureForm = () => {
     const furnitureProcessedData = {
       name: data.name.trim() || "N/A",
       type: data.type.trim() || "N/A",
+      color: data.color.trim() || "N/A",
       brand: data.brand.trim() || "N/A",
       age: data.age.trim() || "N/A",
       dimensions: data.dimensions.trim() || "N/A",
@@ -123,7 +125,7 @@ const FurnitureForm = () => {
 
       if (response.data.success) {
         toast.success("Furniture donation uploaded successfully!", {
-          description: `"${processedData.name}" has been added to our donation list.`,
+          description: `"${furnitureProcessedData.name}" has been added to our donation list.`,
         });
         setTimeout(() => navigate("/furniture"), 2500);
       } 

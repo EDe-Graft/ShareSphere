@@ -234,59 +234,74 @@ app.get("/items", async (req, res) => {
 
 
 app.get("/user-posts", async (req, res) => {
-  const userId = req.user?.user_id
+  const userId = req.user?.user_id;
 
   try {
-    //get all posted item ids by user from items table
-  const postedResults = await db.query("SELECT item_id, category FROM items WHERE uploader_id = $1", [userId])
-  
-  if (postedResults.rowCount === 0) {
-    //no items posted
-    res.json({
-      success: true,
-      posts: []
-    })
-  }
+    // Get all posted item ids by user from items table
+    const postedResults = await db.query(
+      "SELECT item_id, category FROM items WHERE uploader_id = $1", 
+      [userId]
+    );
+    
+    if (postedResults.rowCount === 0) {
+      return res.json({
+        success: true,
+        posts: []
+      });
+    }
 
-  else {
-    //user has posted items
-    const postedData = postedResults.rows.map(item => item)
-    //get posted items data from respective tables
-
+    // User has posted items
     const userPosts = await Promise.all(
-      postedData.map(async (data) => {
-        const itemId = data.item_id
-        const itemCategory = data.category
+      postedResults.rows.map(async (data) => {
+        const itemId = data.item_id;
+        const itemCategory = data.category;
+        const tableName = getTableName(itemCategory);
 
-        const tableName = getTableName(itemCategory)
+        try {
+          const postResult = await db.query(
+            `SELECT * FROM ${tableName} WHERE item_id = $1`, 
+            [itemId]
+          );
+          
+          // Check if post exists in category table
+          if (postResult.rowCount === 0) {
+            console.warn(`Item ${itemId} not found in ${tableName}`);
+            return null;
+          }
 
-        const postResult = await db.query(`SELECT * FROM ${tableName} WHERE item_id = $1`, [itemId])
-        const post = postResult.rows[0]
+          const post = postResult.rows[0];
+          const images = await getImages(db, itemId);
+          const likes = await getLikes(db, itemId);
 
-        //fetch post images
-       const images = await getImages(db, itemId)
-        //get likeCount for post
-        const likes = await getLikes(db, itemId)
-
-        //convert keys to camelCase before returning object
-        return toCamelCase({
-          ...post,
-          images: images,
-          displayImage: images[0],
-          likes: likes
-        });
+          // Only convert to camelCase if post exists
+          return post ? toCamelCase({
+            ...post,
+            images: images || [],
+            displayImage: images?.[0] || null,
+            likes: likes || 0
+          }) : null;
+        } catch (error) {
+          console.error(`Error processing item ${itemId}:`, error);
+          return null;
+        }
       })
-    )
-     
+    );
+
+    // Filter out any null posts that failed to load
+    const validPosts = userPosts.filter(post => post !== null);
+    
     res.json({
       success: true,
-      posts: userPosts
-    })
-  }
+      posts: validPosts
+    });
+    
   } catch (error) {
-    console.error("Error: " + error);
+    console.error("Error in /user-posts:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch user posts"
+    });
   }
-  
 });
 
 
@@ -591,6 +606,7 @@ app.post("/upload", upload.array('images', 3), async (req, res) => {
         //save image without the url
         const imageData = {
           imageUrl: `awaiting image url on ${uploadDate}...`,
+          publicId: `awaiting public id on ${uploadDate}...`,
           imageType: mimeType,  // Use the captured mimetype
           itemId: itemId
         };
@@ -598,7 +614,7 @@ app.post("/upload", upload.array('images', 3), async (req, res) => {
         //retrieve imageId to make every saved image unique
         const imageId = await saveImage(db, imageData);
 
-        const formattedImageUrl = await uploadToCloudinary(
+        const [formattedImageUrl, publicId] = await uploadToCloudinary(
           `data:${mimeType};base64,${file.buffer.toString('base64')}`,
           category,
           imageId
@@ -608,6 +624,7 @@ app.post("/upload", upload.array('images', 3), async (req, res) => {
         const updateData = {
           imageUrl: formattedImageUrl,
           imageId: imageId,
+          publicId: publicId
         }
 
         await updateImage(db, updateData);
@@ -923,6 +940,7 @@ app.delete("/items/:itemId/:itemCategory", async (req, res) => {
   }
 
   try {
+    console.log("Deletion requested")
     const { itemId, itemCategory } = req.params;
     const tableName = getTableName(itemCategory);
 

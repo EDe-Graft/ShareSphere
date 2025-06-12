@@ -1,5 +1,13 @@
 import { Button } from "@/components/ui/button";
-import { Book, Shirt, Sofa, Package, Github, Mail } from "lucide-react";
+import {
+  Grid3X3,
+  Book,
+  Shirt,
+  Sofa,
+  Package,
+  Github,
+  Mail,
+} from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
@@ -87,6 +95,21 @@ const Footer = () => {
             <ul className="space-y-3 text-sm">
               <li>
                 <Link
+                  to="/all-categories"
+                  className="flex items-center gap-2 hover:text-violet-500 transition-colors duration-200 group"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNavigation("/all-categories");
+                  }}
+                >
+                  <div className="bg-muted p-1.5 rounded-md group-hover:bg-violet-100 transition-colors duration-200">
+                    <Grid3X3 className="h-4 w-4 group-hover:text-violet-500 transition-colors duration-200" />
+                  </div>
+                  <span>All Categories</span>
+                </Link>
+              </li>
+              <li>
+                <Link
                   to="/books"
                   className="flex items-center gap-2 hover:text-violet-500 transition-colors duration-200 group"
                   onClick={(e) => {
@@ -163,7 +186,7 @@ const Footer = () => {
                     handleNavigation("/");
                   }}
                 >
-                  <span className="hover:translate-x-1 transition-transform duration-200 inline-block">
+                  <span className="transition-transform duration-200 inline-block">
                     Home
                   </span>
                 </Link>
@@ -177,7 +200,7 @@ const Footer = () => {
                     handleNavigation("/about");
                   }}
                 >
-                  <span className="hover:translate-x-1 transition-transform duration-200 inline-block">
+                  <span className="transition-transform duration-200 inline-block">
                     About Us
                   </span>
                 </Link>
@@ -191,7 +214,7 @@ const Footer = () => {
                     handleNavigation("/contact");
                   }}
                 >
-                  <span className="hover:translate-x-1 transition-transform duration-200 inline-block">
+                  <span className="transition-transform duration-200 inline-block">
                     Contact
                   </span>
                 </Link>
@@ -202,7 +225,7 @@ const Footer = () => {
                   className="hover:text-violet-500 transition-colors duration-200 flex items-center"
                   onClick={() => setTermsDialogOpen(true)}
                 >
-                  <span className="hover:translate-x-1 transition-transform duration-200 inline-block">
+                  <span className=" transition-transform duration-200 inline-block">
                     Terms & Conditions
                   </span>
                 </button>
@@ -212,7 +235,7 @@ const Footer = () => {
                   className="hover:text-violet-500 transition-colors duration-200 flex items-center"
                   onClick={() => setPrivacyDialogOpen(true)}
                 >
-                  <span className="hover:translate-x-1 transition-transform duration-200 inline-block">
+                  <span className=" transition-transform duration-200 inline-block">
                     Privacy Policy
                   </span>
                 </button>

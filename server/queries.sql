@@ -116,6 +116,7 @@ CREATE TABLE miscellaneous (
 CREATE TABLE images (
     image_id SERIAL PRIMARY KEY,
     image_url VARCHAR NOT NULL,
+    public_id VARCHAR,
     image_type VARCHAR(20),
     item_id INTEGER NOT NULL,
     CONSTRAINT fk_items 
