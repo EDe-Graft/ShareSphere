@@ -236,7 +236,8 @@ const Navbar = () => {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Avatar className="cursor-pointer bg-white dark:bg-[hsl(224,71.4%,4.1%)]">
+              {/* <Avatar className="cursor-pointer bg-white dark:bg-[hsl(224,71.4%,4.1%)]"> */}
+              <Avatar className="cursor-pointer">
                 {user ? (
                   <>
                     <AvatarImage
@@ -248,15 +249,15 @@ const Navbar = () => {
                             : null
                       }
                     />
-                    <AvatarFallback>
+                    <AvatarFallback className="bg-primary text-primary-foreground">
                       {user.displayName
                         ? user.displayName[0].toUpperCase()
                         : user.name[0].toUpperCase()}
                     </AvatarFallback>
                   </>
                 ) : (
-                  <AvatarFallback className="bg-muted">
-                    <User2 className="h-5 w-5 text-foreground" />
+                  <AvatarFallback className="bg-muted-foreground/10 border border-border hover:bg-muted-foreground/20 transition-colors">
+                    <User2 className="h-5 w-5 text-muted-foreground" />
                   </AvatarFallback>
                 )}
               </Avatar>
