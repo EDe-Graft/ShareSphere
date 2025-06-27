@@ -13,12 +13,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import ImageCarousel from "./ImageCarousel";
-import {ConditionBadge} from "./CustomBadges";
+import { ConditionBadge } from "./CustomBadges";
 import { RequestItemDialog } from "./RequestItemDialog";
 import { ReportDialog } from "./ReportDialog";
 import { useAuth } from "@/components/AuthContext";
 import { CATEGORY_OPTIONS } from "@/lib/utils";
-import { ConfirmDeleteDialog } from "./ConfirmDeleteDialgo";
+import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
 
 export default function ItemDetailsDialog({
   item,
@@ -45,7 +45,6 @@ export default function ItemDetailsDialog({
   const [isDeleting, setIsDeleting] = useState(false);
 
   const originalParentCategory = useRef(item?.parentCategory);
-
 
   // Initialize editedData with proper fallbacks
   useEffect(() => {
@@ -365,7 +364,7 @@ export default function ItemDetailsDialog({
   const conditionOptions = ["Like-New", "Good", "Fair"];
 
   // Check if current user owns this item
-  const isOwnItem = (item.uploaderId === user.userId);
+  const isOwnItem = item.uploaderId === user.userId;
 
   if (!isOpen) return null;
 
@@ -736,7 +735,7 @@ export default function ItemDetailsDialog({
         reportedUser={{
           id: item.uploaderId,
           name: item.uploadedBy,
-          email: item.uploaderEmail
+          email: item.uploaderEmail,
         }}
         reportedItem={item}
       />
