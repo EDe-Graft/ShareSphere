@@ -113,9 +113,15 @@ export function SignUpPage() {
   const handleGithubEmailSubmit = async (data) => {
     setIsLoading("github");
     setGithubDialogOpen(false);
+    handleSocialSignIn(providers[0], data);
+  };
+
+  // Handle social login
+  const handleSocialSignIn = async (provider, data = null) => {
+    setIsLoading(provider.id);
 
     try {
-      const result = await socialLogin("github", { email: data.email });
+      const result = await socialLogin(provider.id, data);
       if (result.error) {
         setError(result.error);
       } else {
@@ -128,24 +134,6 @@ export function SignUpPage() {
             state: { replace: true },
           });
         }
-      }
-    } catch (err) {
-      setError("An unexpected error occurred");
-    } finally {
-      setIsLoading(null);
-    }
-  };
-
-  // Handle social login
-  const handleSocialSignIn = async (provider) => {
-    setIsLoading(provider.id);
-
-    try {
-      const result = await socialLogin(provider.id);
-      if (result.error) {
-        setError(result.error);
-      } else {
-        console.log(result);
       }
     } catch (err) {
       setError("An unexpected error occurred");

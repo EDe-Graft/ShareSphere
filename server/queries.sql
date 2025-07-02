@@ -16,6 +16,8 @@ CREATE TABLE items (
     description TEXT,
     available VARCHAR(5),
     uploader_id INTEGER NOT NULL,
+    uploaded_by VARCHAR(50) NOT NULL,
+    uploader_username VARCHAR(30) NOT NULL,
     uploader_email VARCHAR(40) NOT NULL,
     upload_date VARCHAR(30) UNIQUE,
     CONSTRAINT fk_users
@@ -40,6 +42,7 @@ CREATE TABLE books (
     uploaded_by VARCHAR (50) NOT NULL,
     uploader_id INTEGER NOT NULL,
     uploader_email VARCHAR(40) NOT NULL,
+    uploader_username VARCHAR(30) NOT NULL,
     upload_date VARCHAR(40) NOT NULL,
     CONSTRAINT fk_items 
         FOREIGN KEY (item_id)
@@ -63,6 +66,7 @@ CREATE TABLE furniture (
     uploaded_by VARCHAR (50) NOT NULL,
     uploader_id INTEGER NOT NULL,
     uploader_email VARCHAR(40) NOT NULL,
+    uploader_username VARCHAR(30) NOT NULL,
     upload_date VARCHAR(40) NOT NULL,
     CONSTRAINT fk_items 
         FOREIGN KEY (item_id)
@@ -83,9 +87,10 @@ CREATE TABLE clothing (
     description TEXT,
     condition VARCHAR(10) NOT NULL,
     available VARCHAR(5) NOT NULL,
-    uploaded_by VARCHAR (30) NOT NULL,
+    uploaded_by VARCHAR (50) NOT NULL,
     uploader_id INTEGER NOT NULL,
     uploader_email VARCHAR(40) NOT NULL,
+    uploader_username VARCHAR(30) NOT NULL,
     upload_date VARCHAR(40) NOT NULL,
     CONSTRAINT fk_items 
         FOREIGN KEY (item_id)
@@ -105,9 +110,10 @@ CREATE TABLE miscellaneous (
     description TEXT,
     condition VARCHAR(10) NOT NULL,
     available VARCHAR(6) NOT NULL,
-    uploaded_by VARCHAR(30) NOT NULL,
+    uploaded_by VARCHAR(50) NOT NULL,
     uploader_id INTEGER NOT NULL,
     uploader_email VARCHAR(40) NOT NULL,
+    uploader_username VARCHAR(30) NOT NULL,
     upload_date VARCHAR(30) NOT NULL,
     CONSTRAINT fk_items 
         FOREIGN KEY (item_id)

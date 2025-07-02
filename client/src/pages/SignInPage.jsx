@@ -27,7 +27,6 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AuthSkeleton } from "@/components/AuthSkeleton";
-import { GitHubEmailDialog } from "@/components/GithubEmailDialog";
 
 // Define the authentication providers
 const providers = [
@@ -59,7 +58,6 @@ export function SignInPage() {
   const [isLoading, setIsLoading] = useState(null);
   const [error, setError] = useState(null);
   const [pageLoading, setPageLoading] = useState(true);
-  const [githubDialogOpen, setGithubDialogOpen] = useState(false);
 
   const navigate = useNavigate();
 
@@ -103,36 +101,6 @@ export function SignInPage() {
       }
     } catch (err) {
       setError(err);
-    } finally {
-      setIsLoading(null);
-    }
-  };
-
-  // Handle GitHub button click
-  const handleGithubClick = () => {
-    setGithubDialogOpen(true);
-  };
-
-  // Handle GitHub email submission
-  const handleGithubEmailSubmit = async (data) => {
-    setIsLoading("github");
-    setGithubDialogOpen(false);
-
-    try {
-      const response = await socialLogin("github", { email: data.email });
-      console.log(response);
-      if (response.authSuccess) {
-        const user = response.user;
-        setAuthSuccess(true);
-        setUser(user);
-        navigate("/", {
-          state: { replace: true },
-        });
-      } else {
-        navigate("/sign-in");
-      }
-    } catch (err) {
-      setError("An unexpected error occurred");
     } finally {
       setIsLoading(null);
     }
@@ -186,8 +154,7 @@ export function SignInPage() {
           <div className="grid grid-cols-2 gap-4">
             <Button
               variant="outline"
-              // onClick={() => handleSocialLogIn(providers[0])}
-              onClick={handleGithubClick}
+              onClick={() => handleSocialLogIn(providers[0])}
               disabled={!!isLoading}
               className="w-full"
             >
@@ -289,16 +256,7 @@ export function SignInPage() {
           </div>
         </CardFooter>
       </Card>
-      {/* GitHub Email Dialog */}
-      <GitHubEmailDialog
-        isOpen={githubDialogOpen}
-        onClose={() => setGithubDialogOpen(false)}
-        onSubmit={handleGithubEmailSubmit}
-        isLoading={isLoading === "github"}
-        title="GitHub Sign In"
-        description="Please provide your email address to continue with GitHub authentication."
-        submitButtonText="Continue with GitHub"
-      />
+
     </div>
   );
 }

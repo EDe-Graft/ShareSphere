@@ -498,10 +498,15 @@ export default function ItemDetailsDialog({
 
               <div className="space-y-4">
                 <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                  <h4 className="text-sm font-medium text-muted-foreground">
                     Uploaded By
                   </h4>
-                  <p>{item.uploadedBy}</p>
+                  <p className="mb-4">{`${item.uploadedBy}`}</p>
+
+                  <h4 className="text-sm font-medium text-muted-foreground">
+                    Username
+                  </h4>
+                  <p className="text-xs text-primary mb-4">{`${item.uploaderUsername}`}</p>
                 </div>
 
                 <div>

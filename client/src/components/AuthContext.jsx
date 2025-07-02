@@ -66,11 +66,11 @@ export function AuthProvider({ children }) {
     return response;
   };
 
-  const socialLogin = (socialStrategy) => {
+  const socialLogin = (socialStrategy, data = {}) => {
     try {
       return new Promise((resolve) => {
         const popup = window.open(
-          `${BACKEND_URL}/auth/${socialStrategy}`,
+          `${BACKEND_URL}/auth/${socialStrategy}?state=${JSON.stringify(data)}`,
           "_blank",
           "width=500,height=600"
         );

@@ -167,14 +167,18 @@ app.get("/auth/google/callback",
 );
 
 //GITHUB AUTH ROUTES
-app.get("/auth/github", passport.authenticate("github",
-  {scope: ['user:email']}
-))
+app.get("/auth/github", (req, res) => {
+  passport.authenticate("github", {
+    scope: ['user:email'],
+    state: req.query?.state || null
+  })(req, res);
+});
 
 app.get("/auth/github/callback",
   passport.authenticate("github", { failureRedirect: "/auth/failure" }),
   (req, res) => {
     // Successful auth
+    const state = req.query?.state;
     res.redirect("/auth/success");
   }
 );

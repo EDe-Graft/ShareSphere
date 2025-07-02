@@ -2,7 +2,7 @@ import { Strategy as LocalStrategy } from "passport-local";
 import GoogleStrategy from "passport-google-oauth2";
 import GitHubStrategy from "passport-github2"; //  import GitHub strategy
 import bcrypt from "bcrypt";
-// import { generateUniqueUsername } from "./database-utils";
+import { generateUniqueUsername } from "./database-utils.js";
 
 export function configurePassport(passport, db) {
   // LOCAL STRATEGY
@@ -44,7 +44,8 @@ export function configurePassport(passport, db) {
       let authStrategy;
 
       if (result.rows.length === 0) {
-        // username = await generateUniqueUsername(db, profile.displayName)
+        // Generate a unique username
+        username = await generateUniqueUsername(db, profile.displayName)
         const newUser = await db.query(
           "INSERT INTO users (username, name, email, password, strategy, report_count) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
           [username, profile.displayName, profile.email, "google", "google", 0]
@@ -67,11 +68,13 @@ export function configurePassport(passport, db) {
   passport.use("github", new GitHubStrategy({
     clientID: process.env.GITHUB_CLIENT_ID,
     clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    callbackURL: process.env.GITHUB_CALLBACK_URL
-  }, async (accessToken, refreshToken, profile, cb) => {
+    callbackURL: process.env.GITHUB_CALLBACK_URL,
+    passReqToCallback: true
+  }, async (req, accessToken, refreshToken, profile, cb) => {
     try {
       console.log("GitHub strategy activated");
-      // console.log(profile)
+      const state = req.query?.state;
+      const email = state?.email;
       const profileUrl = profile.profileUrl;
       if (!profileUrl) return cb(null, false, { message: "No profile found" });
 
@@ -81,10 +84,11 @@ export function configurePassport(passport, db) {
       let authStrategy;
 
       if (result.rows.length === 0) {
-        // username = await generateUniqueUsername(db, profile.displayName)
+        // Generate a unique username
+        username = await generateUniqueUsername(db, profile.displayName)
         const newUser = await db.query(
           "INSERT INTO users (username, name, email, password, strategy, report_count) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-          [username, profile.displayName, profileUrl, "github", "github", 0]
+          [username, profile.displayName, email, "github", "github", 0]
         );
         userId = newUser.rows[0].user_id;
         authStrategy = newUser.rows[0].strategy

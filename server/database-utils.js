@@ -7,29 +7,29 @@ export function slugify(name) {
 }
 
 // Generate unique username
-// export async function generateUniqueUsername(db, name) {
-//     let baseUsername = slugify(name);
-//     let username = baseUsername;
-//     let isUnique = false;
-//     let attempt = 0;
+export async function generateUniqueUsername(db, name) {
+    let baseUsername = slugify(name);
+    let username = baseUsername;
+    let isUnique = false;
+    let attempt = 0;
 
-//     while (!isUnique) {
-//         const res = await db.query('SELECT 1 FROM users WHERE username = $1', [username]);
+    while (!isUnique) {
+        const res = await db.query('SELECT 1 FROM users WHERE username = $1', [username]);
 
-//         if (res.rowCount === 0) {
-//             isUnique = true;
-//         } else {
-//             // Append random 3-digit number to base username
-//             const randomSuffix = Math.floor(100 + Math.random() * 900); // 100 - 999
-//             username = `${baseUsername}${randomSuffix}`;
-//         }
+        if (res.rowCount === 0) {
+            isUnique = true;
+        } else {
+            // Append random 3-digit number to base username
+            const randomSuffix = Math.floor(100 + Math.random() * 900); // 100 - 999
+            username = `${baseUsername}${randomSuffix}`;
+        }
 
-//         attempt++;
-//         if (attempt > 10) throw new Error('Unable to generate unique username. Try again.');
-//     }
+        attempt++;
+        if (attempt > 10) throw new Error('Unable to generate unique username. Try again.');
+    }
 
-//     return username;
-// }
+    return username;
+}
 
 
 
@@ -116,6 +116,7 @@ export async function insertCategoryDetails(db, {req, itemId, category, uploadDa
   const available = true;
   const uploaderId = req.user?.user_id;
   const uploadedBy = req.user?.name || req.user?.displayName || "N/A";
+  const uploaderUsername = req.user?.username || "N/A";
   const uploaderEmail = req.user?.email || "N/A";
 
   switch (category) {
@@ -132,9 +133,9 @@ export async function insertCategoryDetails(db, {req, itemId, category, uploadDa
       } = req.body;
 
       await db.query(
-        `INSERT INTO books (item_id, title, author, edition, year, general_category, parent_category, sub_category, description, condition, available, uploaded_by, uploader_id, uploader_email, upload_date) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
-        [itemId, title, author, edition, year, generalCategory, parentCategory, subCategory, description, condition, available, uploadedBy, uploaderId, uploaderEmail, uploadDate]
+        `INSERT INTO books (item_id, title, author, edition, year, general_category, parent_category, sub_category, description, condition, available, uploaded_by, uploader_id, uploader_email, uploader_username, upload_date) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+        [itemId, title, author, edition, year, generalCategory, parentCategory, subCategory, description, condition, available, uploadedBy, uploaderId, uploaderEmail, uploaderUsername, uploadDate]
       );
       break;
     }
@@ -153,9 +154,9 @@ export async function insertCategoryDetails(db, {req, itemId, category, uploadDa
       } = req.body;
 
       await db.query(
-        `INSERT INTO furniture (item_id, general_category, name, type, brand, age, color, dimensions, material, description, condition, available, uploaded_by, uploader_id, uploader_email, upload_date) 
+        `INSERT INTO furniture (item_id, general_category, name, type, brand, age, color, dimensions, material, description, condition, available, uploaded_by, uploader_id, uploader_email, uploader_username, upload_date) 
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
-        [itemId, generalCategory, name,  type, brand, age, color, dimensions, material, description, condition, available, uploadedBy, uploaderId, uploaderEmail, uploadDate]
+        [itemId, generalCategory, name,  type, brand, age, color, dimensions, material, description, condition, available, uploadedBy, uploaderId, uploaderEmail, uploaderUsername, uploadDate]
       );
       break;
     }
@@ -174,9 +175,9 @@ export async function insertCategoryDetails(db, {req, itemId, category, uploadDa
       } = req.body;
 
       await db.query(
-        `INSERT INTO clothing (item_id, general_category, name, type, size, brand, color, material, gender, description, condition, available, uploaded_by, uploader_id, uploader_email, upload_date) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
-        [itemId, generalCategory, name, type, size, brand, color, material, gender, description, condition, available, uploadedBy, uploaderId, uploaderEmail, uploadDate]
+        `INSERT INTO clothing (item_id, general_category, name, type, size, brand, color, material, gender, description, condition, available, uploaded_by, uploader_id, uploader_email, uploader_username, upload_date) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
+        [itemId, generalCategory, name, type, size, brand, color, material, gender, description, condition, available, uploadedBy, uploaderId, uploaderEmail, uploaderUsername, uploadDate]
       );
       break;
     }
@@ -194,9 +195,9 @@ export async function insertCategoryDetails(db, {req, itemId, category, uploadDa
       } = req.body;
 
       await db.query(
-        `INSERT INTO miscellaneous (item_id, general_category, name, type, brand, color, age, estimated_value, description, condition, available, uploaded_by, uploader_id, uploader_email, upload_date) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
-        [itemId, generalCategory, name, type, brand, color, age, estimatedValue, description, condition, available, uploadedBy, uploaderId, uploaderEmail, uploadDate]
+        `INSERT INTO miscellaneous (item_id, general_category, name, type, brand, color, age, estimated_value, description, condition, available, uploaded_by, uploader_id, uploader_email, uploader_username, upload_date) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+        [itemId, generalCategory, name, type, brand, color, age, estimatedValue, description, condition, available, uploadedBy, uploaderId, uploaderEmail, uploaderUsername, uploadDate]
       );
       break;
     }
