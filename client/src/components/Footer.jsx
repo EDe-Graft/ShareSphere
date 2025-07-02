@@ -63,7 +63,7 @@ const Footer = () => {
             </p>
             <div className="flex space-x-3 pt-2">
               <Link
-                to="https://github.com"
+                to="https://github.com/EDe-Graft/ShareSphere"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -75,7 +75,7 @@ const Footer = () => {
                   <Github className="h-4 w-4" />
                 </Button>
               </Link>
-              <Link to="mailto:contact@sharesphere.com">
+              <Link to="mailto:sharesphereapp@gmail.com">
                 <Button
                   variant="outline"
                   size="icon"
@@ -504,16 +504,14 @@ const Footer = () => {
               <h3 className="text-lg font-semibold">11. Contact Us</h3>
               <p>
                 If you have any questions about these Terms, please contact us
-                at:
-              </p>
-              <p>
-                Email:{" "}
+                at{" "}
                 <a
                   href="mailto:sharesphereapp@gmail.com"
                   className="text-violet-600 hover:underline"
                 >
                   sharesphereapp@gmail.com
                 </a>
+                .
               </p>
             </div>
           </ScrollArea>
@@ -683,16 +681,14 @@ const Footer = () => {
               <h3 className="text-lg font-semibold">8. Contact Us</h3>
               <p>
                 If you have any questions about this Privacy Policy, please
-                contact us at:
-              </p>
-              <p>
-                Email:{" "}
+                contact us at{" "}
                 <a
                   href="mailto:sharesphereapp@gmail.com"
                   className="text-violet-600 hover:underline"
                 >
                   sharesphereapp@gmail.com
                 </a>
+                .
               </p>
             </div>
           </ScrollArea>

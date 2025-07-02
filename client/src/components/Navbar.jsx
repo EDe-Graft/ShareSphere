@@ -237,7 +237,6 @@ const Navbar = () => {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Avatar className="cursor-pointer bg-white dark:bg-[hsl(224,71.4%,4.1%)]">
-                {/* If user is logged in, show their avatar or fallback to a default avatar */}
                 {user && (
                   <>
                     <AvatarImage
@@ -250,7 +249,7 @@ const Navbar = () => {
                       }
 
                     />
-                    <AvatarFallback>
+                    <AvatarFallback className="bg-primary text-primary-foreground">
                       {user.displayName
                         ? user.displayName[0].toUpperCase()
                         : user.name

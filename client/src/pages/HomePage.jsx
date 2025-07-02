@@ -3,27 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/AuthContext";
 import { CategoryCarousel } from "@/components/category-carousel";
 import { Button } from "@/components/ui/button";
-import {
-  ArrowRight,
-  ArrowDown,
-  Heart,
-  Users,
-  Sparkles,
-  BookOpen,
-  Shirt,
-  Sofa,
-  Package,
-} from "lucide-react";
+import { ArrowRight, ArrowDown, Heart, Users, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 
 const HomePage = () => {
   const { authSuccess, user } = useAuth();
@@ -253,120 +235,26 @@ const HomePage = () => {
               sustainable campus.
             </p>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
-                className={`p-6 rounded-lg border bg-card text-card-foreground shadow-sm ${
-                  feature.isClickable
-                    ? "cursor-pointer hover:shadow-md transition-shadow duration-300"
-                    : ""
-                }`}
+                className="p-6 rounded-lg border bg-card text-card-foreground shadow-sm"
                 initial={{ opacity: 0, y: 20 }}
                 animate={
                   isVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }
                 }
                 transition={{ duration: 0.5, delay: 0.5 + index * 0.1 }}
               >
-                {feature.isClickable ? (
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <div className="w-full text-left">
-                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                          {feature.icon}
-                        </div>
-                        <h3 className="text-xl font-semibold mb-2">
-                          {feature.title}
-                        </h3>
-                        <p className="text-muted-foreground">
-                          {feature.description}
-                        </p>
-                      </div>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>Choose Donation Category</DialogTitle>
-                        <DialogDescription>
-                          Select the category that best describes the item you
-                          want to donate.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="grid grid-cols-1 gap-3 py-4">
-                        <Button
-                          variant="outline"
-                          className="justify-start h-auto p-4 hover:bg-primary hover:text-white"
-                          onClick={() => handleCategorySelection("/books-form")}
-                        >
-                          <BookOpen className="mr-3 h-5 w-5" />
-                          <div className="text-left">
-                            <div className="font-medium">Books</div>
-                            <div className="text-sm text-muted-foreground">
-                              Textbooks, novels, reference materials
-                            </div>
-                          </div>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="justify-start h-auto p-4 hover:bg-primary hover:text-white"
-                          onClick={() =>
-                            handleCategorySelection("/furniture-form")
-                          }
-                        >
-                          <Sofa className="mr-3 h-5 w-5" />
-                          <div className="text-left">
-                            <div className="font-medium">Furniture</div>
-                            <div className="text-sm text-muted-foreground">
-                              Chairs, desks, tables, storage
-                            </div>
-                          </div>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="justify-start h-auto p-4 hover:bg-primary hover:text-white"
-                          onClick={() =>
-                            handleCategorySelection("/clothing-form")
-                          }
-                        >
-                          <Shirt className="mr-3 h-5 w-5" />
-                          <div className="text-left">
-                            <div className="font-medium">Clothing</div>
-                            <div className="text-sm text-muted-foreground">
-                              Shirts, pants, jackets, accessories
-                            </div>
-                          </div>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="justify-start h-auto p-4 hover:bg-primary hover:text-white"
-                          onClick={() =>
-                            handleCategorySelection("/miscellaneous-form")
-                          }
-                        >
-                          <Package className="mr-3 h-5 w-5" />
-                          <div className="text-left">
-                            <div className="font-medium">Miscellaneous</div>
-                            <div className="text-sm text-muted-foreground">
-                              Electronics, supplies, tools, other items
-                            </div>
-                          </div>
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                ) : (
-                  <div>
-                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                      {feature.icon}
-                    </div>
-                    <h3 className="text-xl font-semibold mb-2">
-                      {feature.title}
-                    </h3>
-                    <p className="text-muted-foreground">
-                      {feature.description}
-                    </p>
+                <div>
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                    {feature.icon}
                   </div>
-                )}
+                  <h3 className="text-xl font-semibold mb-2">
+                    {feature.title}
+                  </h3>
+                  <p className="text-muted-foreground">{feature.description}</p>
+                </div>
               </motion.div>
             ))}
           </div>

@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ConditionBadge, AvailabilityBadge, TypeBadge } from "./CustomBadges";
 import LikeButton from "./LikeButton";
-import { ConfirmDeleteDialog } from "./ConfirmDeleteDialgo";
+import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
 import { ReportDialog } from "./ReportDialog";
 import { useAuth } from "@/components/AuthContext";
 
@@ -38,7 +38,7 @@ export default function ItemCard({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const isOwnItem = (item.uploaderId === user.userId);
+  const isOwnItem = item.uploaderId === user?.userId;
 
   let itemValues;
   if (item.generalCategory === "Book" || item.generalCategory === "book") {
@@ -73,7 +73,6 @@ export default function ItemCard({
     }
   };
 
-
   // Grid View Layout
   if (viewMode === "grid") {
     return (
@@ -98,48 +97,46 @@ export default function ItemCard({
               )}
 
               {/* Report menu - only show for items owned by current user */}
-                <div className="absolute top-2 right-2">
-                  <DropdownMenu modal={false}>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        className="h-7 w-7 bg-background/80 backdrop-blur-sm border shadow-sm hover:bg-background"
-                        aria-label="More options"
-                      >
-                        <MoreVertical className="h-3 w-3 text-foreground" />
-                      </Button>
-                    </DropdownMenuTrigger>
-
-                    <DropdownMenuContent
-                      align="end"
-                      sideOffset={5}
-                      onCloseAutoFocus={(e) => e.preventDefault()}
+              <div className="absolute top-2 right-2">
+                <DropdownMenu modal={false}>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="h-7 w-7 bg-background/80 backdrop-blur-sm border shadow-sm hover:bg-background"
+                      aria-label="More options"
                     >
-                      {!isOwnItem && (
-                        <DropdownMenuItem
+                      <MoreVertical className="h-3 w-3 text-foreground" />
+                    </Button>
+                  </DropdownMenuTrigger>
+
+                  <DropdownMenuContent
+                    align="end"
+                    sideOffset={5}
+                    onCloseAutoFocus={(e) => e.preventDefault()}
+                  >
+                    {!isOwnItem && (
+                      <DropdownMenuItem
                         onClick={handleReport}
                         className="text-red-600 cursor-pointer"
-                        >
-                          <Flag className="mr-2 h-3 w-3" />
-                          Report Post
-                        </DropdownMenuItem>
-                      )}
-                      
+                      >
+                        <Flag className="mr-2 h-3 w-3" />
+                        Report Post
+                      </DropdownMenuItem>
+                    )}
 
-                      {isOwnItem && (
-                        <DropdownMenuItem
-                          onClick={handleDeleteClick}
-                          className="text-red-600 cursor-pointer"
-                        >
-                          <Trash2Icon className="mr-2 h-3 w-3" />
-                          Delete Post
-                        </DropdownMenuItem>
-                        )}
-                        
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                    {isOwnItem && (
+                      <DropdownMenuItem
+                        onClick={handleDeleteClick}
+                        className="text-red-600 cursor-pointer"
+                      >
+                        <Trash2Icon className="mr-2 h-3 w-3" />
+                        Delete Post
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
 
               {!item.available && (
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
@@ -294,14 +291,13 @@ export default function ItemCard({
                     >
                       {!isOwnItem && (
                         <DropdownMenuItem
-                        onClick={handleReport}
-                        className="text-red-600 cursor-pointer"
+                          onClick={handleReport}
+                          className="text-red-600 cursor-pointer"
                         >
                           <Flag className="mr-2 h-3 w-3" />
                           Report Post
                         </DropdownMenuItem>
                       )}
-                      
 
                       {isOwnItem && (
                         <DropdownMenuItem
@@ -311,8 +307,7 @@ export default function ItemCard({
                           <Trash2Icon className="mr-2 h-3 w-3" />
                           Delete Post
                         </DropdownMenuItem>
-                        )}
-                        
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>

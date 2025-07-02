@@ -27,6 +27,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AuthSkeleton } from "@/components/AuthSkeleton";
+import { GitHubEmailDialog } from "@/components/GithubEmailDialog";
 
 // Define the authentication providers
 const providers = [
@@ -53,12 +54,12 @@ const signIn = async (provider, credentials) => {
   });
 };
 
-
 export function SignInPage() {
-  const {setAuthSuccess, user, setUser, localLogin, socialLogin} = useAuth();
+  const { setAuthSuccess, user, setUser, localLogin, socialLogin } = useAuth();
   const [isLoading, setIsLoading] = useState(null);
   const [error, setError] = useState(null);
-  const [pageLoading, setPageLoading] = useState(true)
+  const [pageLoading, setPageLoading] = useState(true);
+  const [githubDialogOpen, setGithubDialogOpen] = useState(false);
 
   const navigate = useNavigate();
 
@@ -74,42 +75,65 @@ export function SignInPage() {
   // Simulate page loading
   useEffect(() => {
     const timer = setTimeout(() => {
-      setPageLoading(false)
-    }, 1000)
-    return () => clearTimeout(timer)
-  }, [])
-
+      setPageLoading(false);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Handle form submission
   const onSubmit = async (credentials) => {
     setIsLoading("credentials");
-    
+
     try {
       const response = await localLogin(credentials);
-      if (response.data.message === 'no user found') {
-        navigate("/sign-up")
-      }
-
-      else {
+      if (response.data.message === "no user found") {
+        navigate("/sign-up");
+      } else {
         //login successful
-        console.log(response)
+        console.log(response);
         if (response.data.authSuccess) {
-            const user = response.data.user
-            setAuthSuccess(true)
-            setUser(user)
-            navigate("/"), {
-                state: {replace: true}
-              }
+          const user = response.data.user;
+          setAuthSuccess(true);
+          setUser(user);
+          navigate("/"),
+            {
+              state: { replace: true },
+            };
         }
-            
       }
-    } 
-    
-    catch (err) {
-      setError(err)
-    } 
-    
-    finally {
+    } catch (err) {
+      setError(err);
+    } finally {
+      setIsLoading(null);
+    }
+  };
+
+  // Handle GitHub button click
+  const handleGithubClick = () => {
+    setGithubDialogOpen(true);
+  };
+
+  // Handle GitHub email submission
+  const handleGithubEmailSubmit = async (data) => {
+    setIsLoading("github");
+    setGithubDialogOpen(false);
+
+    try {
+      const response = await socialLogin("github", { email: data.email });
+      console.log(response);
+      if (response.authSuccess) {
+        const user = response.user;
+        setAuthSuccess(true);
+        setUser(user);
+        navigate("/", {
+          state: { replace: true },
+        });
+      } else {
+        navigate("/sign-in");
+      }
+    } catch (err) {
+      setError("An unexpected error occurred");
+    } finally {
       setIsLoading(null);
     }
   };
@@ -117,38 +141,33 @@ export function SignInPage() {
   // Handle social login
   const handleSocialLogIn = async (provider) => {
     setIsLoading(provider.id);
-    console.log("social login requested")
+    console.log("social login requested");
     try {
       const response = await socialLogin(provider.id);
-      console.log(response)
+      console.log(response);
       if (response.authSuccess) {
-        const user = response.user
+        const user = response.user;
 
-        setAuthSuccess(true)
-        setUser(user)
+        setAuthSuccess(true);
+        setUser(user);
 
-        navigate("/"), {
-          state: {replace: true}
-        }
+        navigate("/"),
+          {
+            state: { replace: true },
+          };
+      } else {
+        navigate("/sign-in");
       }
-
-      else {
-        navigate("/sign-in")
-      }
-    } 
-    
-    catch (err) {
+    } catch (err) {
       setError("An unexpected error occurred");
-    } 
-    
-    finally {
+    } finally {
       setIsLoading(null);
     }
   };
 
   // Show skeleton while page is loading
   if (pageLoading) {
-    return <AuthSkeleton type="sign-up" />
+    return <AuthSkeleton type="sign-up" />;
   }
 
   return (
@@ -167,7 +186,8 @@ export function SignInPage() {
           <div className="grid grid-cols-2 gap-4">
             <Button
               variant="outline"
-              onClick={() => handleSocialLogIn(providers[0])}
+              // onClick={() => handleSocialLogIn(providers[0])}
+              onClick={handleGithubClick}
               disabled={!!isLoading}
               className="w-full"
             >
@@ -261,15 +281,24 @@ export function SignInPage() {
           <div className="text-sm text-center text-muted-foreground">
             Don't have an account?{" "}
             <Link
-                to="/sign-up"
-                className="underline underline-offset-4 hover:text-primary"
+              to="/sign-up"
+              className="underline underline-offset-4 hover:text-primary"
             >
               Sign up
             </Link>
-
           </div>
         </CardFooter>
       </Card>
+      {/* GitHub Email Dialog */}
+      <GitHubEmailDialog
+        isOpen={githubDialogOpen}
+        onClose={() => setGithubDialogOpen(false)}
+        onSubmit={handleGithubEmailSubmit}
+        isLoading={isLoading === "github"}
+        title="GitHub Sign In"
+        description="Please provide your email address to continue with GitHub authentication."
+        submitButtonText="Continue with GitHub"
+      />
     </div>
   );
 }
