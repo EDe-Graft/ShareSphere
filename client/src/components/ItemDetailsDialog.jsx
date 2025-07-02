@@ -19,6 +19,7 @@ import { ReportDialog } from "./ReportDialog";
 import { useAuth } from "@/components/AuthContext";
 import { CATEGORY_OPTIONS } from "@/lib/utils";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
+import ImageUploadField from "@/components/ImageUploadField";
 
 export default function ItemDetailsDialog({
   item,
@@ -33,137 +34,142 @@ export default function ItemDetailsDialog({
 }) {
   const navigate = useNavigate();
   const { user } = useAuth();
-
   const dialogRef = useRef(null);
   const overlayRef = useRef(null);
-
   const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedData, setEditedData] = useState({ ...item });
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const originalParentCategory = useRef(item?.parentCategory);
+  // Simplified state management
+  const [formData, setFormData] = useState({});
+  const [imageChanges, setImageChanges] = useState({
+    existingImages: [],
+    newFiles: [],
+    removedImages: [],
+  });
 
-  // Initialize editedData with proper fallbacks
+  // Initialize form data only when item changes
   useEffect(() => {
     if (item) {
-      setEditedData({
-        ...item,
+      setFormData({
+        title: item.title || "",
+        name: item.name || "",
+        parentCategory: item.parentCategory || "",
+        author: item.author || "",
+        edition: item.edition || "",
+        year: item.year || "",
+        subCategory: item.subCategory || "",
+        type: item.type || "",
+        brand: item.brand || "",
+        color: item.color || "",
+        material: item.material || "",
+        age: item.age || "",
+        size: item.size || "",
+        gender: item.gender || "",
+        estimatedValue: item.estimatedValue || "",
+        condition: item.condition || "",
+        description: item.description || "",
       });
-      originalParentCategory.current = item.parentCategory;
+      setImageChanges({
+        existingImages: item.images || [],
+        newFiles: [],
+        removedImages: [],
+      });
     }
-  }, [item]);
+  }, [item]); // Only depend on item
 
-  // Handle parent category changes
+  // Handle inert attribute
   useEffect(() => {
-    if (
-      item?.generalCategory === "Book" &&
-      editedData.parentCategory !== originalParentCategory.current
-    ) {
-      console.log("subCategory value changed");
-      setEditedData((prev) => ({
-        ...prev,
-        subCategory: "",
-      }));
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
     }
-  }, [editedData.parentCategory]);
-
-  // Handle inert attribute and focus management
-  useEffect(() => {
-    const handleInert = () => {
-      const body = document.body;
-
-      if (isOpen) {
-        // Make everything except the dialog inert
-        Array.from(body.children).forEach((child) => {
-          if (
-            child !== dialogRef.current &&
-            !child.contains(dialogRef.current)
-          ) {
-            child.setAttribute("inert", "");
-          }
-        });
-
-        // Ensure dialog is not inert
-        if (dialogRef.current) {
-          dialogRef.current.removeAttribute("inert");
-        }
-      } else {
-        // Remove inert from all elements when dialog closes
-        Array.from(body.children).forEach((child) => {
-          child.removeAttribute("inert");
-        });
-      }
-    };
-
-    handleInert();
-
-    // Cleanup function
     return () => {
-      if (!isOpen) {
-        Array.from(document.body.children).forEach((child) => {
-          child.removeAttribute("inert");
-        });
-      }
+      document.body.style.overflow = "unset";
     };
   }, [isOpen]);
 
-  const handleRequestItem = () => {
-    setIsRequestDialogOpen(true);
+  if (!item || !isOpen) return null;
+
+  const handleInputChange = (field, value) => {
+    setFormData((prev) => {
+      const newData = { ...prev, [field]: value };
+      // Reset subcategory when parent category changes for books
+      if (field === "parentCategory" && item.generalCategory === "Book") {
+        newData.subCategory = "";
+      }
+      return newData;
+    });
   };
 
-  const handleRequestDialogClose = () => {
-    setIsRequestDialogOpen(false);
-  };
-
-  const handleReport = () => {
-    setIsReportDialogOpen(true);
-  };
-
-  const handleEditToggle = () => {
-    setIsEditing(true);
+  const handleImageChanges = (changes) => {
+    setImageChanges(changes);
   };
 
   const handleSaveEdit = () => {
-    // Find changed fields
     const changes = {};
-    Object.keys(editedData).forEach((key) => {
-      if (editedData[key] !== item[key]) {
-        changes[key] = editedData[key];
+    Object.keys(formData).forEach((key) => {
+      if (formData[key] !== (item[key] || "")) {
+        changes[key] = formData[key];
       }
     });
 
+    if (
+      imageChanges.newFiles.length > 0 ||
+      imageChanges.removedImages.length > 0
+    ) {
+      changes.imageChanges = imageChanges;
+    }
+
     if (Object.keys(changes).length > 0 && onUpdate) {
-      // Include identifiers and only changed fields
       onUpdate({
         itemId: item.itemId,
         itemCategory: item.generalCategory,
         ...changes,
       });
     }
+
     setIsEditing(false);
   };
 
   const handleCancelEdit = () => {
     setIsEditing(false);
-    setEditedData({ ...item });
+    setFormData({
+      title: item.title || "",
+      name: item.name || "",
+      parentCategory: item.parentCategory || "",
+      author: item.author || "",
+      edition: item.edition || "",
+      year: item.year || "",
+      subCategory: item.subCategory || "",
+      type: item.type || "",
+      brand: item.brand || "",
+      color: item.color || "",
+      material: item.material || "",
+      age: item.age || "",
+      size: item.size || "",
+      gender: item.gender || "",
+      estimatedValue: item.estimatedValue || "",
+      condition: item.condition || "",
+      description: item.description || "",
+    });
+    setImageChanges({
+      existingImages: item.images || [],
+      newFiles: [],
+      removedImages: [],
+    });
   };
 
-  const handleInputChange = (field, value) => {
-    setEditedData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handleDeleteClick = () => {
-    setIsDeleteDialogOpen(true);
+  const handleDialogClose = () => {
+    setIsEditing(false);
+    onClose();
   };
 
   const handleDeleteConfirm = async () => {
-    if (onDelete) {
+    if (onDelete && item) {
       setIsDeleting(true);
       try {
         await onDelete(item.itemId, item.generalCategory);
@@ -174,89 +180,43 @@ export default function ItemDetailsDialog({
       }
     }
   };
-  const handleDialogClose = () => {
-    setIsEditing(false);
-    setEditedData({ ...item });
-    onClose();
-  };
 
-  const handleOverlayClick = (e) => {
-    if (e.target === overlayRef.current) {
-      handleDialogClose();
-    }
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === "Escape") {
-      if (isEditing) {
-        handleCancelEdit();
-      } else {
-        handleDialogClose();
-      }
-    }
-  };
-
-  if (!item) return null;
-
-  // Helper function to get field configurations based on item type
-  const getFieldConfigurations = () => {
-    let headings,
-      values,
-      fieldNames,
-      typeToChange,
-      selectToChange,
-      selectOptions;
-
-    typeToChange = [2, 3, 4];
-    selectToChange = [5];
-
+  // Get field configuration based on category
+  const getFieldConfig = () => {
     switch (item.generalCategory) {
       case "Book":
-        const currentParent =
-          editedData.parentCategory || originalParentCategory.current;
-
-        headings = [
-          "Title",
-          "Category",
-          "Author",
-          "Edition",
-          "Publication Year",
-          "Genre",
-        ];
-        values = [
-          editedData.title,
-          editedData.parentCategory,
-          editedData.author,
-          editedData.edition,
-          editedData.year,
-          editedData.subCategory || item.subCategory,
-        ];
-        fieldNames = [
-          "title",
-          "parentCategory",
-          "author",
-          "edition",
-          "year",
-          "subCategory",
-        ];
-        selectOptions = {
-          1: ["Textbook", "Fiction", "Non-Fiction"],
-          5: currentParent ? CATEGORY_OPTIONS[currentParent] : [],
+        return {
+          headings: [
+            "Title",
+            "Category",
+            "Author",
+            "Edition",
+            "Publication Year",
+            "Genre",
+          ],
+          fields: [
+            "title",
+            "parentCategory",
+            "author",
+            "edition",
+            "year",
+            "subCategory",
+          ],
+          inputFields: [2, 3, 4], // Author, Edition, Year
+          selectFields: [5], // Genre
+          categoryOptions: ["Textbook", "Fiction", "Non-Fiction"],
+          genreOptions:
+            formData.parentCategory && CATEGORY_OPTIONS[formData.parentCategory]
+              ? CATEGORY_OPTIONS[formData.parentCategory]
+              : [],
         };
-        break;
       case "Furniture":
-        headings = ["Name", "Type", "Brand", "Color", "Material", "Age"];
-        values = [
-          editedData.name,
-          editedData.type,
-          editedData.brand,
-          editedData.color,
-          editedData.material,
-          editedData.age,
-        ];
-        fieldNames = ["name", "type", "brand", "color", "material", "age"];
-        selectOptions = {
-          1: [
+        return {
+          headings: ["Name", "Type", "Brand", "Color", "Material", "Age"],
+          fields: ["name", "type", "brand", "color", "material", "age"],
+          inputFields: [2, 3, 4], // Brand, Color, Material
+          selectFields: [5], // Age
+          categoryOptions: [
             "Chairs",
             "Desks",
             "Tables",
@@ -266,22 +226,15 @@ export default function ItemDetailsDialog({
             "Cabinets",
             "Other",
           ],
-          5: ["1-2 years", "3-5 years", "5-10 years", "10+ years"],
+          genreOptions: ["1-2 years", "3-5 years", "5-10 years", "10+ years"],
         };
-        break;
       case "Clothing":
-        headings = ["Name", "Type", "Brand", "Size", "Material", "Gender"];
-        values = [
-          editedData.name,
-          editedData.type,
-          editedData.brand,
-          editedData.size,
-          editedData.material,
-          editedData.gender,
-        ];
-        fieldNames = ["name", "type", "brand", "size", "material", "gender"];
-        selectOptions = {
-          1: [
+        return {
+          headings: ["Name", "Type", "Brand", "Size", "Material", "Gender"],
+          fields: ["name", "type", "brand", "size", "material", "gender"],
+          inputFields: [2, 3, 4], // Brand, Size, Material
+          selectFields: [5], // Gender
+          categoryOptions: [
             "Tops/Shirts",
             "Pants/Jeans",
             "Dresses/Skirts",
@@ -292,29 +245,22 @@ export default function ItemDetailsDialog({
             "Footwear",
             "Other",
           ],
-          5: ["Men", "Women", "Unisex", "Kids"],
+          genreOptions: ["Men", "Women", "Unisex", "Kids"],
         };
-        break;
       case "Miscellaneous":
-        headings = ["Name", "Type", "Brand", "Color", "Estimated Value", "Age"];
-        values = [
-          editedData.name,
-          editedData.type,
-          editedData.brand,
-          editedData.color,
-          editedData.estimatedValue,
-          editedData.age,
-        ];
-        fieldNames = [
-          "name",
-          "type",
-          "brand",
-          "color",
-          "estimatedValue",
-          "age",
-        ];
-        selectOptions = {
-          1: [
+        return {
+          headings: [
+            "Name",
+            "Type",
+            "Brand",
+            "Color",
+            "Estimated Value",
+            "Age",
+          ],
+          fields: ["name", "type", "brand", "color", "estimatedValue", "age"],
+          inputFields: [2, 3, 4], // Brand, Color, Estimated Value
+          selectFields: [5], // Age
+          categoryOptions: [
             "Electronics",
             "Kitchen Items",
             "Home Decor",
@@ -324,7 +270,7 @@ export default function ItemDetailsDialog({
             "Arts Supplies",
             "Other",
           ],
-          5: [
+          genreOptions: [
             "Less than 1 year",
             "1-2 years",
             "3-5 years",
@@ -332,114 +278,86 @@ export default function ItemDetailsDialog({
             "Unknown",
           ],
         };
-        break;
       default:
-        headings = [];
-        values = [];
-        fieldNames = [];
-        typeToChange = [];
-        selectToChange = [];
-        selectOptions = {};
+        return {
+          headings: [],
+          fields: [],
+          inputFields: [],
+          selectFields: [],
+          categoryOptions: [],
+          genreOptions: [],
+        };
     }
-
-    return {
-      headings,
-      values,
-      fieldNames,
-      typeToChange,
-      selectToChange,
-      selectOptions,
-    };
   };
 
-  const {
-    headings,
-    values,
-    fieldNames,
-    typeToChange,
-    selectToChange,
-    selectOptions,
-  } = getFieldConfigurations();
-
+  const config = getFieldConfig();
   const conditionOptions = ["Like-New", "Good", "Fair"];
-
-  // Check if current user owns this item
-  const isOwnItem = item.uploaderId === user.userId;
-
-  if (!isOpen) return null;
+  const isOwnItem = item.uploaderId === user?.userId;
 
   return (
     <>
-      {/* Custom Dialog Implementation with inert */}
       <div
         ref={overlayRef}
-        className="fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
-        onClick={handleOverlayClick}
-        onKeyDown={handleKeyDown}
-        tabIndex={-1}
+        className="fixed inset-0 z-50 bg-black/80"
+        onClick={(e) => {
+          if (e.target === overlayRef.current) {
+            handleDialogClose();
+          }
+        }}
       >
         <div
           ref={dialogRef}
-          className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg sm:max-w-[600px] max-h-[90vh] overflow-y-auto"
+          className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg sm:rounded-lg sm:max-w-[600px] max-h-[90vh] overflow-y-auto"
           role="dialog"
           aria-modal="true"
-          aria-labelledby="dialog-title"
-          aria-describedby="dialog-description"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Close Button */}
           <button
             type="button"
-            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+            className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100"
             onClick={handleDialogClose}
           >
             <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
           </button>
 
-          {/* Dialog Header */}
-          <div className="flex flex-row items-center justify-between space-y-1.5 text-center sm:text-left">
+          <div className="flex flex-row items-center justify-between">
             <div className="space-y-2">
-              <h2 id="dialog-title" className="text-xl font-bold">
+              <h2 className="text-xl font-bold">
                 {isEditing ? (
                   <div>
-                    <div className="text-sm font-medium text-muted-foreground mt-2 mb-1">
-                      {headings[0]}
+                    <div className="text-sm font-medium text-muted-foreground mb-1">
+                      {config.headings[0]}
                     </div>
                     <Input
-                      value={values[0]}
+                      value={formData[config.fields[0]] || ""}
                       onChange={(e) =>
-                        handleInputChange(fieldNames[0], e.target.value)
+                        handleInputChange(config.fields[0], e.target.value)
                       }
-                      className="font-bold text-xl hover:border-violet-300 focus:border-violet-500 transition-colors"
+                      className="font-bold text-xl"
                     />
                   </div>
                 ) : (
                   item.title || item.name
                 )}
               </h2>
-              <div id="dialog-description" className="text-base font-medium">
+              <div className="text-base font-medium">
                 {isEditing ? (
                   <div>
-                    <div className="text-sm font-medium text-muted-foreground mt-2 mb-1">
-                      {headings[1]}
+                    <div className="text-sm font-medium text-muted-foreground mb-1">
+                      {config.headings[1]}
                     </div>
                     <Select
-                      value={editedData.type || editedData.parentCategory || ""}
+                      value={formData[config.fields[1]] || ""}
                       onValueChange={(value) =>
-                        handleInputChange(fieldNames[1], value)
+                        handleInputChange(config.fields[1], value)
                       }
                     >
-                      <SelectTrigger className="w-full hover:border-violet-300 focus:border-violet-500 transition-colors">
+                      <SelectTrigger>
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                        {selectOptions[1].map((option) => (
-                          <SelectItem
-                            key={option.toLowerCase()}
-                            value={option}
-                            className="hover:bg-violet-50 hover:text-violet-700 cursor-pointer transition-colors"
-                          >
+                        {config.categoryOptions.map((option) => (
+                          <SelectItem key={option} value={option}>
                             {option}
                           </SelectItem>
                         ))}
@@ -451,119 +369,101 @@ export default function ItemDetailsDialog({
                 )}
               </div>
             </div>
+
             {mode === "edit" && !isEditing && (
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={handleEditToggle}
-                className="h-8 w-8 rounded-full hover:bg-violet-50 hover:text-violet-500 transition-colors"
+                onClick={() => setIsEditing(true)}
               >
                 <Edit2 className="h-4 w-4" />
-                <span className="sr-only">Edit post</span>
               </Button>
             )}
+
             {isEditing && (
               <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleCancelEdit}
-                  className="h-8 w-8 rounded-full hover:bg-red-50 hover:text-red-500 transition-colors"
-                >
+                <Button variant="ghost" size="icon" onClick={handleCancelEdit}>
                   <X className="h-4 w-4" />
-                  <span className="sr-only">Cancel edit</span>
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleSaveEdit}
-                  className="h-8 w-8 rounded-full hover:bg-green-50 hover:text-green-500 transition-colors"
-                >
+                <Button variant="ghost" size="icon" onClick={handleSaveEdit}>
                   <Save className="h-4 w-4" />
-                  <span className="sr-only">Save changes</span>
                 </Button>
               </div>
             )}
           </div>
 
-          {/* Dialog Content */}
           <div className="py-4">
-            <ImageCarousel
-              item={item}
-              images={item.images || []}
-              likes={likes}
-              isLiked={isLiked}
-              onLikeToggle={onLikeToggle}
-              isEditing={isEditing}
-            />
+            {isEditing ? (
+              <div className="mb-6">
+                <ImageUploadField
+                  existingImages={item.images || []}
+                  onImagesChange={handleImageChanges}
+                  isEditMode={true}
+                />
+              </div>
+            ) : (
+              <ImageCarousel
+                item={item}
+                images={item.images || []}
+                likes={likes}
+                isLiked={isLiked}
+                onLikeToggle={onLikeToggle}
+                isEditing={isEditing}
+              />
+            )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-[4rem]">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-16">
               <div className="space-y-4">
-                {typeToChange.map((fieldIndex) => (
-                  <div key={`field-${fieldIndex}`}>
+                {config.inputFields.map((fieldIndex) => (
+                  <div key={fieldIndex}>
                     <h4 className="text-sm font-medium text-muted-foreground mb-1">
-                      {headings[fieldIndex]}
+                      {config.headings[fieldIndex]}
                     </h4>
                     {isEditing ? (
                       <Input
-                        value={values[fieldIndex]}
+                        value={formData[config.fields[fieldIndex]] || ""}
                         onChange={(e) =>
                           handleInputChange(
-                            fieldNames[fieldIndex],
+                            config.fields[fieldIndex],
                             e.target.value
                           )
                         }
-                        className="hover:border-violet-300 focus:border-violet-500 transition-colors"
                       />
                     ) : (
-                      <p className="capitalize">{values[fieldIndex]}</p>
+                      <p className="capitalize">
+                        {item[config.fields[fieldIndex]] || ""}
+                      </p>
                     )}
                   </div>
                 ))}
 
-                {selectToChange.map((fieldIndex) => (
-                  <div key={`select-${fieldIndex}`}>
+                {config.selectFields.map((fieldIndex) => (
+                  <div key={fieldIndex}>
                     <h4 className="text-sm font-medium text-muted-foreground mb-1">
-                      {headings[fieldIndex]}
+                      {config.headings[fieldIndex]}
                     </h4>
                     {isEditing ? (
                       <Select
-                        value={editedData[fieldNames[fieldIndex]]}
+                        value={formData[config.fields[fieldIndex]] || ""}
                         onValueChange={(value) =>
-                          handleInputChange(fieldNames[fieldIndex], value)
+                          handleInputChange(config.fields[fieldIndex], value)
                         }
                       >
-                        <SelectTrigger className="w-full hover:border-violet-300 focus:border-violet-500 transition-colors">
-                          <SelectValue
-                            placeholder={
-                              editedData.parentCategory ===
-                              originalParentCategory.current
-                                ? "Select genre"
-                                : "Please select a new genre"
-                            }
-                          />
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select option" />
                         </SelectTrigger>
                         <SelectContent>
-                          {selectOptions[fieldIndex].map((option) => (
-                            <SelectItem
-                              key={option}
-                              value={option}
-                              className="hover:bg-violet-50 hover:text-violet-700 cursor-pointer transition-colors"
-                            >
+                          {config.genreOptions.map((option) => (
+                            <SelectItem key={option} value={option}>
                               {option}
                             </SelectItem>
                           ))}
-                          {selectOptions[fieldIndex].length === 0 && (
-                            <SelectItem value="" disabled>
-                              {editedData.parentCategory
-                                ? "No options available"
-                                : "Select category first"}
-                            </SelectItem>
-                          )}
                         </SelectContent>
                       </Select>
                     ) : (
-                      <p className="capitalize">{values[fieldIndex]}</p>
+                      <p className="capitalize">
+                        {item[config.fields[fieldIndex]] || ""}
+                      </p>
                     )}
                   </div>
                 ))}
@@ -574,21 +474,17 @@ export default function ItemDetailsDialog({
                   </h4>
                   {isEditing ? (
                     <Select
-                      value={editedData.condition || item.condition}
+                      value={formData.condition || ""}
                       onValueChange={(value) =>
                         handleInputChange("condition", value)
                       }
                     >
-                      <SelectTrigger className="w-full hover:border-violet-300 focus:border-violet-500 transition-colors">
+                      <SelectTrigger>
                         <SelectValue placeholder="Select condition" />
                       </SelectTrigger>
                       <SelectContent>
                         {conditionOptions.map((option) => (
-                          <SelectItem
-                            key={option.toLowerCase()}
-                            value={option}
-                            className="hover:bg-violet-50 hover:text-violet-700 cursor-pointer transition-colors"
-                          >
+                          <SelectItem key={option} value={option}>
                             {option}
                           </SelectItem>
                         ))}
@@ -599,6 +495,7 @@ export default function ItemDetailsDialog({
                   )}
                 </div>
               </div>
+
               <div className="space-y-4">
                 <div>
                   <h4 className="text-sm font-medium text-muted-foreground mb-1">
@@ -606,32 +503,29 @@ export default function ItemDetailsDialog({
                   </h4>
                   <p>{item.uploadedBy}</p>
                 </div>
+
                 <div>
                   <h4 className="text-sm font-medium text-muted-foreground mb-1">
                     Upload Date
                   </h4>
                   <p>{new Date(item.uploadDate).toLocaleDateString()}</p>
                 </div>
+
                 {item.generalCategory === "Book" &&
-                  item.parentCategory.toLowerCase() === "textbook" && (
+                  item.parentCategory?.toLowerCase() === "textbook" && (
                     <div>
                       <h4 className="text-sm font-medium text-muted-foreground mb-1">
                         Course Relevance
                       </h4>
                       {isEditing ? (
                         <Input
-                          value={editedData.subCategory || ""}
+                          value={formData.subCategory || ""}
                           onChange={(e) =>
                             handleInputChange("subCategory", e.target.value)
                           }
-                          className="hover:border-violet-300 focus:border-violet-500 transition-colors"
                         />
                       ) : (
-                        <p>
-                          {item.subCategory
-                            ? item.subCategory
-                            : "Not specified"}
-                        </p>
+                        <p>{item.subCategory || "Not specified"}</p>
                       )}
                     </div>
                   )}
@@ -640,17 +534,18 @@ export default function ItemDetailsDialog({
           </div>
 
           <Separator />
+
           <div className="py-2">
             <h4 className="text-sm font-medium text-muted-foreground mb-2">
               Description
             </h4>
             {isEditing ? (
               <Textarea
-                value={editedData.description || ""}
+                value={formData.description || ""}
                 onChange={(e) =>
                   handleInputChange("description", e.target.value)
                 }
-                className="min-h-[100px] hover:border-violet-300 focus:border-violet-500 transition-colors"
+                className="min-h-[100px]"
               />
             ) : (
               <p className="text-sm">
@@ -659,54 +554,37 @@ export default function ItemDetailsDialog({
             )}
           </div>
 
-          {/* Updated Footer with Report Button */}
-          <div className="flex justify-between items-center mt-4 ">
-            {/* Report button on the left - only show if not editing and not own item */}
+          <div className="flex justify-between items-center mt-4">
             {mode !== "edit" && !isEditing && !isOwnItem && (
               <Button
                 variant="outline"
-                onClick={handleReport}
-                className="text-red-500 hover:text-red-600"
+                onClick={() => setIsReportDialogOpen(true)}
               >
-                Report Post
                 <Flag className="mr-2 h-4 w-4" />
+                Report Post
               </Button>
             )}
 
-            {/* Spacer div to push main actions to the right */}
             <div></div>
 
-            {/* Main action buttons on the right */}
             <div>
               {(mode === "edit" && !isEditing) || isOwnItem ? (
                 <Button
                   variant="destructive"
-                  className="hover:bg-red-600 transition-colors"
-                  onClick={handleDeleteClick}
+                  onClick={() => setIsDeleteDialogOpen(true)}
                 >
-                  <Trash2 className="mr-2 h-4 w-4" /> Delete This Post
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete This Post
                 </Button>
               ) : isEditing ? (
                 <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={handleCancelEdit}
-                    className="hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition-colors"
-                  >
+                  <Button variant="outline" onClick={handleCancelEdit}>
                     Cancel
                   </Button>
-                  <Button
-                    className="bg-primary hover:bg-primary/90 transition-colors"
-                    onClick={handleSaveEdit}
-                  >
-                    Save Changes
-                  </Button>
+                  <Button onClick={handleSaveEdit}>Save Changes</Button>
                 </div>
               ) : item.available === "true" ? (
-                <Button
-                  className="bg-primary hover:bg-primary/90 transition-colors"
-                  onClick={handleRequestItem}
-                >
+                <Button onClick={() => setIsRequestDialogOpen(true)}>
                   Request This Item
                 </Button>
               ) : (
@@ -719,16 +597,14 @@ export default function ItemDetailsDialog({
         </div>
       </div>
 
-      {/* Request Item Dialog */}
       {isRequestDialogOpen && (
         <RequestItemDialog
           item={item}
           isOpen={isRequestDialogOpen}
-          onClose={handleRequestDialogClose}
+          onClose={() => setIsRequestDialogOpen(false)}
         />
       )}
 
-      {/* Report Dialog */}
       <ReportDialog
         isOpen={isReportDialogOpen}
         onClose={() => setIsReportDialogOpen(false)}
@@ -740,7 +616,6 @@ export default function ItemDetailsDialog({
         reportedItem={item}
       />
 
-      {/* Delete Confirmation Dialog */}
       <ConfirmDeleteDialog
         isOpen={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}

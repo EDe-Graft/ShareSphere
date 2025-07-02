@@ -38,7 +38,7 @@ export default function ItemCard({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const isOwnItem = item.uploaderId === user.userId;
+  const isOwnItem = item.uploaderId === user?.userId;
 
   let itemValues;
   if (item.generalCategory === "Book" || item.generalCategory === "book") {
