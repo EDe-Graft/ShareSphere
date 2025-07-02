@@ -1,6 +1,38 @@
 import { v2 as cloudinary } from 'cloudinary';
 
 
+// Utility: Simple slugify function
+export function slugify(name) {
+    return name.toLowerCase().replace(/\s+/g, '').replace(/[^\w]/g, '');
+}
+
+// Generate unique username
+// export async function generateUniqueUsername(db, name) {
+//     let baseUsername = slugify(name);
+//     let username = baseUsername;
+//     let isUnique = false;
+//     let attempt = 0;
+
+//     while (!isUnique) {
+//         const res = await db.query('SELECT 1 FROM users WHERE username = $1', [username]);
+
+//         if (res.rowCount === 0) {
+//             isUnique = true;
+//         } else {
+//             // Append random 3-digit number to base username
+//             const randomSuffix = Math.floor(100 + Math.random() * 900); // 100 - 999
+//             username = `${baseUsername}${randomSuffix}`;
+//         }
+
+//         attempt++;
+//         if (attempt > 10) throw new Error('Unable to generate unique username. Try again.');
+//     }
+
+//     return username;
+// }
+
+
+
 export async function uploadToCloudinary(encodedImage, itemCategory, imageId) {
   // Cloudinary Configuration
   cloudinary.config({

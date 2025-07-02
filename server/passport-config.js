@@ -2,6 +2,7 @@ import { Strategy as LocalStrategy } from "passport-local";
 import GoogleStrategy from "passport-google-oauth2";
 import GitHubStrategy from "passport-github2"; //  import GitHub strategy
 import bcrypt from "bcrypt";
+// import { generateUniqueUsername } from "./database-utils";
 
 export function configurePassport(passport, db) {
   // LOCAL STRATEGY
@@ -38,13 +39,15 @@ export function configurePassport(passport, db) {
     try {
       console.log("Google strategy activated");
       const result = await db.query("SELECT * FROM users WHERE email = $1", [profile.email]);
+      let username;
       let userId;
       let authStrategy;
 
       if (result.rows.length === 0) {
+        // username = await generateUniqueUsername(db, profile.displayName)
         const newUser = await db.query(
-          "INSERT INTO users (name, email, password, strategy, report_count) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-          [profile.displayName, profile.email, "google", "google", 0]
+          "INSERT INTO users (username, name, email, password, strategy, report_count) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+          [username, profile.displayName, profile.email, "google", "google", 0]
         );
         userId = newUser.rows[0].user_id;
         authStrategy = newUser.rows[0].strategy
@@ -68,17 +71,20 @@ export function configurePassport(passport, db) {
   }, async (accessToken, refreshToken, profile, cb) => {
     try {
       console.log("GitHub strategy activated");
+      // console.log(profile)
       const profileUrl = profile.profileUrl;
       if (!profileUrl) return cb(null, false, { message: "No profile found" });
 
       const result = await db.query("SELECT * FROM users WHERE email = $1", [profileUrl]);
       let userId;
+      let username;
       let authStrategy;
 
       if (result.rows.length === 0) {
+        // username = await generateUniqueUsername(db, profile.displayName)
         const newUser = await db.query(
-          "INSERT INTO users (name, email, password, strategy, report_count) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-          [profile.displayName, profileUrl, "github", "github", 0]
+          "INSERT INTO users (username, name, email, password, strategy, report_count) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+          [username, profile.displayName, profileUrl, "github", "github", 0]
         );
         userId = newUser.rows[0].user_id;
         authStrategy = newUser.rows[0].strategy
