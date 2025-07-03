@@ -29,6 +29,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import ItemCard from "@/components/ItemCard";
 import ItemDetailsDialog from "@/components/ItemDetailsDialog";
 import EmptyState from "@/components/EmptyState";
+import Pagination from "@/components/Pagination";
 import { useAuth } from "@/components/AuthContext";
 import { getSizeOptions } from "./ClothingForm";
 import axios from "axios";
@@ -79,17 +80,38 @@ const ClothingViewPage = () => {
   const [selectedClothing, setSelectedClothing] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const userMode = "view"; //for itemdetailsdialog display;
   const category = "clothing"; //for empty state handling
-
-
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   const axiosConfig = {
     headers: { "Content-Type": "application/json" },
     withCredentials: true,
   };
+
+  // Calculate current items for pagination
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentItems = filteredClothing.slice(startIndex, endIndex);
+
+  // Handle page change
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    searchQuery,
+    selectedCategory,
+    selectedSubcategory,
+    selectedCondition,
+    selectedAvailability,
+    sortBy,
+  ]);
 
   const getUserFavorites = async () => {
     if (!user) return;
@@ -172,7 +194,6 @@ const ClothingViewPage = () => {
     };
     loadClothing();
   }, [user]);
-
 
   const handleDeletePost = async (itemId, itemCategory) => {
     setIsDeleting(true);
@@ -462,7 +483,7 @@ const ClothingViewPage = () => {
           </Select>
         </div>
 
-        <TabsContent value="grid" className="mt-0">
+        {/* <TabsContent value="grid" className="mt-0">
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {Array(8)
@@ -502,9 +523,49 @@ const ClothingViewPage = () => {
           ) : (
             <EmptyState category={category} />
           )}
+        </TabsContent> */}
+        <TabsContent value="grid" className="mt-0">
+          {isLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {Array(8)
+                .fill(0)
+                .map((_, i) => (
+                  <Card key={i} className="overflow-hidden">
+                    <Skeleton className="h-[200px] w-full" />
+                    <CardHeader className="p-4 pb-2">
+                      <Skeleton className="h-5 w-3/4 mb-2" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </CardHeader>
+                    <CardContent className="px-4 py-2">
+                      <Skeleton className="h-4 w-full" />
+                    </CardContent>
+                    <CardFooter className="p-4">
+                      <Skeleton className="h-9 w-full" />
+                    </CardFooter>
+                  </Card>
+                ))}
+            </div>
+          ) : currentItems.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {currentItems.map((item) => (
+                <ItemCard
+                  key={item.itemId}
+                  item={item}
+                  onViewDetails={handleViewDetails}
+                  onDelete={handleDeletePost}
+                  likes={likesById[item.itemId] || 0}
+                  isLiked={isLikedById[item.itemId] || false}
+                  onLikeToggle={handleLikeToggle}
+                  viewMode="grid"
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptyState category={category} />
+          )}
         </TabsContent>
 
-        <TabsContent value="list" className="mt-0">
+        {/* <TabsContent value="list" className="mt-0">
           {isLoading ? (
             <div className="space-y-4">
               {Array(5)
@@ -541,11 +602,49 @@ const ClothingViewPage = () => {
           ) : (
             <EmptyState category={category} />
           )}
+        </TabsContent> */}
+        <TabsContent value="list" className="mt-0">
+          {isLoading ? (
+            <div className="space-y-4">
+              {Array(5)
+                .fill(0)
+                .map((_, i) => (
+                  <Card key={i} className="overflow-hidden">
+                    <div className="flex flex-col sm:flex-row">
+                      <Skeleton className="h-[150px] sm:w-[150px] w-full" />
+                      <div className="p-4 flex-1">
+                        <Skeleton className="h-6 w-3/4 mb-2" />
+                        <Skeleton className="h-4 w-1/2 mb-4" />
+                        <Skeleton className="h-4 w-full mb-2" />
+                        <Skeleton className="h-4 w-full" />
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+            </div>
+          ) : currentItems.length > 0 ? (
+            <div className="space-y-4">
+              {currentItems.map((item) => (
+                <ItemCard
+                  key={item.itemId}
+                  item={item}
+                  onViewDetails={handleViewDetails}
+                  onDelete={handleDeletePost}
+                  likes={likesById[item.itemId] || 0}
+                  isLiked={isLikedById[item.itemId] || false}
+                  onLikeToggle={handleLikeToggle}
+                  viewMode="list"
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptyState category={category} />
+          )}
         </TabsContent>
       </Tabs>
 
       {/* Pagination placeholder - would be implemented with real data */}
-      {filteredClothing.length > 0 && (
+      {/* {filteredClothing.length > 0 && (
         <div className="flex justify-center mt-8">
           <div className="flex items-center gap-1">
             <Button variant="outline" size="icon" disabled>
@@ -595,6 +694,15 @@ const ClothingViewPage = () => {
             </Button>
           </div>
         </div>
+      )} */}
+
+      {filteredClothing.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalItems={filteredClothing.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={handlePageChange}
+        />
       )}
 
       {/* Clothing details dialog */}

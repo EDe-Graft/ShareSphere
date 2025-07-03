@@ -48,7 +48,6 @@ const PostsViewPage = () => {
   const [selectedPost, setSelectedPost] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
   const userMode = "edit"; //allows user to edit posts
   const category = "post"; //for empty state handling
 
