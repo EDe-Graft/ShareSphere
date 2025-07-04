@@ -436,12 +436,6 @@ app.post("/update-post", upload.array('newImages', 3), async (req, res) => {
       const uploadPromises = newImages.map(async (image) => {
         // For multer files, use mimetype property
         const mimeType = image.mimetype || image.type || 'image/jpeg';
-        
-        // // Validate mimeType to prevent undefined errors
-        // if (!mimeType || mimeType === 'undefined') {
-        //   console.error('Invalid mimeType detected:', mimeType);
-        //   throw new Error('Invalid file type detected');
-        // }
 
         //save image without the url
         const imageData = {
@@ -459,10 +453,6 @@ app.post("/update-post", upload.array('newImages', 3), async (req, res) => {
           itemCategory,
           imageId
         );
-
-        console.log("formattedImageUrl", formattedImageUrl)
-        console.log("publicId", publicId)
-        console.log("imageId", imageId)
 
         //update image with the formatted image url
         const updateData = {
@@ -810,12 +800,14 @@ app.post('/send-request', async (req, res) => {
 });
 
 
+
 // Report post route
 app.post('/report-post', async (req, res) => {
   try {
     const {
       reporterName,
       reporterEmail,
+      reporterId,
       reportedUserName,
       reportedUserEmail,
       reportReason,
@@ -893,11 +885,12 @@ app.post('/report-post', async (req, res) => {
     });
 
     //save report to database after sending emails
-    const newReport = await saveReport(db, req.body)
+    const {newReport, alreadyReported} = await saveReport(db, req.body)
 
     return res.status(200).json({
       reportSuccess: true,
       report: newReport,
+      alreadyReported: alreadyReported,
       message: 'Report and warning emails sent successfully'
     });
   } catch (error) {

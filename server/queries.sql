@@ -143,12 +143,13 @@ CREATE TABLE favorites (
         FOREIGN KEY (item_id) REFERENCES items(item_id)
 );
 
-CREATE TABLE reports (
+CREATE TABLE report_details (
   id SERIAL PRIMARY KEY,
-  report_count INTEGER,
+  report_count INTEGER NOT NULL,
   reporter_name TEXT NOT NULL,
   reporter_email TEXT NOT NULL,
-  reported_user_id INTEGER,
+  reporter_id INTEGER NOT NULL,
+  reported_user_id INTEGER NOT NULL,
   reported_user_name TEXT NOT NULL,
   reported_user_email TEXT NOT NULL,
   report_reason TEXT NOT NULL,
@@ -162,6 +163,16 @@ CREATE TABLE reports (
     REFERENCES items(item_id)
 );
 
+CREATE TABLE report_tracking (
+    id SERIAL PRIMARY KEY,
+    reporter_user_id INTEGER NOT NULL,
+    reported_user_id INTEGER NOT NULL,
+    item_id INTEGER NOT NULL,
+    item_category TEXT NOT NULL,
+    UNIQUE (reporter_user_id, reported_user_id),
+    CONSTRAINT fk_users FOREIGN KEY (reporter_user_id) REFERENCES users(user_id),
+    CONSTRAINT fk_users FOREIGN KEY (reported_user_id) REFERENCES users(user_id)
+);
 
 -- Join images to items
 -- SELECT 

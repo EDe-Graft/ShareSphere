@@ -107,9 +107,10 @@ const ClothingViewPage = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [
+    selectedType,
+    selectedSize,
+    selectedGender,
     searchQuery,
-    selectedCategory,
-    selectedSubcategory,
     selectedCondition,
     selectedAvailability,
     sortBy,

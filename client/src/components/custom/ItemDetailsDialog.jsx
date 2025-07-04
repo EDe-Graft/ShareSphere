@@ -601,7 +601,8 @@ export default function ItemDetailsDialog({
                 <Button
                   variant="outline"
                   onClick={() => setIsReportDialogOpen(true)}
-                >
+                  className="text-red-500 hover:text-red-500"
+              >
                   <Flag className="mr-2 h-4 w-4" />
                   Report Post
                 </Button>
@@ -611,8 +612,6 @@ export default function ItemDetailsDialog({
                 </Button>
               </div>
             )}
-
-            <div></div>
 
             <div>
               {(mode === "edit" && !isEditing) || isOwnItem ? (

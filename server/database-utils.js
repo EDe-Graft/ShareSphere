@@ -353,11 +353,22 @@ export async function deletePost(db, itemId, tableName) {
   }
 }
 
+
+export async function getReportCount(db, itemId) {
+  const reportCountResult = await db.query(
+    `SELECT report_count FROM report_details WHERE item_id = $1 ORDER BY created_at DESC LIMIT 1`,
+    [itemId]
+  );
+  return reportCountResult.rows[0]?.report_count || 0;
+}
+
+
 export async function saveReport(db, reportData) {
   try {
       const {
         reporterName,
         reporterEmail,
+        reporterId,
         reportedUserId,
         reportedUserName,
         reportedUserEmail,
@@ -368,62 +379,76 @@ export async function saveReport(db, reportData) {
         reportDescription,
       } = reportData;
   
-      // First, get the most recent report count for this item
-      const existingReport = await db.query(
-        `SELECT report_count FROM reports WHERE item_id = $1 ORDER BY created_at DESC LIMIT 1`,
-        [itemId]
-      );
-  
-      // Determine the new report count
-      let currentReportCount;
+      let alreadyReported = false;
       let newReport;
-  
-      if (existingReport.rows.length === 0) {
-        // First report for this item
-        currentReportCount = 1;
-        // Insert the report with the calculated report_count
-      newReport = await db.query(
-        `INSERT INTO reports (
-          report_count,
-          reporter_name,
-          reporter_email,
-          reported_user_id,
-          reported_user_name,
-          reported_user_email,
-          item_id,
-          item_category,
-          item_condition,
-          report_reason,
-          report_description
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-        RETURNING *`,
-        [
-          currentReportCount,
-          reporterName,
-          reporterEmail,
-          reportedUserId,
-          reportedUserName,
-          reportedUserEmail,
-          itemId,
-          itemCategory,
-          itemCondition,
-          reportReason,
-          reportDescription
-        ]
-      );
-  
-      } else {
-        // Increment the most recent report count
-        currentReportCount = parseInt(existingReport.rows[0].report_count) + 1;
-  
-        //Update report count in the report table
-        newReport = await db.query("UPDATE reports SET report_count = $1 WHERE item_id = $2 RETURNING *", [currentReportCount, itemId])
-      }
-      
-      //update user report count in users table
-      await db.query("UPDATE users SET report_count = $1 WHERE user_id = $2", [currentReportCount, reportedUserId])
 
-      return newReport
+      //check if the reporter has already reported this item
+      //only one report per item per user
+      const existingReportTracking = await db.query(
+        `SELECT * FROM report_tracking WHERE reporter_user_id = $1 AND item_id = $2`,
+        [reporterId, itemId]
+      );
+
+      //if the reporter has not reported this item, insert into report_tracking table
+      if (existingReportTracking.rows.length === 0) {
+        //insert into report_tracking table and report_details table
+        await db.query(
+          `INSERT INTO report_tracking (reporter_user_id, reported_user_id, item_id, item_category) VALUES ($1, $2, $3, $4)`,
+          [reporterId, reportedUserId, itemId, itemCategory]
+        );
+
+        //get the most recent report count for this item
+        let currentReportCount = await getReportCount(db, itemId);
+
+        //if the item has no reports, set the report count to 1
+        if (currentReportCount === 0) {
+          // first report for this item
+          currentReportCount += 1;
+          //insert into report_details table
+          await db.query(
+            `INSERT INTO report_details (report_count, reporter_name, reporter_email, reporter_id, reported_user_id, reported_user_name, reported_user_email, item_id, item_category, item_condition, report_reason, report_description) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+            [currentReportCount, reporterName, reporterEmail, reporterId, reportedUserId, reportedUserName, reportedUserEmail, itemId, itemCategory, itemCondition, reportReason, reportDescription]
+          );
+          
+          // generate new report
+          newReport = await db.query(
+            `INSERT INTO report_details (
+              report_count,
+              reporter_id,
+              reporter_name,
+              reporter_email,
+              reported_user_id,
+              reported_user_name,
+              reported_user_email,
+              item_id,
+              item_category,
+              item_condition,
+              report_reason,
+              report_description
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            RETURNING *`,
+            [
+              currentReportCount,
+              reporterId,
+              reporterName,
+              reporterEmail,
+              reportedUserId,
+              reportedUserName,
+              reportedUserEmail,
+              itemId,
+              itemCategory,
+              itemCondition,
+              reportReason,
+              reportDescription
+            ]
+          );
+      
+          } else {
+            alreadyReported = true;
+          }      
+      }      
+
+      return {newReport, alreadyReported}
     }  catch (error) {
       console.error("Error in making report:", error);
       throw error; // Propagate the error to the route handler

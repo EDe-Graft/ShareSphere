@@ -127,6 +127,11 @@ export function ReportDialog({
 
       const reportRes = await axios.post(`${BACKEND_URL}/report-post`, reportData, axiosConfig)
 
+      if (reportRes.data.alreadyReported) {
+        toast.error("You have already reported this item");
+        return;
+      }
+
       if (reportRes.data.reportSuccess) {
         toast.success(
           "Report submitted successfully. Our team will review it shortly."
@@ -136,6 +141,10 @@ export function ReportDialog({
         setDescription("");
         setEmail("");
         onClose();
+        //reload the page to update the report count
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
       }
     } catch (error) {
       console.error("Error submitting report:", error);
