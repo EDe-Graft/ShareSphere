@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Trash2, Edit2, Save, X, Flag } from "lucide-react";
+import { Trash2, Edit2, Save, Star, X, Flag } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ import { ReportDialog } from "./ReportDialog";
 import { useAuth } from "@/components/context/AuthContext";
 import { CATEGORY_OPTIONS } from "@/lib/utils";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
+import ReviewDialog from "./ReviewDialog";
 import ImageUploadField from "@/components/custom/ImageUploadField";
 
 export default function ItemDetailsDialog({
@@ -42,6 +43,8 @@ export default function ItemDetailsDialog({
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isOwnItem, setIsOwnItem] = useState(false);
+  const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
+  const [selectedReviewUser, setSelectedReviewUser] = useState(null);
 
   // Simplified state management
   const [formData, setFormData] = useState({});
@@ -127,7 +130,7 @@ export default function ItemDetailsDialog({
 
   const handleSaveEdit = () => {
     const changes = {};
-    console.log("formData", formData)
+    console.log("formData", formData);
     Object.keys(formData).forEach((key) => {
       if (formData[key] !== (item[key] || "")) {
         changes[key] = formData[key];
@@ -197,6 +200,16 @@ export default function ItemDetailsDialog({
         setIsDeleting(false);
       }
     }
+  };
+
+  const handleWriteReview = () => {
+    setSelectedReviewUser({
+      userId: item.uploaderId,
+      name: item.uploadedBy,
+      username: item.uploaderUsername,
+      profilePhoto: item.uploaderPhoto,
+    });
+    setIsReviewDialogOpen(true);
   };
 
   // Get field configuration based on category
@@ -523,7 +536,13 @@ export default function ItemDetailsDialog({
                   <h4 className="text-sm font-medium text-muted-foreground">
                     Username
                   </h4>
-                  <p className="text-xs text-primary mb-4">{`${item.uploaderUsername}`}</p>
+                  {/* <p className="text-xs text-primary mb-4">{`${item.uploaderUsername}`}</p> */}
+                  <p
+                    className="text-xs text-primary mb-4 cursor-pointer hover:underline"
+                    onClick={() => navigate(`/profile/${item.uploaderId}`)}
+                  >
+                    {`@${item.uploaderUsername}`}
+                  </p>
                 </div>
 
                 <div>
@@ -578,13 +597,19 @@ export default function ItemDetailsDialog({
 
           <div className="flex justify-between items-center mt-4">
             {mode !== "edit" && !isEditing && !isOwnItem && (
-              <Button
-                variant="outline"
-                onClick={() => setIsReportDialogOpen(true)}
-              >
-                <Flag className="mr-2 h-4 w-4" />
-                Report Post
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsReportDialogOpen(true)}
+                >
+                  <Flag className="mr-2 h-4 w-4" />
+                  Report Post
+                </Button>
+                <Button variant="outline" onClick={handleWriteReview}>
+                  <Star className="mr-2 h-4 w-4" />
+                  Write Review
+                </Button>
+              </div>
             )}
 
             <div></div>
@@ -645,6 +670,20 @@ export default function ItemDetailsDialog({
         itemName={item.name || item.title}
         itemType={item.generalCategory}
         isDeleting={isDeleting}
+      />
+
+      <ReviewDialog
+        isOpen={isReviewDialogOpen}
+        onClose={() => {
+          setIsReviewDialogOpen(false);
+          setSelectedReviewUser(null);
+        }}
+        reviewedUser={selectedReviewUser}
+        relatedItem={item}
+        onReviewSubmitted={() => {
+          setIsReviewDialogOpen(false);
+          setSelectedReviewUser(null);
+        }}
       />
     </>
   );

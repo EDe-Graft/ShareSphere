@@ -10,6 +10,8 @@ import BooksViewPage from "./pages/BooksViewPage";
 import FurnitureViewPage from "./pages/FurnitureViewPage";
 import ClothingViewPage from "./pages/ClothingViewPage";
 import MiscellaneousViewPage from "./pages/MiscellaneousViewPage";
+import ProfilePage from "./pages/ProfilePage";
+import ReviewsPage from "./pages/ReviewsPage";
 import BooksForm from "./pages/BooksForm";
 import ClothingForm from "./pages/ClothingForm";
 import FurnitureForm from "./pages/FurnitureForm";
@@ -73,6 +75,33 @@ function App() {
             element={
               <ProtectedRoute>
                 <MiscellaneousViewPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/profile/:userId"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/reviews"
+            element={
+              <ProtectedRoute>
+                <ReviewsPage />
               </ProtectedRoute>
             }
           />

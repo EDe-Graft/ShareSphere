@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Badge, BookOpen, MoreVertical, Flag, Trash2Icon } from "lucide-react";
 import {
@@ -34,6 +35,7 @@ export default function ItemCard({
   onDelete,
 }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -157,10 +159,20 @@ export default function ItemCard({
                 {itemValues[1]}
               </CardDescription>
             </CardHeader>
+
             <CardContent className="px-4 py-0 space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">{itemValues[2]}</span>
               </div>
+              <p
+                className="text-xs text-primary cursor-pointer hover:underline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/profile/${item.uploaderId}`);
+                }}
+              >
+                @{item.uploaderUsername}
+              </p>
               {additionalBadges.length > 0 && (
                 <div className="flex flex-wrap gap-1">{additionalBadges}</div>
               )}
@@ -265,6 +277,15 @@ export default function ItemCard({
                     />
                   </div>
                   <p className="text-muted-foreground">{itemValues[1]}</p>
+                  <p
+                    className="text-xs text-primary cursor-pointer hover:underline mt-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/profile/${item.uploaderId}`);
+                    }}
+                  >
+                    @{item.uploaderUsername}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <ConditionBadge condition={item.condition?.toLowerCase()} />

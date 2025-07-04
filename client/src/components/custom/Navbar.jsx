@@ -247,23 +247,24 @@ const Navbar = () => {
                             ? user.photos[0]?.value
                             : null
                       }
-
                     />
                     <AvatarFallback className="bg-primary text-primary-foreground">
-                      {user.displayName
-                        ? user.displayName[0].toUpperCase()
-                        : user.name
-                        ? user.name[0].toUpperCase()
-                        : user.username
-                        ? user.username[0].toUpperCase()
-                        : <User2 className="h-5 w-5 text-foreground" />}
+                      {user.displayName ? (
+                        user.displayName[0].toUpperCase()
+                      ) : user.name ? (
+                        user.name[0].toUpperCase()
+                      ) : user.username ? (
+                        user.username[0].toUpperCase()
+                      ) : (
+                        <User2 className="h-5 w-5 text-foreground" />
+                      )}
                     </AvatarFallback>
                   </>
                 )}
                 {/* If user is not logged in, show a default avatar */}
                 {!user && (
                   <>
-                  <AvatarImage src="/default-avatar.png" />
+                    <AvatarImage src="/default-avatar.png" />
                     <AvatarFallback className="bg-muted">
                       <User2 className="h-5 w-5 text-foreground" />
                     </AvatarFallback>
@@ -285,6 +286,12 @@ const Navbar = () => {
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/posts")}>
                     Posts
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/reviews")}>
+                    Reviews
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/profile")}>
+                    Profile
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={async () => {

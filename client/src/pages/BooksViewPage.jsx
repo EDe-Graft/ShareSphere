@@ -147,8 +147,13 @@ const BooksViewPage = () => {
 
       // Check if there are any File objects in imageChanges.newImages
       let hasFile = false;
-      if (updateData.imageChanges && Array.isArray(updateData.imageChanges.newImages)) {
-        hasFile = updateData.imageChanges.newImages.some(f => f instanceof File);
+      if (
+        updateData.imageChanges &&
+        Array.isArray(updateData.imageChanges.newImages)
+      ) {
+        hasFile = updateData.imageChanges.newImages.some(
+          (f) => f instanceof File
+        );
       }
 
       let response;
@@ -158,7 +163,7 @@ const BooksViewPage = () => {
           `${BACKEND_URL}/update-post?hasFile=true`,
           formData,
           {
-            headers: { 'Content-Type': 'multipart/form-data' },
+            headers: { "Content-Type": "multipart/form-data" },
             withCredentials: true,
           }
         );
@@ -222,7 +227,6 @@ const BooksViewPage = () => {
     };
     loadBooks();
   }, [user]);
-
 
   // Update your filtering useEffect to be more defensive
   useEffect(() => {
