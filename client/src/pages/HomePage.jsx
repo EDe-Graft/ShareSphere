@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/components/AuthContext";
-import { CategoryCarousel } from "@/components/category-carousel";
+import { useAuth } from "@/components/context/AuthContext";
+import { CategoryCarousel } from "@/components/custom/category-carousel";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ArrowDown, Heart, Users, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";

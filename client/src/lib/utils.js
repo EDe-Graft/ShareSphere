@@ -50,6 +50,7 @@ export const CATEGORY_OPTIONS = {
 //Helper functions and constants
 
 export function toTitleCase(str) {
+  if (typeof str !== "string") return str;
   return str
     .toLowerCase()
     .replace(/\b\w+/g, function(word) {
@@ -61,68 +62,68 @@ export function capitalizeFirst(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-export function formatData(processedData) {
+export function formatData(updatedData) {
   const formData = new FormData();
 
   // Helper functions
   const isNA = (value) => value === "N/A" || value === null || value === undefined;
-  const shouldTitleCase = (key) => !['images', 'description', 'estimatedValue', 'year', 'age', 'gender'].includes(key);
+  const shouldTitleCase = (key) => !['description', 'estimatedValue', 'year', 'age', 'gender'].includes(key);
 
-  // Process each field
-  for (const [key, value] of Object.entries(processedData)) {
+  for (const [key, value] of Object.entries(updatedData)) {
     let processedValue;
 
     if (isNA(value)) {
       processedValue = "N/A";
     } else if (key === "images") {
       continue; // Skip images here, we'll handle them separately
+    } else if (key === "imageChanges" && value) {
+      // Handle imageChanges: append removedImages as JSON, newImages as files
+      if (Array.isArray(value.removedImages)) {
+        formData.append("removedImages", JSON.stringify(value.removedImages));
+      }
+      if (Array.isArray(value.newImages)) {
+        value.newImages.forEach((file) => {
+          if (file instanceof File) {
+            formData.append("newImages", file);
+          }
+        });
+      }
+      continue; // Don't append imageChanges as a whole
     } else {
       switch (key) {
         case "description":
           processedValue = capitalizeFirst(value.trim());
           break;
-          
         case "estimatedValue":
           const numericValue = parseFloat(value.replace(/[^0-9.]/g, ''));
           processedValue = isNaN(numericValue) ? "N/A" : `$${numericValue.toFixed(2)}`;
           break;
-
         case "age":
           processedValue = value.toLowerCase() === "n/a" ? "N/A" : value;
           break;
-          
         case "gender":
-          processedValue = value; // Leave as-is
+          processedValue = value;
           break;
-
         case "condition":
           processedValue = formatCondition(value);
           break;
-          
-        //for edited data formatting
         case "itemCategory":
-          processedValue = value;
-          break;
-
         case "itemId":
           processedValue = value;
           break;
-
         default:
-          processedValue = shouldTitleCase(key) ? toTitleCase(value) : value;
+          processedValue = shouldTitleCase(key) && typeof value === "string" ? toTitleCase(value) : value;
           break;
       }
     }
-
-    if (key !== "images") {
-      console.log(key, processedValue)
+    if (key !== "images" && key !== "imageChanges") {
       formData.append(key, processedValue);
     }
   }
 
-  // Handle images separately
-  if (processedData.images && Array.isArray(processedData.images)) {
-    processedData.images.forEach((file) => {
+  // Handle images separately (legacy, if needed)
+  if (updatedData.images && Array.isArray(updatedData.images)) {
+    updatedData.images.forEach((file) => {
       formData.append("images", file);
     });
   }

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Send, CheckCircle, AlertCircle } from "lucide-react";
 import axios from "axios"; // Import Axios
-import { useAuth } from "./AuthContext";
+import { useAuth } from "../context/AuthContext";
 import {
   Dialog,
   DialogContent,

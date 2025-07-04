@@ -28,7 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useAuth } from "@/components/AuthContext";
+import { useAuth } from "@/components/context/AuthContext";
 import { cn } from "@/lib/utils";
 
 export function CategoryCarousel({ items, isVisible }) {

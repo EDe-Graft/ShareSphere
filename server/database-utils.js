@@ -1,6 +1,5 @@
 import { v2 as cloudinary } from 'cloudinary';
 
-
 // Utility: Simple slugify function
 export function slugify(name) {
     return name.toLowerCase().replace(/\s+/g, '').replace(/[^\w]/g, '');
@@ -72,9 +71,10 @@ export async function uploadToCloudinary(encodedImage, itemCategory, imageId) {
 
 export async function saveImage(db, imageData) {
   try {
+    const {imageUrl, publicId, imageType, itemId} = imageData;
     const imageResult = await db.query(
       "INSERT INTO images (image_url, public_id, image_type, item_id) VALUES ($1, $2, $3, $4) RETURNING image_id",
-      [imageData.imageUrl, imageData.publicId, imageData.imageType, imageData.itemId]
+      [imageUrl, publicId, imageType, itemId]
     );
     return imageResult.rows[0].image_id;
   } catch (error) {
@@ -86,9 +86,10 @@ export async function saveImage(db, imageData) {
 export async function updateImage(db, updateData) {
   try {
     const {imageUrl, imageId, publicId} = updateData;
-    await db.query("UPDATE images SET image_url = ($1) AND public_id = ($2) WHERE image_id = ($3)", [imageUrl, publicId, imageId]) 
+    await db.query("UPDATE images SET image_url = $1, public_id = $2 WHERE image_id = $3", [imageUrl, publicId, imageId]) 
   } catch (error) {
-    console.error('Error updating image')
+    console.error('Error updating image:', error)
+    throw error;
   }
 }
 
@@ -207,22 +208,24 @@ export async function insertCategoryDetails(db, {req, itemId, category, uploadDa
   }
 }
 
+
 export function getTableName(itemCategory) {
+  if (!itemCategory || typeof itemCategory !== "string") {
+    throw new Error(`Invalid itemCategory: ${itemCategory}`);
+  }
   itemCategory = itemCategory.toLowerCase();
   let tableName;
-
   switch (itemCategory) {
     case "book":
-      tableName = "books"
+      tableName = "books";
       break;
-  
     default:
-      tableName = itemCategory.toLowerCase();
+      tableName = itemCategory;
       break;
   }
-
   return tableName;
 }
+
 
 export async function getImages(db, itemId) {
   //fetch images
@@ -235,6 +238,7 @@ export async function getImages(db, itemId) {
   return images
 }
 
+
 export async function getLikes(db, itemId) {
   const likesResult = await db.query(
     `SELECT likes FROM items WHERE item_id = $1`,
@@ -245,6 +249,53 @@ export async function getLikes(db, itemId) {
     return likes
 }
 
+
+export async function deleteImages(db, itemId, deletedImages) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
+    api_key: process.env.CLOUDINARY_API_KEY, 
+    api_secret: process.env.CLOUDINARY_API_SECRET 
+  });
+  
+  try {
+    //get public_id from images table to delete from cloudinary
+    const deletedImagesPublicIds = deletedImages.map(async (imageUrl) => {
+      const result = await db.query(
+        "SELECT public_id FROM images WHERE item_id =($1) AND image_url = ($2)",
+        [itemId, imageUrl]
+      );
+      const publicId = result?.rows[0]?.public_id;
+      return publicId;
+    });
+
+    await Promise.all(deletedImagesPublicIds);
+
+    //delete images from cloudinary
+    const cloudinaryPromises = deletedImagesPublicIds.map(async (publicId) => {
+      return cloudinary.uploader.destroy(publicId)
+        .catch(error => {
+          console.error(`Failed to delete image ${publicId} from Cloudinary:`, error);
+          // Continue even if one fails
+        });
+    });
+
+    await Promise.all(cloudinaryPromises);
+
+    //delete images from images table
+    const deleteImagesPromises = deletedImages.map(async (imageUrl) => {
+      return db.query("DELETE FROM images WHERE item_id = $1 AND image_url = $2", [itemId, imageUrl])
+    });
+
+    await Promise.all(deleteImagesPromises);
+
+    return true;
+  } catch (error) {
+    console.error("Error deleting image:", error);
+    throw error;
+  }
+}
+
+
 export async function deletePost(db, itemId, tableName) {
   cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
@@ -253,7 +304,6 @@ export async function deletePost(db, itemId, tableName) {
   });
 
   try {
-
     // 1. Get all Cloudinary public_ids for this item's images
     const imagesResult = await db.query(
       "SELECT public_id FROM images WHERE item_id = $1",

@@ -4,8 +4,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Github, Mail, Loader2 } from "lucide-react";
-import { useAuth } from "@/components/AuthContext";
-import { AuthSkeleton } from "@/components/AuthSkeleton";
+import { useAuth } from "@/components/context/AuthContext";
+import { AuthSkeleton } from "@/components/custom/AuthSkeleton";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { GitHubEmailDialog } from "@/components/GithubEmailDialog";
+import { GitHubEmailDialog } from "@/components/custom/GithubEmailDialog";
 
 // Define the authentication providers
 const providers = [

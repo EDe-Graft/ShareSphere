@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useAuth } from "@/components/AuthContext";
+import { useAuth } from "@/components/context/AuthContext";
 import { toast } from "sonner";
 import axios from "axios";
 

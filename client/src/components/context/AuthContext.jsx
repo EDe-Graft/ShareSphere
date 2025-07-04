@@ -25,6 +25,7 @@ export function AuthProvider({ children }) {
       );
       // if 200 OK comes back:
       if (data.authSuccess) {
+        console.log("AuthContext: Setting user", data.user);
         setUser(data.user);
         setAuthSuccess(true);
       }
@@ -52,6 +53,13 @@ export function AuthProvider({ children }) {
       { displayName, email, password, confirmPassword },
       axiosConfig
     );
+    
+    // After successful registration, check session to get user data
+    if (response.data.authSuccess) {
+      console.log("AuthContext: Registration successful, checking session");
+      await checkSession();
+    }
+    
     return response;
   };
 
@@ -62,6 +70,11 @@ export function AuthProvider({ children }) {
       { email, password },
       axiosConfig
     );
+    
+    // After successful login, check session to get updated user data
+    if (response.data.authSuccess) {
+      await checkSession();
+    }
     
     return response;
   };
@@ -94,6 +107,9 @@ export function AuthProvider({ children }) {
           if (event.data.authSuccess) {
             setAuthSuccess(true);
             setUser(event.data.user);
+            
+            // After successful social login, check session to ensure consistency
+            checkSession();
             
             resolve({
               authSuccess: true,
@@ -135,6 +151,8 @@ export function AuthProvider({ children }) {
     setUser,
     authSuccess,
     setAuthSuccess,
+    initialized,
+    checkSession, // Expose checkSession for manual refresh
     register,
     localLogin,
     socialLogin,

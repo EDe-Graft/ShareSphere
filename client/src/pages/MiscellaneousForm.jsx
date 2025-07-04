@@ -32,7 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import ImageUploadField from "@/components/ImageUploadField";
+import ImageUploadField from "@/components/custom/ImageUploadField";
 import { formatData } from "@/lib/utils";
 import axios from "axios";
 

@@ -25,10 +25,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import ItemCard from "@/components/ItemCard";
-import ItemDetailsDialog from "@/components/ItemDetailsDialog";
-import EmptyState from "@/components/EmptyState";
-import { useAuth } from "@/components/AuthContext";
+import ItemCard from "@/components/custom/ItemCard";
+import ItemDetailsDialog from "@/components/custom/ItemDetailsDialog";
+import EmptyState from "@/components/custom/EmptyState";
+import { useAuth } from "@/components/context/AuthContext";
 import axios from "axios";
 import { formatData } from "@/lib/utils";
 
@@ -117,17 +117,35 @@ const PostsViewPage = () => {
       // formatData returns a FormData object
       const formData = formatData(updateData);
 
-      // Convert FormData to a plain JS object
-      const plainObject = {};
-      for (const [key, value] of formData.entries()) {
-        plainObject[key] = value;
+      // Check if there are any File objects in imageChanges.newImages
+      let hasFile = false;
+      if (updateData.imageChanges && Array.isArray(updateData.imageChanges.newImages)) {
+        hasFile = updateData.imageChanges.newImages.some(f => f instanceof File);
       }
 
-      const response = await axios.post(
-        `${BACKEND_URL}/update-post`,
-        { updateData: plainObject }, // Ensure this is JSON serializable
-        axiosConfig
-      );
+      let response;
+      if (hasFile) {
+        // Send as multipart/form-data
+        response = await axios.post(
+          `${BACKEND_URL}/update-post?hasFile=true`,
+          formData,
+          {
+            headers: { 'Content-Type': 'multipart/form-data' },
+            withCredentials: true,
+          }
+        );
+      } else {
+        // Convert FormData to a JS object for JSON
+        const formattedData = {};
+        for (const [key, value] of formData.entries()) {
+          formattedData[key] = value;
+        }
+        response = await axios.post(
+          `${BACKEND_URL}/update-post?hasFile=false`,
+          { updateData: formattedData },
+          axiosConfig
+        );
+      }
 
       if (response.data.updateSuccess) {
         toast.success("Post updated successfully", {

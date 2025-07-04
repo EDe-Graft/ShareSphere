@@ -15,7 +15,7 @@ import AdminReportEmail from './dist/emails/AdminReportEmail.js';
 import ReportConfirmationEmail from './dist/emails/ReportConfirmationEmail.js';
 import WarningEmail from './dist/emails/WarningEmail.js';
 import { configurePassport } from "./passport-config.js";
-import { uploadToCloudinary, saveItem, saveImage, updateImage, insertCategoryDetails, getTableName, getImages, getLikes, deletePost, saveReport } from './database-utils.js';
+import { uploadToCloudinary, saveItem, saveImage, updateImage, insertCategoryDetails, getTableName, getImages, getLikes, deleteImages, deletePost, saveReport } from './database-utils.js';
 import { formatLocalISO, capitalizeFirst, toCamelCase, toSnakeCase } from "./format.js";
 
 // Express-app and environment creation
@@ -309,18 +309,44 @@ app.get("/user-posts", async (req, res) => {
 });
 
 
-app.post("/update-post", async (req, res) => {
-  const updateData = req.body.updateData;
-  const convertedData = toSnakeCase(updateData);
-  const { item_id: itemId, item_category: itemCategory } = convertedData;
-  let tableName = getTableName(itemCategory);
+app.post("/update-post", upload.array('newImages', 3), async (req, res) => {
+  const hasFile = req.query.hasFile;
+  let newImages;
+  let removedImages;
+  let updateData;
 
-  // Track original camelCase fields for response
-  const camelCaseFields = Object.keys(updateData).filter(
-    key => !['itemId', 'itemCategory'].includes(key)
+
+  if (hasFile === "true") {
+    //get new images
+    newImages = req.files;
+    removedImages = JSON.parse(req.body.removedImages);
+    updateData = req.body;
+  } else {
+    //no new images, possibly removed images
+    updateData = req.body.updateData;
+    removedImages = JSON.parse(updateData.removedImages);
+  }
+
+
+  //get item id and category
+  const { itemId, itemCategory } = updateData;
+  const tableName = getTableName(itemCategory);
+
+  // // Track original camelCase fields for response
+  const updatedFields = Object.keys(updateData).filter(
+    key => !['itemId', 'itemCategory', 'removedImages', 'newImages'].includes(key)
   );
 
   try {
+    if (Object.keys(updateData).length === 2 && hasFile === "false") {
+      //if only itemId and itemCategory are present, no changes were made
+      console.log("no changes made")
+      return res.status(200).json({
+        updateSuccess: true,
+        message: "No changes made"
+      });
+    }
+
     // Validate required parameters
     if (!itemId || !itemCategory) {
       return res.status(400).json({ error: 'Missing required parameters' });
@@ -346,9 +372,9 @@ app.post("/update-post", async (req, res) => {
     let categoryParamIndex = 1;
 
     // Process all fields from converted data
-    Object.entries(convertedData).forEach(([key, value]) => {
+    Object.entries(updateData).forEach(([key, value]) => {
       // Skip identifiers
-      if (key === 'item_id' || key === 'item_category') return;
+      if (key === 'itemId' || key === 'itemCategory' || key === 'removedImages' || key === 'newImages') return;
 
       // Update items table parameters
       if (commonFields.includes(key)) {
@@ -386,17 +412,78 @@ app.post("/update-post", async (req, res) => {
                WHERE item_id = $${categoryParamIndex}`,
         values: categoryValues
       };
-      await db.query(categoryQuery);
+      await db.query(categoryQuery);  
     }
 
-    // Check if any updates occurred
-    if (camelCaseFields.length === 0) {
-      return res.status(400).json({ error: 'No valid fields to update' });
+
+    if (removedImages) {
+      //delete removed images
+      const deleteSuccess = await deleteImages(db, itemId, removedImages);
+      if (!deleteSuccess) {
+        return res.status(500).json({
+          error: 'Failed to delete images'
+        });
+      }
+    }
+
+    if (newImages) {
+      const uploadDate = formatLocalISO(); //upload date
+      
+      console.log("Processing newImages:", newImages.length, "files");
+      console.log("First image properties:", Object.keys(newImages[0] || {}));
+
+      // Process each file and upload to cloudinary
+      const uploadPromises = newImages.map(async (image) => {
+        // For multer files, use mimetype property
+        const mimeType = image.mimetype || image.type || 'image/jpeg';
+        
+        // // Validate mimeType to prevent undefined errors
+        // if (!mimeType || mimeType === 'undefined') {
+        //   console.error('Invalid mimeType detected:', mimeType);
+        //   throw new Error('Invalid file type detected');
+        // }
+
+        //save image without the url
+        const imageData = {
+          imageUrl: `awaiting image url on ${uploadDate}...`,
+          publicId: `awaiting public id on ${uploadDate}...`,
+          imageType: mimeType,
+          itemId: itemId,
+        };
+
+        //retrieve imageId to make every saved image unique
+        const imageId = await saveImage(db, imageData);
+
+        const [formattedImageUrl, publicId] = await uploadToCloudinary(
+          `data:${mimeType};base64,${image.buffer.toString('base64')}`,
+          itemCategory,
+          imageId
+        );
+
+        console.log("formattedImageUrl", formattedImageUrl)
+        console.log("publicId", publicId)
+        console.log("imageId", imageId)
+
+        //update image with the formatted image url
+        const updateData = {
+          imageUrl: formattedImageUrl,
+          imageId: imageId,
+          publicId: publicId
+        }
+
+        await updateImage(db, updateData);
+
+        return formattedImageUrl;
+      });
+
+      await Promise.all(uploadPromises);
     }
 
     res.status(200).json({
       updateSuccess: true,
-      updatedFields: camelCaseFields
+      message: "Post updated successfully",
+      itemId: itemId,
+      updatedFields: updatedFields
     });
 
   } catch (error) {
@@ -407,6 +494,7 @@ app.post("/update-post", async (req, res) => {
     });
   }
 });
+
 
 
 app.get("/favorites", async (req, res) => {
@@ -481,6 +569,7 @@ app.get("/favorites", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
 
 
 //Post Routes
@@ -837,12 +926,21 @@ app.post("/change-availability", async (req, res) => {
 
   try {
     //update items table
-    await db.query(`UPDATE items SET available to $1  WHERE item_id = $2`, [newAvailability, itemId])
-    //updata category table
-    await db.query(`UPDATE ${tableName} SET available to $1  WHERE item_id = $2`, [newAvailability, itemId])
+    await db.query(`UPDATE items SET available = $1 WHERE item_id = $2`, [newAvailability, itemId])
+    //update category table
+    await db.query(`UPDATE ${tableName} SET available = $1 WHERE item_id = $2`, [newAvailability, itemId])
+
+    res.status(200).json({
+      success: true,
+      message: "Availability updated successfully"
+    });
 
   } catch (error) {
-    console.log("Could not update availability")
+    console.error("Could not update availability:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update availability"
+    });
   }
 });
 

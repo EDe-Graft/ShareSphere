@@ -17,8 +17,8 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { useTheme } from "@/components/theme-provider";
-import { useAuth } from "./AuthContext";
+import { useTheme } from "@/components/context/theme-provider";
+import { useAuth } from "@/components/context/AuthContext";
 import { cn } from "@/lib/utils";
 import {
   NavigationMenu,

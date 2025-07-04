@@ -20,7 +20,7 @@ import { ConditionBadge, AvailabilityBadge, TypeBadge } from "./CustomBadges";
 import LikeButton from "./LikeButton";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
 import { ReportDialog } from "./ReportDialog";
-import { useAuth } from "@/components/AuthContext";
+import { useAuth } from "@/components/context/AuthContext";
 
 export default function ItemCard({
   item,

@@ -31,13 +31,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import ItemCard from "@/components/ItemCard";
-import ItemDetailsDialog from "@/components/ItemDetailsDialog";
-import EmptyState from "@/components/EmptyState";
-import Pagination from "@/components/Pagination";
+import ItemCard from "@/components/custom/ItemCard";
+import ItemDetailsDialog from "@/components/custom/ItemDetailsDialog";
+import EmptyState from "@/components/custom/EmptyState";
+import Pagination from "@/components/custom/Pagination";
 import { CATEGORY_OPTIONS, toTitleCase } from "@/lib/utils";
 import axios from "axios";
-import { useAuth } from "@/components/AuthContext";
+import { useAuth } from "@/components/context/AuthContext";
+import { formatData } from "@/lib/utils";
+import { toast } from "sonner";
 
 const BooksViewPage = () => {
   const navigate = useNavigate();
@@ -138,6 +140,55 @@ const BooksViewPage = () => {
     }
   };
 
+  const handleUpdatePost = async (updateData) => {
+    try {
+      // formatData returns a FormData object
+      const formData = formatData(updateData);
+
+      // Check if there are any File objects in imageChanges.newImages
+      let hasFile = false;
+      if (updateData.imageChanges && Array.isArray(updateData.imageChanges.newImages)) {
+        hasFile = updateData.imageChanges.newImages.some(f => f instanceof File);
+      }
+
+      let response;
+      if (hasFile) {
+        // Send as multipart/form-data
+        response = await axios.post(
+          `${BACKEND_URL}/update-post?hasFile=true`,
+          formData,
+          {
+            headers: { 'Content-Type': 'multipart/form-data' },
+            withCredentials: true,
+          }
+        );
+      } else {
+        // Convert FormData to a JS object for JSON
+        const formattedData = {};
+        for (const [key, value] of formData.entries()) {
+          formattedData[key] = value;
+        }
+        response = await axios.post(
+          `${BACKEND_URL}/update-post?hasFile=false`,
+          { updateData: formattedData },
+          axiosConfig
+        );
+      }
+
+      if (response.data.updateSuccess) {
+        toast.success("Post updated successfully", {
+          description: `Your ${updateData.itemCategory} post was successfully updated on ShareSphere.`,
+        });
+
+        setTimeout(() => {
+          window.location.reload(); // refreshes the current page
+        }, 2000);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   useEffect(() => {
     const loadBooks = async () => {
       try {
@@ -172,35 +223,6 @@ const BooksViewPage = () => {
     loadBooks();
   }, [user]);
 
-  useEffect(() => {
-    const loadBooks = async () => {
-      try {
-        const items = [bookItems];
-
-        setBooks(items);
-        setFilteredBooks(items);
-
-        const initialLikes = {};
-        const initialLikedStatus = {};
-        items.forEach((item) => {
-          initialLikes[item.itemId] = item.likes;
-          initialLikedStatus[item.itemId] = false;
-        });
-        setLikesById(initialLikes);
-        setIsLikedById(initialLikedStatus);
-
-        if (user) {
-          getUserFavorites();
-        }
-        // }
-      } catch (error) {
-        console.error("Error loading books:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadBooks();
-  }, [user]);
 
   // Update your filtering useEffect to be more defensive
   useEffect(() => {
@@ -657,6 +679,7 @@ const BooksViewPage = () => {
         }
         onLikeToggle={handleLikeToggle}
         mode={userMode}
+        onUpdate={handleUpdatePost}
       />
     </main>
   );

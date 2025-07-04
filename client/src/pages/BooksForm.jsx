@@ -35,7 +35,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { formatData, CATEGORY_OPTIONS } from "@/lib/utils";
-import ImageUploadField from "@/components/ImageUploadField";
+import ImageUploadField from "@/components/custom/ImageUploadField";
 import axios from "axios";
 
 const MAX_FILE_SIZE = 7000000;

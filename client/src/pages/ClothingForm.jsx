@@ -34,7 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import ImageUploadField from "@/components/ImageUploadField";
+import ImageUploadField from "@/components/custom/ImageUploadField";
 import { formatData } from "@/lib/utils";
 import axios from "axios";
 

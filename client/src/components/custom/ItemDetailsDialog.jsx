@@ -16,10 +16,10 @@ import ImageCarousel from "./ImageCarousel";
 import { ConditionBadge } from "./CustomBadges";
 import { RequestItemDialog } from "./RequestItemDialog";
 import { ReportDialog } from "./ReportDialog";
-import { useAuth } from "@/components/AuthContext";
+import { useAuth } from "@/components/context/AuthContext";
 import { CATEGORY_OPTIONS } from "@/lib/utils";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
-import ImageUploadField from "@/components/ImageUploadField";
+import ImageUploadField from "@/components/custom/ImageUploadField";
 
 export default function ItemDetailsDialog({
   item,
@@ -33,7 +33,7 @@ export default function ItemDetailsDialog({
   onUpdate,
 }) {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, initialized } = useAuth();
   const dialogRef = useRef(null);
   const overlayRef = useRef(null);
   const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
@@ -41,12 +41,13 @@ export default function ItemDetailsDialog({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isOwnItem, setIsOwnItem] = useState(false);
 
   // Simplified state management
   const [formData, setFormData] = useState({});
   const [imageChanges, setImageChanges] = useState({
     existingImages: [],
-    newFiles: [],
+    newImages: [],
     removedImages: [],
   });
 
@@ -71,14 +72,24 @@ export default function ItemDetailsDialog({
         estimatedValue: item.estimatedValue || "",
         condition: item.condition || "",
         description: item.description || "",
+        images: item.images || [],
       });
       setImageChanges({
         existingImages: item.images || [],
-        newFiles: [],
+        newImages: [],
         removedImages: [],
       });
     }
   }, [item]); // Only depend on item
+
+  // Update isOwnItem when user or item changes
+  useEffect(() => {
+    if (initialized && item && user) {
+      setIsOwnItem(item.uploaderId === user.userId);
+    } else {
+      setIsOwnItem(false);
+    }
+  }, [initialized, item, user]);
 
   // Handle inert attribute
   useEffect(() => {
@@ -106,11 +117,17 @@ export default function ItemDetailsDialog({
   };
 
   const handleImageChanges = (changes) => {
-    setImageChanges(changes);
+    console.log("changes", changes);
+    setImageChanges({
+      existingImages: changes.existingImages,
+      newImages: changes.newFiles,
+      removedImages: changes.removedImages,
+    });
   };
 
   const handleSaveEdit = () => {
     const changes = {};
+    console.log("formData", formData)
     Object.keys(formData).forEach((key) => {
       if (formData[key] !== (item[key] || "")) {
         changes[key] = formData[key];
@@ -118,8 +135,8 @@ export default function ItemDetailsDialog({
     });
 
     if (
-      imageChanges.newFiles.length > 0 ||
-      imageChanges.removedImages.length > 0
+      imageChanges.newImages?.length > 0 ||
+      imageChanges.removedImages?.length > 0
     ) {
       changes.imageChanges = imageChanges;
     }
@@ -155,10 +172,11 @@ export default function ItemDetailsDialog({
       estimatedValue: item.estimatedValue || "",
       condition: item.condition || "",
       description: item.description || "",
+      images: item.images || [],
     });
     setImageChanges({
       existingImages: item.images || [],
-      newFiles: [],
+      newImages: [],
       removedImages: [],
     });
   };
@@ -292,7 +310,6 @@ export default function ItemDetailsDialog({
 
   const config = getFieldConfig();
   const conditionOptions = ["Like-New", "Good", "Fair"];
-  const isOwnItem = item.uploaderId === user?.userId;
 
   return (
     <>
@@ -370,7 +387,7 @@ export default function ItemDetailsDialog({
               </div>
             </div>
 
-            {mode === "edit" && !isEditing && (
+            {(mode === "edit" || isOwnItem) && (
               <Button
                 variant="ghost"
                 size="icon"
