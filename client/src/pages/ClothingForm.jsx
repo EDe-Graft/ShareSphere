@@ -63,13 +63,14 @@ const formSchema = z.object({
     .min(1, "At least one image is required")
     .max(3, "You can upload up to 3 images")
     .refine(
-      (files) => files.every((file) => ACCEPTED_IMAGE_TYPES.includes(file.type)),
+      (files) =>
+        files.every((file) => ACCEPTED_IMAGE_TYPES.includes(file.type)),
       "Only JPG, PNG, WebP files are supported"
     )
     .refine(
       (files) => files.every((file) => file.size <= MAX_FILE_SIZE),
       "Each image must be under 7MB"
-    )
+    ),
 });
 
 // Update size options based on selected type
@@ -109,7 +110,6 @@ export default function ClothingForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedType, setSelectedType] = useState(""); // Track selected type
   const navigate = useNavigate();
-  
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -129,7 +129,7 @@ export default function ClothingForm() {
 
   const onSubmit = async (data) => {
     setIsSubmitting(true);
-    
+
     // For clothing form
     const clothingProcessedData = {
       name: data.name.trim() || "N/A",
@@ -141,15 +141,15 @@ export default function ClothingForm() {
       gender: data.gender || "Unisex",
       description: data.description.trim() || "N/A",
       condition: data.condition || "Good",
-      images: data.images
+      images: data.images,
     };
     const clothingFormData = formatData(clothingProcessedData);
 
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
     const axiosConfig = {
       headers: { "Content-Type": "multipart/form-data" },
-      withCredentials: true
-    }
+      withCredentials: true,
+    };
 
     try {
       const response = await axios.post(
@@ -158,14 +158,12 @@ export default function ClothingForm() {
         axiosConfig
       );
 
-
       if (response.data.success) {
         toast.success("Clothing donation uploaded successfully!", {
           description: `"${processedData.name}" has been added to our donation list.`,
         });
         setTimeout(() => navigate("/clothing"), 2500);
-      } 
-      
+      }
     } catch (error) {
       toast.error("Failed to submit donation", {
         description: error.response?.data?.message || "Please try again later.",
@@ -173,9 +171,9 @@ export default function ClothingForm() {
       console.error(error);
     } finally {
       setIsSubmitting(false);
-      }
     }
-  
+  };
+
   return (
     <main className="container mx-auto px-4 py-8 sm:min-h-[85vh]">
       {/* Sonner Toaster Component */}
@@ -228,24 +226,24 @@ export default function ClothingForm() {
                   />
 
                   <FormField
-                      control={form.control}
-                      name="type"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="font-medium">Type*</FormLabel>
-                          <Select
-                            onValueChange={(value) => {
-                              field.onChange(value);
-                              setSelectedType(value); // Update selected type
-                            }}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger className="border-gray-300 focus:border-violet-500">
-                                <SelectValue placeholder="Select clothing type" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
+                    control={form.control}
+                    name="type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="font-medium">Type*</FormLabel>
+                        <Select
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            setSelectedType(value); // Update selected type
+                          }}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="border-gray-300 focus:border-violet-500">
+                              <SelectValue placeholder="Select clothing type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
                             <SelectItem value="tops">Tops/Shirts</SelectItem>
                             <SelectItem value="pants">Pants/Jeans</SelectItem>
                             <SelectItem value="dresses">
@@ -284,9 +282,13 @@ export default function ClothingForm() {
                         >
                           <FormControl>
                             <SelectTrigger className="border-gray-300 focus:border-violet-500">
-                              <SelectValue placeholder={
-                                selectedType === "footwear" ? "Select shoe size" : "Select size"
-                              } />
+                              <SelectValue
+                                placeholder={
+                                  selectedType === "footwear"
+                                    ? "Select shoe size"
+                                    : "Select size"
+                                }
+                              />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -490,7 +492,13 @@ export default function ClothingForm() {
                   name="images"
                   render={({ field, fieldState }) => (
                     <FormItem>
-                      <ImageUploadField field={field} fieldState={fieldState} setValue={form.setValue} />
+                      <ImageUploadField
+                        value={field.value || []}
+                        onChange={field.onChange}
+                        label="Clothing Images"
+                        required={true}
+                        error={fieldState.error?.message}
+                      />
                     </FormItem>
                   )}
                 />

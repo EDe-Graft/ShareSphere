@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Sofa, Loader2} from "lucide-react";
+import { Sofa, Loader2 } from "lucide-react";
 import { Toaster, toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,6 @@ import ImageUploadField from "@/components/custom/ImageUploadField";
 import { formatData } from "@/lib/utils";
 import axios from "axios";
 
-
 // Define constants for file validation
 const MAX_FILE_SIZE = 7000000; // 7MB
 const ACCEPTED_IMAGE_TYPES = [
@@ -62,7 +61,8 @@ const formSchema = z.object({
     .min(1, "At least one image is required")
     .max(3, "You can upload up to 3 images")
     .refine(
-      (files) => files.every((file) => ACCEPTED_IMAGE_TYPES.includes(file.type)),
+      (files) =>
+        files.every((file) => ACCEPTED_IMAGE_TYPES.includes(file.type)),
       "Only JPG, PNG, WebP files are supported"
     )
     .refine(
@@ -93,7 +93,7 @@ const FurnitureForm = () => {
 
   const onSubmit = async (data) => {
     setIsSubmitting(true);
-    
+
     // For furniture form
     const furnitureProcessedData = {
       name: data.name.trim() || "N/A",
@@ -112,8 +112,8 @@ const FurnitureForm = () => {
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
     const axiosConfig = {
       headers: { "Content-Type": "multipart/form-data" },
-      withCredentials: true
-    }
+      withCredentials: true,
+    };
 
     try {
       // console.log(formData)
@@ -128,7 +128,7 @@ const FurnitureForm = () => {
           description: `"${furnitureProcessedData.name}" has been added to our donation list.`,
         });
         setTimeout(() => navigate("/furniture"), 2500);
-      } 
+      }
     } catch (error) {
       toast.error("Failed to submit donation", {
         description: error.response?.data?.message || "Please try again later.",
@@ -138,7 +138,6 @@ const FurnitureForm = () => {
       setIsSubmitting(false);
     }
   };
-
 
   return (
     <main className="container mx-auto px-4 py-8 sm:min-h-[85vh]">
@@ -224,7 +223,7 @@ const FurnitureForm = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <FormField
+                  <FormField
                     control={form.control}
                     name="color"
                     render={({ field }) => (
@@ -264,12 +263,14 @@ const FurnitureForm = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <FormField
+                  <FormField
                     control={form.control}
                     name="age"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="font-medium">Age (optional)</FormLabel>
+                        <FormLabel className="font-medium">
+                          Age (optional)
+                        </FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           defaultValue={field.value}
@@ -293,7 +294,7 @@ const FurnitureForm = () => {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="dimensions"
@@ -412,15 +413,21 @@ const FurnitureForm = () => {
                   )}
                 />
 
-               <FormField
-                control={form.control}
-                name="images"
-                render={({ field, fieldState }) => (
-                  <FormItem>
-                    <ImageUploadField field={field} fieldState={fieldState} setValue={form.setValue} />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="images"
+                  render={({ field, fieldState }) => (
+                    <FormItem>
+                      <ImageUploadField
+                        value={field.value || []}
+                        onChange={field.onChange}
+                        label="Furniture Images"
+                        required={true}
+                        error={fieldState.error?.message}
+                      />
+                    </FormItem>
+                  )}
+                />
 
                 <div className="pt-4">
                   <Button

@@ -39,14 +39,23 @@ import ImageUploadField from "@/components/custom/ImageUploadField";
 import axios from "axios";
 
 const MAX_FILE_SIZE = 7000000;
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const ACCEPTED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+];
 
 const formSchema = z.object({
   subCategory: z.string().min(1, "Category is required"),
   title: z.string().min(1, "Title is required"),
   author: z.string().default("n/a"),
   edition: z.string().default("n/a"),
-  year: z.string().regex(/^[0-9]{4}$/, "Enter a valid year").or(z.literal("")).transform(val => val || "n/a"),
+  year: z
+    .string()
+    .regex(/^[0-9]{4}$/, "Enter a valid year")
+    .or(z.literal(""))
+    .transform((val) => val || "n/a"),
   description: z.string().default("n/a"),
   condition: z.string().default("good"),
   images: z
@@ -54,7 +63,8 @@ const formSchema = z.object({
     .min(1, "At least one image is required")
     .max(3, "You can upload up to 3 images")
     .refine(
-      (files) => files.every((file) => ACCEPTED_IMAGE_TYPES.includes(file.type)),
+      (files) =>
+        files.every((file) => ACCEPTED_IMAGE_TYPES.includes(file.type)),
       "Only JPG, PNG, WebP files are supported"
     )
     .refine(
@@ -63,7 +73,7 @@ const formSchema = z.object({
     ),
 });
 
-const fields = ['title', 'author', 'edition', 'year'];
+const fields = ["title", "author", "edition", "year"];
 
 const BooksForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -85,12 +95,13 @@ const BooksForm = () => {
 
   const onSubmit = async (data) => {
     setIsSubmitting(true);
-  
+
     // Determine the parent category based on subcategory
-    const parentCategory = Object.entries(CATEGORY_OPTIONS).find(([key, values]) =>
-      values.map(v => v.toLowerCase()).includes(data.subCategory)
-    )?.[0] || "Other";
-  
+    const parentCategory =
+      Object.entries(CATEGORY_OPTIONS).find(([key, values]) =>
+        values.map((v) => v.toLowerCase()).includes(data.subCategory)
+      )?.[0] || "Other";
+
     // For books form
     const booksProcessedData = {
       ...data,
@@ -109,9 +120,9 @@ const BooksForm = () => {
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
     const axiosConfig = {
       headers: { "Content-Type": "multipart/form-data" },
-      withCredentials: true
-    }
-  
+      withCredentials: true,
+    };
+
     try {
       // console.log(formData)
       const response = await axios.post(
@@ -119,7 +130,7 @@ const BooksForm = () => {
         booksFormData,
         axiosConfig
       );
-  
+
       if (response.data.success) {
         toast.success("Book donation uploaded successfully!", {
           description: `"${processedData.title}" has been added.`,
@@ -135,7 +146,6 @@ const BooksForm = () => {
       setIsSubmitting(false);
     }
   };
-  
 
   return (
     <main className="container mx-auto px-4 py-8 sm:min-h-[85vh]">
@@ -143,14 +153,19 @@ const BooksForm = () => {
       <div className="flex flex-col items-center max-w-2xl mx-auto">
         <div className="flex items-center space-x-1 justify-center mb-6">
           <BookOpen className="text-violet-500" />
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Donate Books</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Donate Books
+          </h1>
         </div>
 
         <Card className="w-full shadow-lg border-t-4 border-t-violet-500">
           <CardHeader className="pb-4">
-            <CardTitle className="text-xl text-center sm:text-2xl">Book Information</CardTitle>
+            <CardTitle className="text-xl text-center sm:text-2xl">
+              Book Information
+            </CardTitle>
             <CardDescription className="text-center">
-              Please provide details about the book you'd like to donate to ShareSphere.
+              Please provide details about the book you'd like to donate to
+              ShareSphere.
             </CardDescription>
           </CardHeader>
 
@@ -158,8 +173,10 @@ const BooksForm = () => {
 
           <CardContent className="pt-6">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-                
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-5"
+              >
                 {/* Category Dropdown */}
                 <FormField
                   control={form.control}
@@ -167,16 +184,24 @@ const BooksForm = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="font-medium">Category*</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <SelectTrigger className="w-full bg-white dark:bg-[hsl(224,71.4%,4.1%)] text-black dark:text-white">
                           <SelectValue placeholder="Select a category" />
                         </SelectTrigger>
                         <SelectContent className="bg-white dark:bg-[hsl(224,71.4%,4.1%)] text-black dark:text-white">
                           {Object.keys(CATEGORY_OPTIONS).map((category) => (
                             <SelectGroup key={category}>
-                              <SelectLabel className="text-violet-500">{category}</SelectLabel>
+                              <SelectLabel className="text-violet-500">
+                                {category}
+                              </SelectLabel>
                               {CATEGORY_OPTIONS[category].map((subcategory) => (
-                                <SelectItem key={subcategory} value={subcategory.toLowerCase()}>
+                                <SelectItem
+                                  key={subcategory}
+                                  value={subcategory.toLowerCase()}
+                                >
                                   {subcategory}
                                 </SelectItem>
                               ))}
@@ -199,7 +224,11 @@ const BooksForm = () => {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="font-medium capitalize">
-                            {fieldName === 'title' ? 'Title*' : fieldName.charAt(0).toUpperCase() + fieldName.slice(1) + ' (optional)'}
+                            {fieldName === "title"
+                              ? "Title*"
+                              : fieldName.charAt(0).toUpperCase() +
+                                fieldName.slice(1) +
+                                " (optional)"}
                           </FormLabel>
                           <FormControl>
                             <Input
@@ -221,7 +250,9 @@ const BooksForm = () => {
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-medium">Description (optional)</FormLabel>
+                      <FormLabel className="font-medium">
+                        Description (optional)
+                      </FormLabel>
                       <FormControl>
                         <Textarea
                           placeholder="Brief description of the book..."
@@ -240,17 +271,27 @@ const BooksForm = () => {
                   name="condition"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-medium">Book Condition*</FormLabel>
+                      <FormLabel className="font-medium">
+                        Book Condition*
+                      </FormLabel>
                       <div className="grid grid-cols-3 gap-3">
                         {["like-new", "good", "fair"].map((cond) => (
                           <Button
                             key={cond}
                             type="button"
-                            variant={field.value === cond ? "default" : "outline"}
-                            className={field.value === cond ? "bg-violet-500 hover:bg-violet-600" : ""}
+                            variant={
+                              field.value === cond ? "default" : "outline"
+                            }
+                            className={
+                              field.value === cond
+                                ? "bg-violet-500 hover:bg-violet-600"
+                                : ""
+                            }
                             onClick={() => form.setValue("condition", cond)}
                           >
-                            {cond.replace("-", " ").replace(/\b\w/g, c => c.toUpperCase())}
+                            {cond
+                              .replace("-", " ")
+                              .replace(/\b\w/g, (c) => c.toUpperCase())}
                           </Button>
                         ))}
                       </div>
@@ -266,9 +307,11 @@ const BooksForm = () => {
                   render={({ field, fieldState }) => (
                     <FormItem>
                       <ImageUploadField
-                        field={field}
-                        fieldState={fieldState}
-                        setValue={form.setValue}
+                        value={field.value || []}
+                        onChange={field.onChange}
+                        label="Book Images"
+                        required={true}
+                        error={fieldState.error?.message}
                       />
                     </FormItem>
                   )}

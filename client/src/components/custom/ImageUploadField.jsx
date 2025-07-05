@@ -170,7 +170,7 @@ const ImageUploadField = ({
         removedImages: removedUrls,
       });
     }
-  }, [images, isEditMode]); // Removed onImagesChange and existingImages from dependencies
+  }, [images, isEditMode]);
 
   const handleFiles = (files) => {
     const validFiles = files.filter((file) =>

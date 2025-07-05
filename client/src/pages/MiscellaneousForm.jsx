@@ -53,14 +53,18 @@ const formSchema = z.object({
   color: z.string().min(1, "Misc. item color is required"),
   age: z.string().default("n/a"),
   estimatedValue: z.string().default("n/a"),
-  description: z.string().min(3, "Description is required").default("misc. item"),
+  description: z
+    .string()
+    .min(3, "Description is required")
+    .default("misc. item"),
   condition: z.string().default("good"),
-images: z
+  images: z
     .array(z.instanceof(File))
     .min(1, "At least one image is required")
     .max(3, "You can upload up to 3 images")
     .refine(
-      (files) => files.every((file) => ACCEPTED_IMAGE_TYPES.includes(file.type)),
+      (files) =>
+        files.every((file) => ACCEPTED_IMAGE_TYPES.includes(file.type)),
       "Only JPG, PNG, WebP files are supported"
     )
     .refine(
@@ -90,7 +94,7 @@ const MiscellaneousForm = () => {
 
   const onSubmit = async (data) => {
     setIsSubmitting(true);
-    
+
     // For miscellaneous form
     const miscProcessedData = {
       name: data.name.trim() || "N/A",
@@ -108,8 +112,8 @@ const MiscellaneousForm = () => {
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
     const axiosConfig = {
       headers: { "Content-Type": "multipart/form-data" },
-      withCredentials: true
-    }
+      withCredentials: true,
+    };
 
     try {
       const response = await axios.post(
@@ -123,17 +127,16 @@ const MiscellaneousForm = () => {
           description: `"${processedData.type}" has been added to our donation list.`,
         });
         setTimeout(() => navigate("/miscellaneous"), 2500);
-      } 
+      }
     } catch (error) {
       toast.error("Failed to submit donation", {
         description: error.response?.data?.message || "Please try again later.",
       });
       console.error(error);
     } finally {
-      setIsSubmitting(false)
-        }
+      setIsSubmitting(false);
     }
-
+  };
 
   return (
     <main className="container mx-auto px-4 py-8 sm:min-h-[85vh]">
@@ -173,7 +176,9 @@ const MiscellaneousForm = () => {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="font-medium">Misc. Name*</FormLabel>
+                        <FormLabel className="font-medium">
+                          Misc. Name*
+                        </FormLabel>
                         <FormControl>
                           <Input
                             placeholder="E.g., Desk Lamp, Backpack"
@@ -230,7 +235,7 @@ const MiscellaneousForm = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <FormField
+                  <FormField
                     control={form.control}
                     name="color"
                     render={({ field }) => (
@@ -268,7 +273,6 @@ const MiscellaneousForm = () => {
                     )}
                   />
 
-
                   <FormField
                     control={form.control}
                     name="age"
@@ -301,34 +305,35 @@ const MiscellaneousForm = () => {
                     )}
                   />
 
-                <FormField
-                  control={form.control}
-                  name="estimatedValue"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-medium">
-                        Estimated Value (optional)
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="E.g., $20, $50-100"
-                          className="border-gray-300 focus:border-violet-500"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage className="text-red-500" />
-                    </FormItem>
-                  )}
-                />
-
-                </div>                
+                  <FormField
+                    control={form.control}
+                    name="estimatedValue"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="font-medium">
+                          Estimated Value (optional)
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="E.g., $20, $50-100"
+                            className="border-gray-300 focus:border-violet-500"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage className="text-red-500" />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <FormField
                   control={form.control}
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-medium">Description*</FormLabel>
+                      <FormLabel className="font-medium">
+                        Description*
+                      </FormLabel>
                       <FormControl>
                         <Textarea
                           placeholder="Please describe the item, its features, and any other relevant details..."
@@ -403,7 +408,13 @@ const MiscellaneousForm = () => {
                   name="images"
                   render={({ field, fieldState }) => (
                     <FormItem>
-                      <ImageUploadField field={field} fieldState={fieldState} setValue={form.setValue} />
+                      <ImageUploadField
+                        value={field.value || []}
+                        onChange={field.onChange}
+                        label="Item Images"
+                        required={true}
+                        error={fieldState.error?.message}
+                      />
                     </FormItem>
                   )}
                 />
