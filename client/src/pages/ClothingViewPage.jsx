@@ -107,10 +107,10 @@ const ClothingViewPage = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [
+    searchQuery,
     selectedType,
     selectedSize,
     selectedGender,
-    searchQuery,
     selectedCondition,
     selectedAvailability,
     sortBy,
@@ -171,8 +171,13 @@ const ClothingViewPage = () => {
 
       // Check if there are any File objects in imageChanges.newImages
       let hasFile = false;
-      if (updateData.imageChanges && Array.isArray(updateData.imageChanges.newImages)) {
-        hasFile = updateData.imageChanges.newImages.some(f => f instanceof File);
+      if (
+        updateData.imageChanges &&
+        Array.isArray(updateData.imageChanges.newImages)
+      ) {
+        hasFile = updateData.imageChanges.newImages.some(
+          (f) => f instanceof File
+        );
       }
 
       let response;
@@ -182,7 +187,7 @@ const ClothingViewPage = () => {
           `${BACKEND_URL}/update-post?hasFile=true`,
           formData,
           {
-            headers: { 'Content-Type': 'multipart/form-data' },
+            headers: { "Content-Type": "multipart/form-data" },
             withCredentials: true,
           }
         );
@@ -535,47 +540,6 @@ const ClothingViewPage = () => {
           </Select>
         </div>
 
-        {/* <TabsContent value="grid" className="mt-0">
-          {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {Array(8)
-                .fill(0)
-                .map((_, index) => (
-                  <Card key={index} className="overflow-hidden">
-                    <Skeleton className="h-[200px] w-full" />
-                    <CardHeader className="p-4 pb-2">
-                      <Skeleton className="h-5 w-3/4 mb-2" />
-                      <Skeleton className="h-4 w-1/2" />
-                    </CardHeader>
-                    <CardContent className="px-4 py-2">
-                      <Skeleton className="h-4 w-full" />
-                    </CardContent>
-                    <CardFooter className="p-4">
-                      <Skeleton className="h-9 w-full" />
-                    </CardFooter>
-                  </Card>
-                ))}
-            </div>
-          ) : filteredClothing.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {filteredClothing.map((item) => (
-                <ItemCard
-                  key={item.itemId}
-                  item={item}
-                  onViewDetails={handleViewDetails}
-                  onDelete={handleDeletePost}
-                  likes={likesById[item.itemId] || 0}
-                  isLiked={isLikedById[item.itemId] || false}
-                  onLikeToggle={handleLikeToggle}
-                  sizeBadge={<SizeDisplay size={item.size} />}
-                  viewMode="grid"
-                />
-              ))}
-            </div>
-          ) : (
-            <EmptyState category={category} />
-          )}
-        </TabsContent> */}
         <TabsContent value="grid" className="mt-0">
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -617,44 +581,6 @@ const ClothingViewPage = () => {
           )}
         </TabsContent>
 
-        {/* <TabsContent value="list" className="mt-0">
-          {isLoading ? (
-            <div className="space-y-4">
-              {Array(5)
-                .fill(0)
-                .map((_, i) => (
-                  <Card key={i} className="overflow-hidden">
-                    <div className="flex flex-col sm:flex-row">
-                      <Skeleton className="h-[150px] sm:w-[150px] w-full" />
-                      <div className="p-4 flex-1">
-                        <Skeleton className="h-6 w-3/4 mb-2" />
-                        <Skeleton className="h-4 w-1/2 mb-4" />
-                        <Skeleton className="h-4 w-full mb-2" />
-                        <Skeleton className="h-4 w-full" />
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-            </div>
-          ) : filteredClothing.length > 0 ? (
-            <div className="space-y-4">
-              {filteredClothing.map((item) => (
-                <ItemCard
-                  key={item.itemId}
-                  item={item}
-                  onViewDetails={handleViewDetails}
-                  onDelete={handleDeletePost}
-                  likes={likesById[item.itemId] || 0}
-                  isLiked={isLikedById[item.itemId] || false}
-                  onLikeToggle={handleLikeToggle}
-                  viewMode="list"
-                />
-              ))}
-            </div>
-          ) : (
-            <EmptyState category={category} />
-          )}
-        </TabsContent> */}
         <TabsContent value="list" className="mt-0">
           {isLoading ? (
             <div className="space-y-4">
@@ -694,59 +620,6 @@ const ClothingViewPage = () => {
           )}
         </TabsContent>
       </Tabs>
-
-      {/* Pagination placeholder - would be implemented with real data */}
-      {/* {filteredClothing.length > 0 && (
-        <div className="flex justify-center mt-8">
-          <div className="flex items-center gap-1">
-            <Button variant="outline" size="icon" disabled>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="lucide lucide-chevron-left"
-              >
-                <path d="m15 18-6-6 6-6" />
-              </svg>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-primary text-white hover:bg-primary/90"
-            >
-              1
-            </Button>
-            <Button variant="outline" size="sm">
-              2
-            </Button>
-            <Button variant="outline" size="sm">
-              3
-            </Button>
-            <Button variant="outline" size="icon">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="lucide lucide-chevron-right"
-              >
-                <path d="m9 18 6-6-6-6" />
-              </svg>
-            </Button>
-          </div>
-        </div>
-      )} */}
 
       {filteredClothing.length > 0 && (
         <Pagination

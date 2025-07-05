@@ -82,8 +82,7 @@ const FurnitureViewPage = () => {
     setCurrentPage(1);
   }, [
     searchQuery,
-    selectedCategory,
-    selectedSubcategory,
+    selectedType,
     selectedCondition,
     selectedAvailability,
     sortBy,
@@ -178,8 +177,13 @@ const FurnitureViewPage = () => {
 
       // Check if there are any File objects in imageChanges.newImages
       let hasFile = false;
-      if (updateData.imageChanges && Array.isArray(updateData.imageChanges.newImages)) {
-        hasFile = updateData.imageChanges.newImages.some(f => f instanceof File);
+      if (
+        updateData.imageChanges &&
+        Array.isArray(updateData.imageChanges.newImages)
+      ) {
+        hasFile = updateData.imageChanges.newImages.some(
+          (f) => f instanceof File
+        );
       }
 
       let response;
@@ -189,7 +193,7 @@ const FurnitureViewPage = () => {
           `${BACKEND_URL}/update-post?hasFile=true`,
           formData,
           {
-            headers: { 'Content-Type': 'multipart/form-data' },
+            headers: { "Content-Type": "multipart/form-data" },
             withCredentials: true,
           }
         );
@@ -452,46 +456,6 @@ const FurnitureViewPage = () => {
           </Select>
         </div>
 
-        {/* <TabsContent value="grid" className="mt-0">
-          {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {Array(8)
-                .fill(0)
-                .map((_, index) => (
-                  <Card key={index} className="overflow-hidden">
-                    <Skeleton className="h-[200px] w-full" />
-                    <CardHeader className="p-4 pb-2">
-                      <Skeleton className="h-5 w-3/4 mb-2" />
-                      <Skeleton className="h-4 w-1/2" />
-                    </CardHeader>
-                    <CardContent className="px-4 py-2">
-                      <Skeleton className="h-4 w-full" />
-                    </CardContent>
-                    <CardFooter className="p-4">
-                      <Skeleton className="h-9 w-full" />
-                    </CardFooter>
-                  </Card>
-                ))}
-            </div>
-          ) : filteredFurniture.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {filteredFurniture.map((furniture) => (
-                <ItemCard
-                  key={furniture.itemId}
-                  item={furniture}
-                  onViewDetails={handleViewDetails}
-                  onDelete={handleDeletePost}
-                  likes={likesById[furniture.itemId] || 0}
-                  isLiked={isLikedById[furniture.itemId] || false}
-                  onLikeToggle={handleLikeToggle}
-                  viewMode="grid"
-                />
-              ))}
-            </div>
-          ) : (
-            <EmptyState category="furniture" />
-          )}
-        </TabsContent> */}
         <TabsContent value="grid" className="mt-0">
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -533,44 +497,6 @@ const FurnitureViewPage = () => {
           )}
         </TabsContent>
 
-        {/* <TabsContent value="list" className="mt-0">
-          {isLoading ? (
-            <div className="space-y-4">
-              {Array(5)
-                .fill(0)
-                .map((_, i) => (
-                  <Card key={i} className="overflow-hidden">
-                    <div className="flex flex-col sm:flex-row">
-                      <Skeleton className="h-[150px] sm:w-[150px] w-full" />
-                      <div className="p-4 flex-1">
-                        <Skeleton className="h-6 w-3/4 mb-2" />
-                        <Skeleton className="h-4 w-1/2 mb-4" />
-                        <Skeleton className="h-4 w-full mb-2" />
-                        <Skeleton className="h-4 w-full" />
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-            </div>
-          ) : filteredFurniture.length > 0 ? (
-            <div className="space-y-4">
-              {filteredFurniture.map((item) => (
-                <ItemCard
-                  key={item.itemId}
-                  item={item}
-                  onViewDetails={handleViewDetails}
-                  onDelete={handleDeletePost}
-                  likes={likesById[item.itemId] || 0}
-                  isLiked={isLikedById[item.itemId] || false}
-                  onLikeToggle={handleLikeToggle}
-                  viewMode="list"
-                />
-              ))}
-            </div>
-          ) : (
-            <EmptyState category={category} />
-          )}
-        </TabsContent> */}
         <TabsContent value="list" className="mt-0">
           {isLoading ? (
             <div className="space-y-4">

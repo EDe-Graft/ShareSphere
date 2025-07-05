@@ -28,6 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import ItemCard from "@/components/custom/ItemCard";
 import ItemDetailsDialog from "@/components/custom/ItemDetailsDialog";
 import EmptyState from "@/components/custom/EmptyState";
+import Pagination from "@/components/custom/Pagination";
 import { useAuth } from "@/components/context/AuthContext";
 import axios from "axios";
 import { formatData } from "@/lib/utils";
@@ -48,6 +49,8 @@ const PostsViewPage = () => {
   const [selectedPost, setSelectedPost] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const userMode = "edit"; //allows user to edit posts
   const category = "post"; //for empty state handling
 
@@ -57,6 +60,20 @@ const PostsViewPage = () => {
     withCredentials: true,
   };
 
+  // Calculate current items for pagination
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentItems = filteredPosts.slice(startIndex, endIndex);
+
+  // Handle page change
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategory, selectedAvailability, sortBy]);
   const getUserFavorites = async () => {
     if (!user) return;
 
@@ -119,8 +136,13 @@ const PostsViewPage = () => {
 
       // Check if there are any File objects in imageChanges.newImages
       let hasFile = false;
-      if (updateData.imageChanges && Array.isArray(updateData.imageChanges.newImages)) {
-        hasFile = updateData.imageChanges.newImages.some(f => f instanceof File);
+      if (
+        updateData.imageChanges &&
+        Array.isArray(updateData.imageChanges.newImages)
+      ) {
+        hasFile = updateData.imageChanges.newImages.some(
+          (f) => f instanceof File
+        );
       }
 
       let response;
@@ -130,7 +152,7 @@ const PostsViewPage = () => {
           `${BACKEND_URL}/update-post?hasFile=true`,
           formData,
           {
-            headers: { 'Content-Type': 'multipart/form-data' },
+            headers: { "Content-Type": "multipart/form-data" },
             withCredentials: true,
           }
         );
@@ -417,9 +439,9 @@ const PostsViewPage = () => {
                   </Card>
                 ))}
             </div>
-          ) : filteredPosts.length > 0 ? (
+          ) : currentItems.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {filteredPosts.map((item) => (
+              {currentItems.map((item) => (
                 <ItemCard
                   key={item.itemId}
                   item={item}
@@ -437,7 +459,6 @@ const PostsViewPage = () => {
             <EmptyState category={category} />
           )}
         </TabsContent>
-
         <TabsContent value="list" className="mt-0">
           {isLoading ? (
             <div className="space-y-4">
@@ -457,9 +478,9 @@ const PostsViewPage = () => {
                   </Card>
                 ))}
             </div>
-          ) : filteredPosts.length > 0 ? (
+          ) : currentItems.length > 0 ? (
             <div className="space-y-4">
-              {filteredPosts.map((item) => (
+              {currentItems.map((item) => (
                 <ItemCard
                   key={item.itemId}
                   item={item}
@@ -478,6 +499,15 @@ const PostsViewPage = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      {filteredPosts.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalItems={filteredPosts.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={handlePageChange}
+        />
+      )}
 
       <ItemDetailsDialog
         item={selectedPost}

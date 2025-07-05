@@ -5,16 +5,33 @@ import { motion } from "framer-motion";
 import { Toaster, toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import ItemCard from "@/components/custom/ItemCard";
-import {ConditionBadge} from "@/components/custom/CustomBadges";
+import { ConditionBadge } from "@/components/custom/CustomBadges";
 import ItemDetailsDialog from "@/components/custom/ItemDetailsDialog";
 import EmptyState from "@/components/custom/EmptyState";
+import Pagination from "@/components/custom/Pagination";
 import { useAuth } from "@/components/context/AuthContext";
 import axios from "axios";
 import { formatData } from "@/lib/utils";
@@ -35,15 +52,32 @@ const FavoritesViewPage = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  const userMode = 'view';
-  const category = 'favorites';
+  const userMode = "view";
+  const category = "favorites";
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   const axiosConfig = {
     headers: { "Content-Type": "application/json" },
-    withCredentials: true
+    withCredentials: true,
   };
+
+  // Calculate current items for pagination
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentItems = filteredFavorites.slice(startIndex, endIndex);
+
+  // Handle page change
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategory, selectedAvailability, sortBy]);
 
   // Modified to use includeDetails=true
   const loadUserFavorites = async () => {
@@ -63,9 +97,10 @@ const FavoritesViewPage = () => {
 
         const initialLikes = {};
         const initialLikedStatus = {};
-        favorites.forEach(item => {
+        favorites.forEach((item) => {
           const itemId = item.itemId;
-          if (item && itemId) { // Null check
+          if (item && itemId) {
+            // Null check
             initialLikes[itemId] = item.likes || 0;
             initialLikedStatus[itemId] = true;
           }
@@ -93,20 +128,20 @@ const FavoritesViewPage = () => {
 
       if (res.data.toggleSuccess) {
         // Update likes count
-        setLikesById(prev => ({
+        setLikesById((prev) => ({
           ...prev,
-          [itemId]: res.data.newLikeCount
+          [itemId]: res.data.newLikeCount,
         }));
-        
+
         // Update liked status
-        setIsLikedById(prev => ({
+        setIsLikedById((prev) => ({
           ...prev,
-          [itemId]: res.data.isLiked
+          [itemId]: res.data.isLiked,
         }));
-        
+
         // If unliked, remove from favorites view
         if (!res.data.isLiked) {
-          setFavorites(prev => prev.filter(item => item.itemId !== itemId));
+          setFavorites((prev) => prev.filter((item) => item.itemId !== itemId));
           toast.info("Removed from favorites");
         }
       }
@@ -124,8 +159,13 @@ const FavoritesViewPage = () => {
 
       // Check if there are any File objects in imageChanges.newImages
       let hasFile = false;
-      if (updateData.imageChanges && Array.isArray(updateData.imageChanges.newImages)) {
-        hasFile = updateData.imageChanges.newImages.some(f => f instanceof File);
+      if (
+        updateData.imageChanges &&
+        Array.isArray(updateData.imageChanges.newImages)
+      ) {
+        hasFile = updateData.imageChanges.newImages.some(
+          (f) => f instanceof File
+        );
       }
 
       let response;
@@ -135,7 +175,7 @@ const FavoritesViewPage = () => {
           `${BACKEND_URL}/update-post?hasFile=true`,
           formData,
           {
-            headers: { 'Content-Type': 'multipart/form-data' },
+            headers: { "Content-Type": "multipart/form-data" },
             withCredentials: true,
           }
         );
@@ -166,32 +206,32 @@ const FavoritesViewPage = () => {
     }
   };
 
-    const handleDeletePost = async (itemId, itemCategory) => {
-      setIsDeleting(true);
-  
-      try {
-        console.log("Attempting to delete:", itemId, itemCategory);
-        const response = await axios.delete(
-          `${BACKEND_URL}/items/${itemId}/${itemCategory}`,
-          axiosConfig
-        );
-  
-        if (response.data.deleteSuccess) {
-          toast.success("Post deleted successfully", {
-            description: `Your ${itemCategory} has been successfully removed from ShareSphere.`,
-          });
-  
-          setTimeout(() => {
-            window.location.reload(); // refreshes the current page
-          }, 2000);
-        }
-      } catch (error) {
-        console.error("Failed to delete post:", error);
-        toast.error("Failed to delete post. Please try again.");
-      } finally {
-        setIsDeleting(false);
+  const handleDeletePost = async (itemId, itemCategory) => {
+    setIsDeleting(true);
+
+    try {
+      console.log("Attempting to delete:", itemId, itemCategory);
+      const response = await axios.delete(
+        `${BACKEND_URL}/items/${itemId}/${itemCategory}`,
+        axiosConfig
+      );
+
+      if (response.data.deleteSuccess) {
+        toast.success("Post deleted successfully", {
+          description: `Your ${itemCategory} has been successfully removed from ShareSphere.`,
+        });
+
+        setTimeout(() => {
+          window.location.reload(); // refreshes the current page
+        }, 2000);
       }
-    };
+    } catch (error) {
+      console.error("Failed to delete post:", error);
+      toast.error("Failed to delete post. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   useEffect(() => {
     loadUserFavorites();
@@ -202,53 +242,58 @@ const FavoritesViewPage = () => {
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(item => 
-        item.generalCategory?.toLowerCase().includes(query) ||
-        item.name?.toLowerCase().includes(query) || 
-        item.title?.toLowerCase().includes(query) ||
-        item.type?.toLowerCase().includes(query) ||
-        item.brand?.toLowerCase().includes(query) ||
-        item.description?.toLowerCase().includes(query)
+      result = result.filter(
+        (item) =>
+          item.generalCategory?.toLowerCase().includes(query) ||
+          item.name?.toLowerCase().includes(query) ||
+          item.title?.toLowerCase().includes(query) ||
+          item.type?.toLowerCase().includes(query) ||
+          item.brand?.toLowerCase().includes(query) ||
+          item.description?.toLowerCase().includes(query)
       );
     }
 
     if (selectedCategory !== "all") {
-      result = result.filter(item => item.generalCategory?.toLowerCase() === selectedCategory);
+      result = result.filter(
+        (item) => item.generalCategory?.toLowerCase() === selectedCategory
+      );
     }
 
     if (selectedAvailability !== "all") {
       const isAvailable = selectedAvailability === "available";
-      result = result.filter(item => item.available === isAvailable.toString());
+      result = result.filter(
+        (item) => item.available === isAvailable.toString()
+      );
     }
 
     switch (sortBy) {
-      case "newest": 
-        result.sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate)); 
+      case "newest":
+        result.sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
         break;
-      case "oldest": 
-        result.sort((a, b) => new Date(a.uploadDate) - new Date(b.uploadDate)); 
+      case "oldest":
+        result.sort((a, b) => new Date(a.uploadDate) - new Date(b.uploadDate));
         break;
-      case "name-asc": 
+      case "name-asc":
         result.sort((a, b) => {
-          const aName = a.name || a.title || '';
-          const bName = b.name || b.title || '';
+          const aName = a.name || a.title || "";
+          const bName = b.name || b.title || "";
           return aName.localeCompare(bName);
-        }); 
+        });
         break;
-      case "name-desc": 
+      case "name-desc":
         result.sort((a, b) => {
-          const aName = a.name || a.title || '';
-          const bName = b.name || b.title || '';
+          const aName = a.name || a.title || "";
+          const bName = b.name || b.title || "";
           return bName.localeCompare(aName);
-        }); 
+        });
         break;
-      case "likes-high": 
-        result.sort((a, b) => (b.likes || 0) - (a.likes || 0)); 
+      case "likes-high":
+        result.sort((a, b) => (b.likes || 0) - (a.likes || 0));
         break;
-      case "likes-low": 
-        result.sort((a, b) => (a.likes || 0) - (b.likes || 0)); 
+      case "likes-low":
+        result.sort((a, b) => (a.likes || 0) - (b.likes || 0));
         break;
-      default: 
+      default:
         break;
     }
 
@@ -280,11 +325,18 @@ const FavoritesViewPage = () => {
         <div className="flex items-center">
           <Heart className="h-8 w-8 text-primary mr-3" fill="#FF0000" />
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">My Favorites</h1>
-            <p className="text-muted-foreground">Items you've liked from the community</p>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+              My Favorites
+            </h1>
+            <p className="text-muted-foreground">
+              Items you've liked from the community
+            </p>
           </div>
         </div>
-        <Button onClick={() => navigate("/explore")} className="bg-primary hover:bg-primary/90">
+        <Button
+          onClick={() => navigate("/explore")}
+          className="bg-primary hover:bg-primary/90"
+        >
           Explore More Items
         </Button>
       </div>
@@ -323,7 +375,9 @@ const FavoritesViewPage = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger><SelectValue placeholder="Category" /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
               <SelectItem value="book">Books</SelectItem>
@@ -333,8 +387,13 @@ const FavoritesViewPage = () => {
             </SelectContent>
           </Select>
 
-          <Select value={selectedAvailability} onValueChange={setSelectedAvailability}>
-            <SelectTrigger><SelectValue placeholder="Availability" /></SelectTrigger>
+          <Select
+            value={selectedAvailability}
+            onValueChange={setSelectedAvailability}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Availability" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Items</SelectItem>
               <SelectItem value="available">Available</SelectItem>
@@ -343,7 +402,9 @@ const FavoritesViewPage = () => {
           </Select>
 
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger><SelectValue placeholder="Sort By" /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue placeholder="Sort By" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="newest">Newest First</SelectItem>
               <SelectItem value="oldest">Oldest First</SelectItem>
@@ -376,9 +437,9 @@ const FavoritesViewPage = () => {
                   </Card>
                 ))}
             </div>
-          ) : filteredFavorites.length > 0 ? (
+          ) : currentItems.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {filteredFavorites.map((item) => (
+              {currentItems.map((item) => (
                 <ItemCard
                   key={item.itemId}
                   item={item}
@@ -415,9 +476,9 @@ const FavoritesViewPage = () => {
                   </Card>
                 ))}
             </div>
-          ) : filteredFavorites.length > 0 ? (
+          ) : currentItems.length > 0 ? (
             <div className="space-y-4">
-              {filteredFavorites.map((item) => (
+              {currentItems.map((item) => (
                 <ItemCard
                   key={item.itemId}
                   item={item}
@@ -436,12 +497,23 @@ const FavoritesViewPage = () => {
         </TabsContent>
       </Tabs>
 
+      {filteredFavorites.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalItems={filteredFavorites.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={handlePageChange}
+        />
+      )}
+
       <ItemDetailsDialog
         item={selectedItem}
         isOpen={isDetailsOpen}
         onClose={handleCloseDetails}
         likes={selectedItem ? likesById[selectedItem.itemId] || 0 : 0}
-        isLiked={selectedItem ? isLikedById[selectedItem.itemId] || false : false}
+        isLiked={
+          selectedItem ? isLikedById[selectedItem.itemId] || false : false
+        }
         onLikeToggle={handleLikeToggle}
         mode={userMode}
         onUpdate={handleUpdatePost}
