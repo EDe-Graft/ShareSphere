@@ -66,19 +66,25 @@ const ReviewDialog = ({
 
     try {
       const reviewData = {
+        reviewerId: user?.userId,
+        reviewerName: user?.name,
+        reviewerPhoto: user?.photo,
         reviewedUserId: reviewedUser.userId,
+        reviewedUserName: reviewedUser.name,
+        reviewedUserPhoto: reviewedUser.photo,
+        itemId: relatedItem?.itemId || null,
+        itemName: relatedItem?.name || relatedItem?.title || "N/A",
+        itemCategory: relatedItem?.generalCategory || "N/A",
         rating,
         comment: comment.trim(),
-        itemId: relatedItem?.itemId || null,
-        itemName: relatedItem?.name || relatedItem?.title || null,
       };
 
       let response;
 
       if (existingReview) {
         // Update existing review
-        response = await axios.put(
-          `${BACKEND_URL}/reviews/${existingReview.id}`,
+        response = await axios.patch(
+          `${BACKEND_URL}/reviews/update/${existingReview.reviewId}`,
           reviewData,
           axiosConfig
         );
@@ -91,7 +97,7 @@ const ReviewDialog = ({
         );
       }
 
-      if (response.data.success) {
+      if (response.data.reviewSuccess) {
         toast.success(
           existingReview
             ? "Review updated successfully!"
@@ -163,10 +169,10 @@ const ReviewDialog = ({
             <Avatar className="h-12 w-12">
               <AvatarImage
                 src={
-                  reviewedUser.profilePhoto ||
+                  reviewedUser.photo ||
                   "/placeholder.svg?height=48&width=48"
                 }
-                alt={reviewedUser.name || reviewedUser.displayName}
+                alt={reviewedUser.name || reviewedUser.displayName || "User"}
               />
               <AvatarFallback>
                 {(reviewedUser.name || reviewedUser.displayName || "U")
@@ -176,10 +182,10 @@ const ReviewDialog = ({
             </Avatar>
             <div>
               <p className="font-medium">
-                {reviewedUser.name || reviewedUser.displayName}
+                {reviewedUser.name || reviewedUser.displayName || "User"}
               </p>
               <p className="text-sm text-muted-foreground">
-                @{reviewedUser.username || "user"}
+                {reviewedUser.username || "user"}
               </p>
             </div>
           </div>

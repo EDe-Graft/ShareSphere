@@ -240,13 +240,7 @@ const Navbar = () => {
                 {user && (
                   <>
                     <AvatarImage
-                      src={
-                        user.picture
-                          ? user.picture
-                          : user.photos
-                            ? user.photos[0]?.value
-                            : null
-                      }
+                      src={user.photo ? user.photo : null}
                     />
                     <AvatarFallback className="bg-primary text-primary-foreground">
                       {user.displayName ? (

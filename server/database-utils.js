@@ -1,4 +1,6 @@
 import { v2 as cloudinary } from 'cloudinary';
+import { formatLocalISO } from './format.js ';
+
 
 // Utility: Simple slugify function
 export function slugify(name) {
@@ -20,7 +22,7 @@ export async function generateUniqueUsername(db, name) {
         } else {
             // Append random 3-digit number to base username
             const randomSuffix = Math.floor(100 + Math.random() * 900); // 100 - 999
-            username = `${baseUsername}${randomSuffix}`;
+            username = `@${baseUsername}${randomSuffix}`;
         }
 
         attempt++;
@@ -97,11 +99,11 @@ export async function updateImage(db, updateData) {
 export async function saveItem(db, itemData) {
   try {
     console.log(itemData)
-    const { category, condition,  description, available, likes, uploaderId, uploaderEmail, uploadDate } = itemData;
+    const { category, condition,  description, available, likes, uploaderId, uploaderEmail, uploaderPhoto, uploadDate } = itemData;
     
     const itemResult = await db.query(
-      "INSERT INTO items (category, condition, description, available, likes, uploader_id, uploader_email, upload_date) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
-      [category, condition, description, available, likes, uploaderId, uploaderEmail, uploadDate]
+      "INSERT INTO items (category, condition, description, available, likes, uploader_id, uploader_email, uploader_photo, upload_date) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
+      [category, condition, description, available, likes, uploaderId, uploaderEmail, uploaderPhoto, uploadDate]
     );
     
     return itemResult.rows[0].item_id;
@@ -112,13 +114,15 @@ export async function saveItem(db, itemData) {
 }
 
 
-export async function insertCategoryDetails(db, {req, itemId, category, uploadDate}) {
+export async function insertCategoryDetails(db, {req, itemId, category}) {
   const generalCategory = category;
   const available = true;
   const uploaderId = req.user?.user_id;
   const uploadedBy = req.user?.name || req.user?.displayName || "N/A";
   const uploaderUsername = req.user?.username || "N/A";
   const uploaderEmail = req.user?.email || "N/A";
+  const uploaderPhoto = req.user?.photo || "N/A";
+  const uploadDate = formatLocalISO();
 
   switch (category) {
     case 'Book': {
@@ -134,9 +138,9 @@ export async function insertCategoryDetails(db, {req, itemId, category, uploadDa
       } = req.body;
 
       await db.query(
-        `INSERT INTO books (item_id, title, author, edition, year, general_category, parent_category, sub_category, description, condition, available, uploaded_by, uploader_id, uploader_email, uploader_username, upload_date) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
-        [itemId, title, author, edition, year, generalCategory, parentCategory, subCategory, description, condition, available, uploadedBy, uploaderId, uploaderEmail, uploaderUsername, uploadDate]
+        `INSERT INTO books (item_id, title, author, edition, year, general_category, parent_category, sub_category, description, condition, available, uploaded_by, uploader_id, uploader_email, uploader_photo, uploader_username, upload_date) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
+        [itemId, title, author, edition, year, generalCategory, parentCategory, subCategory, description, condition, available, uploadedBy, uploaderId, uploaderEmail, uploaderPhoto, uploaderUsername, uploadDate]
       );
       break;
     }
@@ -155,9 +159,9 @@ export async function insertCategoryDetails(db, {req, itemId, category, uploadDa
       } = req.body;
 
       await db.query(
-        `INSERT INTO furniture (item_id, general_category, name, type, brand, age, color, dimensions, material, description, condition, available, uploaded_by, uploader_id, uploader_email, uploader_username, upload_date) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
-        [itemId, generalCategory, name,  type, brand, age, color, dimensions, material, description, condition, available, uploadedBy, uploaderId, uploaderEmail, uploaderUsername, uploadDate]
+        `INSERT INTO furniture (item_id, general_category, name, type, brand, age, color, dimensions, material, description, condition, available, uploaded_by, uploader_id, uploader_email, uploader_photo, uploader_username, upload_date) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+        [itemId, generalCategory, name,  type, brand, age, color, dimensions, material, description, condition, available, uploadedBy, uploaderId, uploaderEmail, uploaderPhoto, uploaderUsername, uploadDate]
       );
       break;
     }
@@ -176,9 +180,9 @@ export async function insertCategoryDetails(db, {req, itemId, category, uploadDa
       } = req.body;
 
       await db.query(
-        `INSERT INTO clothing (item_id, general_category, name, type, size, brand, color, material, gender, description, condition, available, uploaded_by, uploader_id, uploader_email, uploader_username, upload_date) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
-        [itemId, generalCategory, name, type, size, brand, color, material, gender, description, condition, available, uploadedBy, uploaderId, uploaderEmail, uploaderUsername, uploadDate]
+        `INSERT INTO clothing (item_id, general_category, name, type, size, brand, color, material, gender, description, condition, available, uploaded_by, uploader_id, uploader_email, uploader_photo, uploader_username, upload_date) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+        [itemId, generalCategory, name, type, size, brand, color, material, gender, description, condition, available, uploadedBy, uploaderId, uploaderEmail, uploaderPhoto, uploaderUsername, uploadDate]
       );
       break;
     }
@@ -196,9 +200,9 @@ export async function insertCategoryDetails(db, {req, itemId, category, uploadDa
       } = req.body;
 
       await db.query(
-        `INSERT INTO miscellaneous (item_id, general_category, name, type, brand, color, age, estimated_value, description, condition, available, uploaded_by, uploader_id, uploader_email, uploader_username, upload_date) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
-        [itemId, generalCategory, name, type, brand, color, age, estimatedValue, description, condition, available, uploadedBy, uploaderId, uploaderEmail, uploaderUsername, uploadDate]
+        `INSERT INTO miscellaneous (item_id, general_category, name, type, brand, color, age, estimated_value, description, condition, available, uploaded_by, uploader_id, uploader_email, uploader_photo, uploader_username, upload_date) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
+        [itemId, generalCategory, name, type, brand, color, age, estimatedValue, description, condition, available, uploadedBy, uploaderId, uploaderEmail, uploaderPhoto, uploaderUsername, uploadDate]
       );
       break;
     }
@@ -362,6 +366,56 @@ export async function getReportCount(db, itemId) {
   return reportCountResult.rows[0]?.report_count || 0;
 }
 
+
+export async function postReview(db, reviewData) {
+  const {
+    reviewerId,
+    reviewerName,
+    reviewerPhoto,
+    reviewedUserId,
+    reviewedUserName,
+    reviewedUserPhoto,
+    itemId,
+    itemName,
+    itemCategory,
+    rating,
+    comment,
+  } = reviewData;
+
+  let reviewDate = formatLocalISO();
+
+  const reviewsResult = await db.query(
+    `INSERT INTO reviews (reviewer_id, reviewer_name, reviewer_photo, reviewed_user_id, reviewed_user_name, reviewed_user_photo, item_id, item_name, item_category, rating, comment, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
+    [reviewerId, reviewerName, reviewerPhoto, reviewedUserId, reviewedUserName, reviewedUserPhoto, itemId, itemName, itemCategory, rating, comment, reviewDate]
+  );
+  return reviewsResult.rows;
+}
+
+
+export async function updateReview(db, reviewData) {
+  const { rating, comment, reviewId } = reviewData;
+
+  // Validate required parameters
+  if (!reviewId) {
+    throw new Error("Review ID is required for updating a review");
+  }
+
+  if (rating === undefined || rating === null) {
+    throw new Error("Rating is required for updating a review");
+  }
+
+  try {
+    const review = await db.query(
+      `UPDATE reviews SET rating = $1, comment = $2 WHERE review_id = $3 RETURNING *`,
+      [rating, comment, reviewId]
+    );
+    return review.rows[0];
+  } catch (error) {
+    console.error("Error updating review:", error);
+    throw error;
+  }
+  
+}
 
 export async function saveReport(db, reportData) {
   try {

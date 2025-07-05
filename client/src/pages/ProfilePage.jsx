@@ -532,7 +532,7 @@ const ProfilePage = () => {
             {receivedReviews.length > 0 ? (
               <div className="space-y-4">
                 {receivedReviews.map((review) => (
-                  <Card key={review.id}>
+                  <Card key={review.reviewId}>
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center space-x-3">
@@ -597,7 +597,7 @@ const ProfilePage = () => {
             {userReviews.length > 0 ? (
               <div className="space-y-4">
                 {userReviews.map((review) => (
-                  <Card key={review.id}>
+                  <Card key={review.reviewId}>
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center space-x-3">

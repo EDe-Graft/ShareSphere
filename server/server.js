@@ -15,7 +15,7 @@ import AdminReportEmail from './dist/emails/AdminReportEmail.js';
 import ReportConfirmationEmail from './dist/emails/ReportConfirmationEmail.js';
 import WarningEmail from './dist/emails/WarningEmail.js';
 import { configurePassport } from "./passport-config.js";
-import { uploadToCloudinary, saveItem, saveImage, updateImage, insertCategoryDetails, getTableName, getImages, getLikes, deleteImages, deletePost, saveReport } from './database-utils.js';
+import { uploadToCloudinary, saveItem, saveImage, updateImage, insertCategoryDetails, getTableName, getImages, getLikes, deleteImages, deletePost, saveReport, postReview, updateReview } from './database-utils.js';
 import { formatLocalISO, capitalizeFirst, toCamelCase, toSnakeCase } from "./format.js";
 
 // Express-app and environment creation
@@ -186,6 +186,10 @@ app.get("/auth/github/callback",
 
 //retrieve requested item type from database
 app.get("/items", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
   const itemCategory = capitalizeFirst(req.query.category);
   const validCategories = ['Book', 'Clothing', 'Furniture', 'Miscellaneous', 'Favorites'];
 
@@ -238,6 +242,10 @@ app.get("/items", async (req, res) => {
 
 
 app.get("/user-posts", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
   const userId = req.user?.user_id;
 
   try {
@@ -310,6 +318,10 @@ app.get("/user-posts", async (req, res) => {
 
 
 app.post("/update-post", upload.array('newImages', 3), async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
   const hasFile = req.query.hasFile;
   let newImages;
   let removedImages;
@@ -649,6 +661,7 @@ app.post("/upload", upload.array('images', 3), async (req, res) => {
       const category = capitalizeFirst(req.query.category)
       const uploaderId = req.user?.user_id;
       const uploaderEmail = req.user?.email;
+      const uploaderPhoto = req.user?.photo;
       const {condition, description} = req.body;
       const uploadDate = formatLocalISO(); //upload date
       const files = req.files;
@@ -667,6 +680,7 @@ app.post("/upload", upload.array('images', 3), async (req, res) => {
         likes: 0,
         uploaderId,
         uploaderEmail,
+        uploaderPhoto,
         uploadDate
       }
       const itemId = await saveItem(db, itemData)
@@ -677,7 +691,7 @@ app.post("/upload", upload.array('images', 3), async (req, res) => {
         req,
         itemId,
         category,
-        uploadDate
+        uploaderPhoto
       }
       await insertCategoryDetails(db, categoryData);
 
@@ -739,6 +753,10 @@ app.post("/upload", upload.array('images', 3), async (req, res) => {
 
 // Send request email
 app.post('/send-request', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
@@ -803,6 +821,10 @@ app.post('/send-request', async (req, res) => {
 
 // Report post route
 app.post('/report-post', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
   try {
     const {
       reporterName,
@@ -903,8 +925,139 @@ app.post('/report-post', async (req, res) => {
 });
 
 
+// Review Routes
+// Get reviews given by user
+app.get("/reviews/:type", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
+  const { type } = req.params;
+  const userId = req.user?.user_id;
+
+  if (type === "given") {
+    //reviews given by user
+    const reviews = await db.query("SELECT * FROM reviews WHERE reviewer_id = $1", [userId]);
+    console.log("reviews", reviews.rows)
+
+    res.json({
+      success: true,
+      reviews: toCamelCase(reviews.rows),
+      message: "Reviews given by user retrieved successfully"
+    });
+  } else {
+    //reviews received by user
+    const reviews = await db.query("SELECT * FROM reviews WHERE reviewed_user_id = $1", [userId]); //reviews received by user
+    res.json({
+      success: true,
+      reviews: toCamelCase(reviews.rows),
+      message: "Reviews received by user retrieved successfully"
+    });
+  }
+});
+
+
+app.post("/reviews", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
+  try {
+    const reviewData = req.body;
+    const review = await postReview(db, reviewData); //save review to database
+    return res.status(200).json({
+      reviewSuccess: true,
+      message: "Review saved successfully",
+      review: toCamelCase(review)
+    });
+  } catch (error) {
+    console.error('Error saving review:', error);
+    return res.status(500).json({
+      reviewSuccess: false,
+      message: error.message || 'Failed to save review'
+    });
+  }
+});
+
+
+app.patch("/reviews/update/:reviewId", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
+  try {
+    const { reviewId } = req.params;
+
+    const reviewData = {
+      rating: req.body.rating,
+      comment: req.body.comment,
+      reviewId: reviewId
+    };
+
+    //update review in database
+    const review = await updateReview(db, reviewData);
+
+    return res.status(200).json({
+      reviewSuccess: true,
+      message: "Review updated successfully",
+      review: toCamelCase(review)
+    });
+  } catch (error) {
+    console.error('Error updating review:', error);
+    return res.status(500).json({
+      reviewSuccess: false,
+      message: error.message || 'Failed to update review'
+    });
+  }
+});
+
+
+// Delete review
+app.delete("/reviews/:reviewId", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
+  try {
+    const { reviewId } = req.params;
+    const userId = req.user?.user_id;
+
+    // Check if the review exists and belongs to the authenticated user
+    const reviewCheck = await db.query(
+      "SELECT * FROM reviews WHERE review_id = $1 AND reviewer_id = $2",
+      [reviewId, userId]
+    );
+
+    if (reviewCheck.rows.length === 0) {
+      return res.status(404).json({
+        deleteSuccess: false,
+        message: "Review not found or you don't have permission to delete it"
+      });
+    }
+
+    // Delete the review
+    await db.query("DELETE FROM reviews WHERE review_id = $1", [reviewId]);
+
+    return res.status(200).json({
+      deleteSuccess: true,
+      message: "Review deleted successfully"
+    });
+  } catch (error) {
+    console.error('Error deleting review:', error);
+    return res.status(500).json({
+      deleteSuccess: false,
+      message: error.message || 'Failed to delete review'
+    });
+  }
+});
+
+
 
 app.post("/change-availability", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
   const {itemId, itemCategory, newAvailability} = req.body;
   let tableName;
 

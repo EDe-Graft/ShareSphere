@@ -207,7 +207,7 @@ export default function ItemDetailsDialog({
       userId: item.uploaderId,
       name: item.uploadedBy,
       username: item.uploaderUsername,
-      profilePhoto: item.uploaderPhoto,
+      photo: item.uploaderPhoto,
     });
     setIsReviewDialogOpen(true);
   };
@@ -541,7 +541,7 @@ export default function ItemDetailsDialog({
                     className="text-xs text-primary mb-4 cursor-pointer hover:underline"
                     onClick={() => navigate(`/profile/${item.uploaderId}`)}
                   >
-                    {`@${item.uploaderUsername}`}
+                    {`${item.uploaderUsername || "user"}`}
                   </p>
                 </div>
 
@@ -595,7 +595,7 @@ export default function ItemDetailsDialog({
             )}
           </div>
 
-          <div className="flex justify-between items-center mt-4">
+          <div className={`flex justify-between items-center mt-4 ${isOwnItem ? "flex-row-reverse" : "flex-row"}`}>
             {mode !== "edit" && !isEditing && !isOwnItem && (
               <div className="flex gap-2">
                 <Button
@@ -606,10 +606,16 @@ export default function ItemDetailsDialog({
                   <Flag className="mr-2 h-4 w-4" />
                   Report Post
                 </Button>
-                <Button variant="outline" onClick={handleWriteReview}>
-                  <Star className="mr-2 h-4 w-4" />
-                  Write Review
-                </Button>
+                {/* write review button */}
+                {
+                  !isOwnItem && (
+                    <Button className="text-yellow-500 hover:text-yellow-500" variant="outline" onClick={handleWriteReview}>
+                      <Star className="mr-2 h-4 w-4" />
+                      Write Review
+                    </Button>
+                  )
+                }
+                
               </div>
             )}
 

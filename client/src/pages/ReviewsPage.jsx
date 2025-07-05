@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Star, Search, Filter, Plus, Edit2, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { toast } from "sonner";
+import { toast, Toaster } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,6 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
 import ReviewDialog from "@/components/custom/ReviewDialog";
 import { useAuth } from "@/components/context/AuthContext";
 import axios from "axios";
@@ -57,6 +58,7 @@ const ReviewsPage = () => {
     filterReviews();
   }, [reviewsGiven, reviewsReceived, searchQuery, ratingFilter, sortBy]);
 
+  //load reviews
   const loadReviews = async () => {
     if (!user) return;
 
@@ -65,7 +67,7 @@ const ReviewsPage = () => {
 
       // Load reviews given by user
       const givenResponse = await axios.get(
-        `${BACKEND_URL}/user-reviews/${user.userId}`,
+        `${BACKEND_URL}/reviews/given`,
         axiosConfig
       );
 
@@ -75,7 +77,7 @@ const ReviewsPage = () => {
 
       // Load reviews received by user
       const receivedResponse = await axios.get(
-        `${BACKEND_URL}/user-received-reviews/${user.userId}`,
+        `${BACKEND_URL}/reviews/received`,
         axiosConfig
       );
 
@@ -159,7 +161,7 @@ const ReviewsPage = () => {
     setSelectedUser({
       userId: review.reviewedUserId,
       name: review.reviewedUserName,
-      profilePhoto: review.reviewedUserPhoto,
+      photo: review.reviewedUserPhoto,
     });
     setIsReviewDialogOpen(true);
   };
@@ -171,9 +173,12 @@ const ReviewsPage = () => {
         axiosConfig
       );
 
-      if (response.data.success) {
+      if (response.data.deleteSuccess) {
         toast.success("Review deleted successfully");
-        loadReviews();
+        //refresh reviews page after 2 seconds
+        setTimeout(() => {
+          loadReviews();
+        }, 1500);
       }
     } catch (error) {
       console.error("Error deleting review:", error);
@@ -256,7 +261,7 @@ const ReviewsPage = () => {
                       Edit Review
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => onDelete(review.id)}
+                      onClick={() => onDelete(review.reviewId)}
                       className="text-red-600"
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
@@ -321,6 +326,7 @@ const ReviewsPage = () => {
 
   return (
     <main className="container mx-auto px-4 py-8">
+      <Toaster position="bottom-right" richColors />
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
@@ -403,8 +409,12 @@ const ReviewsPage = () => {
           <TabsContent value="received" className="space-y-4">
             {filteredReviewsReceived.length > 0 ? (
               <div className="space-y-4">
-                {filteredReviewsReceived.map((review) => (
-                  <ReviewCard key={review.id} review={review} type="received" />
+                {filteredReviewsReceived.map((review, index) => (
+                  <ReviewCard
+                    key={review.reviewId || `received-${index}`}
+                    review={review}
+                    type="received"
+                  />
                 ))}
               </div>
             ) : (
@@ -429,9 +439,9 @@ const ReviewsPage = () => {
           <TabsContent value="given" className="space-y-4">
             {filteredReviewsGiven.length > 0 ? (
               <div className="space-y-4">
-                {filteredReviewsGiven.map((review) => (
+                {filteredReviewsGiven.map((review, index) => (
                   <ReviewCard
-                    key={review.id}
+                    key={review.reviewId || `given-${index}`}
                     review={review}
                     type="given"
                     onEdit={handleEditReview}
@@ -474,9 +484,15 @@ const ReviewsPage = () => {
           setIsReviewDialogOpen(false);
           setSelectedReview(null);
           setSelectedUser(null);
-          loadReviews();
+          toast.success("Review updated successfully!");
+
+          //refresh reviews page after 2 seconds
+          setTimeout(() => {
+            loadReviews();
+          }, 1500);
         }}
       />
+      
     </main>
   );
 };

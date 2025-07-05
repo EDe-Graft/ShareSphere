@@ -4,8 +4,11 @@ CREATE TABLE users (
     name VARCHAR(40),
     email VARCHAR(35) UNIQUE,
     password VARCHAR NOT NULL,
-    strategy VARCHAR(15)
+    photo VARCHAR(100),
+    strategy VARCHAR(15),
+    profile_url VARCHAR(100) UNIQUE,
     report_count INTEGER NOT NULL,
+    rating INTEGER NOT NULL,
 );
 
 CREATE TABLE items (
@@ -19,6 +22,7 @@ CREATE TABLE items (
     uploaded_by VARCHAR(50) NOT NULL,
     uploader_username VARCHAR(30) NOT NULL,
     uploader_email VARCHAR(40) NOT NULL,
+    uploader_photo VARCHAR(100),
     upload_date VARCHAR(30) UNIQUE,
     CONSTRAINT fk_users
         FOREIGN KEY (owner_id) 
@@ -43,6 +47,7 @@ CREATE TABLE books (
     uploader_id INTEGER NOT NULL,
     uploader_email VARCHAR(40) NOT NULL,
     uploader_username VARCHAR(30) NOT NULL,
+    uploader_photo VARCHAR(100),
     upload_date VARCHAR(40) NOT NULL,
     CONSTRAINT fk_items 
         FOREIGN KEY (item_id)
@@ -67,6 +72,7 @@ CREATE TABLE furniture (
     uploader_id INTEGER NOT NULL,
     uploader_email VARCHAR(40) NOT NULL,
     uploader_username VARCHAR(30) NOT NULL,
+    uploader_photo VARCHAR(100),
     upload_date VARCHAR(40) NOT NULL,
     CONSTRAINT fk_items 
         FOREIGN KEY (item_id)
@@ -91,6 +97,7 @@ CREATE TABLE clothing (
     uploader_id INTEGER NOT NULL,
     uploader_email VARCHAR(40) NOT NULL,
     uploader_username VARCHAR(30) NOT NULL,
+    uploader_photo VARCHAR(100),
     upload_date VARCHAR(40) NOT NULL,
     CONSTRAINT fk_items 
         FOREIGN KEY (item_id)
@@ -114,6 +121,7 @@ CREATE TABLE miscellaneous (
     uploader_id INTEGER NOT NULL,
     uploader_email VARCHAR(40) NOT NULL,
     uploader_username VARCHAR(30) NOT NULL,
+    uploader_photo VARCHAR(100),
     upload_date VARCHAR(30) NOT NULL,
     CONSTRAINT fk_items 
         FOREIGN KEY (item_id)
@@ -142,6 +150,27 @@ CREATE TABLE favorites (
     CONSTRAINT fk_item 
         FOREIGN KEY (item_id) REFERENCES items(item_id)
 );
+
+CREATE TABLE reviews (
+    review_id SERIAL PRIMARY KEY,
+    reviewer_id INTEGER NOT NULL,
+    reviewer_name VARCHAR(50) NOT NULL,
+    reviewer_photo VARCHAR(100) NOT NULL,
+    reviewed_user_id INTEGER NOT NULL,
+    reviewed_user_name VARCHAR(50) NOT NULL,
+    reviewed_user_photo VARCHAR(100) NOT NULL,
+    item_id INTEGER NOT NULL,
+    item_name VARCHAR(100) NOT NULL,
+    item_category VARCHAR(20) NOT NULL,
+    rating INTEGER NOT NULL,
+    comment TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_reviewer 
+        FOREIGN KEY (reviewer_id) REFERENCES users(user_id),
+    CONSTRAINT fk_reviewed_user 
+        FOREIGN KEY (reviewed_user_id) REFERENCES users(user_id)
+);
+
 
 CREATE TABLE report_details (
   id SERIAL PRIMARY KEY,

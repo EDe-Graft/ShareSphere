@@ -4,6 +4,7 @@ import GitHubStrategy from "passport-github2"; //  import GitHub strategy
 import bcrypt from "bcrypt";
 import { generateUniqueUsername } from "./database-utils.js";
 
+
 export function configurePassport(passport, db) {
   // LOCAL STRATEGY
   passport.use("local", new LocalStrategy({
@@ -29,6 +30,7 @@ export function configurePassport(passport, db) {
     }
   }));
 
+
   // GOOGLE STRATEGY
   passport.use("google", new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
@@ -43,26 +45,34 @@ export function configurePassport(passport, db) {
       let userId;
       let authStrategy;
 
+      let name = profile.displayName;
+      let photo = profile.picture;
+
       if (result.rows.length === 0) {
         // Generate a unique username
-        username = await generateUniqueUsername(db, profile.displayName)
+        username = await generateUniqueUsername(db, name)
         const newUser = await db.query(
-          "INSERT INTO users (username, name, email, password, strategy, report_count) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-          [username, profile.displayName, profile.email, "google", "google", 0]
+          "INSERT INTO users (username, name, email, password, photo, strategy, report_count) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+          [username, name, profile.email, "google", photo, "google", 0]
         );
         userId = newUser.rows[0].user_id;
+        name = newUser.rows[0].name;
         authStrategy = newUser.rows[0].strategy
       } else {
         userId = result.rows[0].user_id;
+        name = result.rows[0].name;
         authStrategy = result.rows[0].strategy;
       }
 
       profile.user_id = userId;
+      profile.photo = photo;
+      profile.name = name;
       cb(null, profile);
     } catch (error) {
       cb(error);
     }
   }));
+
 
   // ✅ GITHUB STRATEGY
   passport.use("github", new GitHubStrategy({
@@ -74,31 +84,38 @@ export function configurePassport(passport, db) {
     try {
       console.log("GitHub strategy activated");
       const state = req.query?.state;
-      const email = state?.email;
+      const email = state?.email
       const profileUrl = profile.profileUrl;
       if (!profileUrl) return cb(null, false, { message: "No profile found" });
 
-      const result = await db.query("SELECT * FROM users WHERE email = $1", [profileUrl]);
+      const result = await db.query("SELECT * FROM users WHERE profile_url = $1", [profileUrl]);
       let userId;
       let username;
       let authStrategy;
+      
+      let name = profile.displayName;
+      let photo = profile.photos?.[0]?.value;
 
       if (result.rows.length === 0) {
         // Generate a unique username
-        username = await generateUniqueUsername(db, profile.displayName)
+        username = await generateUniqueUsername(db, name)
         const newUser = await db.query(
-          "INSERT INTO users (username, name, email, password, strategy, report_count) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-          [username, profile.displayName, email, "github", "github", 0]
+          "INSERT INTO users (username, name, email, password, photo, strategy, report_count) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+          [username, name, email, "github", photo, "github", 0]
         );
         userId = newUser.rows[0].user_id;
+        name = newUser.rows[0].name;
         authStrategy = newUser.rows[0].strategy
       } else {
         userId = result.rows[0].user_id;
-        authStrategy = result.rows[0].strategy
+        name = result.rows[0].name;
+        authStrategy = result.rows[0].strategy;
       }
 
       profile.user_id = userId;
       profile.email = profileUrl;
+      profile.photo = photo;
+      profile.name = name;
       profile.authStrategy = authStrategy;
       cb(null, profile);
 
