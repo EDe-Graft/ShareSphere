@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Slider } from "@/components/ui/slider";
 import { useAuth } from "@/components/context/AuthContext";
 import axios from "axios";
 
@@ -26,7 +27,6 @@ const ReviewDialog = ({
 }) => {
   const { user } = useAuth();
   const [rating, setRating] = useState(0);
-  const [hoveredRating, setHoveredRating] = useState(0);
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -121,69 +121,46 @@ const ReviewDialog = ({
 
   const handleClose = () => {
     setRating(0);
-    setHoveredRating(0);
     setComment("");
     setError(null);
     onClose();
   };
 
-  // Add this new function for half-star support
-  const handleStarClick = (starValue, event) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const clickX = event.clientX - rect.left;
-    const starWidth = rect.width;
-
-    // If clicked on left half, set to .5, if right half, set to full
-    const newRating = clickX < starWidth / 2 ? starValue - 0.5 : starValue;
-    setRating(newRating);
-  };
-
-  const renderStars = () => {
+  // Enhanced star rendering with precise decimal support
+  const renderStars = (displayRating) => {
     return Array.from({ length: 5 }).map((_, index) => {
       const starValue = index + 1;
-      const currentRating = hoveredRating || rating;
-
-      // Determine star state: empty, half, or full
-      let starState = "empty";
-      if (currentRating >= starValue) {
-        starState = "full";
-      } else if (currentRating >= starValue - 0.5) {
-        starState = "half";
-      }
+      const fillPercentage = Math.max(
+        0,
+        Math.min(100, (displayRating - index) * 100)
+      );
 
       return (
-        <button
-          key={index}
-          type="button"
-          className={`p-1 transition-colors relative ${
-            starState !== "empty"
-              ? "text-yellow-400"
-              : "text-gray-300 hover:text-yellow-200"
-          }`}
-          onMouseEnter={() => setHoveredRating(starValue)}
-          onMouseLeave={() => setHoveredRating(0)}
-          onClick={(e) => handleStarClick(starValue, e)}
-        >
-          {starState === "half" ? (
-            <div className="relative">
-              {/* Background empty star */}
-              <Star className="h-8 w-8 text-gray-300" />
-              {/* Half-filled overlay */}
-              <div
-                className="absolute inset-0 overflow-hidden"
-                style={{ width: "50%" }}
-              >
-                <Star className="h-8 w-8 fill-yellow-400 text-yellow-400" />
-              </div>
+        <div key={index} className="relative inline-block">
+          {/* Background empty star */}
+          <Star className="h-8 w-8 text-gray-300" />
+          {/* Filled portion */}
+          {fillPercentage > 0 && (
+            <div
+              className="absolute inset-0 overflow-hidden"
+              style={{ width: `${fillPercentage}%` }}
+            >
+              <Star className="h-8 w-8 fill-yellow-400 text-yellow-400" />
             </div>
-          ) : (
-            <Star
-              className={`h-8 w-8 ${starState === "full" ? "fill-current" : ""}`}
-            />
           )}
-        </button>
+        </div>
       );
     });
+  };
+
+  // Rating labels for better UX
+  const getRatingLabel = (rating) => {
+    if (rating === 0) return "No rating";
+    if (rating <= 1) return "Poor";
+    if (rating <= 2) return "Fair";
+    if (rating <= 3) return "Good";
+    if (rating <= 4) return "Very Good";
+    return "Excellent";
   };
 
   if (!reviewedUser) return null;
@@ -239,16 +216,65 @@ const ReviewDialog = ({
             </div>
           )}
 
-          {/* Rating */}
-          <div className="space-y-2">
+          {/* Enhanced Rating Section */}
+          <div className="space-y-4">
             <Label>Rating *</Label>
-            <div className="flex items-center space-x-1">
-              {renderStars()}
-              {rating > 0 && (
-                <span className="ml-2 text-sm text-muted-foreground">
-                  {rating.toFixed(1)} out of 5 stars
+
+            {/* Visual Star Display */}
+            <div className="flex items-center justify-center space-x-1 py-2">
+              {renderStars(rating)}
+            </div>
+
+            {/* Precise Rating Slider */}
+            <div className="space-y-3">
+              <div className="px-2">
+                <Slider
+                  value={[rating]}
+                  onValueChange={(value) => setRating(value[0])}
+                  max={5}
+                  min={0}
+                  step={0.1}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Rating Display */}
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">
+                  {rating > 0
+                    ? `${rating.toFixed(1)} out of 5.0`
+                    : "Move slider to rate"}
                 </span>
-              )}
+                <span
+                  className={`font-medium ${
+                    rating <= 2
+                      ? "text-red-500"
+                      : rating <= 3
+                        ? "text-yellow-500"
+                        : rating <= 4
+                          ? "text-blue-500"
+                          : "text-green-500"
+                  }`}
+                >
+                  {getRatingLabel(rating)}
+                </span>
+              </div>
+            </div>
+
+            {/* Quick Rating Buttons */}
+            <div className="flex justify-center space-x-2">
+              {[1, 2, 3, 4, 5].map((quickRating) => (
+                <Button
+                  key={quickRating}
+                  type="button"
+                  variant={rating === quickRating ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setRating(quickRating)}
+                  className="w-12 h-8"
+                >
+                  {quickRating}
+                </Button>
+              ))}
             </div>
           </div>
 
