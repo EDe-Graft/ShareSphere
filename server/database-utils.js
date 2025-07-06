@@ -1,5 +1,55 @@
 import { v2 as cloudinary } from 'cloudinary';
 import { formatLocalISO } from './format.js ';
+import bcrypt from "bcrypt";
+import { toCamelCase } from "./format.js";
+
+
+export async function registerUser(db, userData) {
+  const {displayName, email, password, confirmPassword} = userData;
+  const saltRounds = 10;
+
+  const username = slugify(displayName);
+  const postsCount = 0;
+  const activePostsCount = 0;
+  const inactivePostsCount = 0;
+  const likesReceived = 0;
+  const reportCount = 0;
+  const reviewCount = 0;
+  const averageRating = 0;
+  const joinedOn = formatLocalISO(new Date());
+  const bio = `Hi, I'm ${displayName}!`;
+
+  if (password === confirmPassword) {
+    try {
+      const checkResult = await db.query("SELECT * FROM users WHERE email = $1", [
+          email,
+      ]);
+  
+      if (checkResult.rows.length > 0) {
+          console.log("User already exists")
+          res.status(400).send({message: `User wih credentials ${req.body} already exists. Please Login`});
+      } else {
+          bcrypt.hash(password, saltRounds, async (err, hash) => {
+          if (err) {
+              console.error("Error hashing password:", err);
+          } else {
+              const result = await db.query(
+              "INSERT INTO users (name, email, password, strategy, posts_count, active_posts_count, inactive_posts_count, likes_received, review_count, average_rating, report_count, joined_on, bio) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *",
+              [username, email, hash, "credentials", postsCount, activePostsCount, inactivePostsCount, likesReceived, reviewCount, averageRating, reportCount, joinedOn, bio]
+              );
+              const user = toCamelCase(result.rows[0]);
+              console.log(user);
+          }
+          });
+      }
+  } catch (err) {
+      console.log(err)
+  }
+} else {
+  res.status(400).send({message: 'Error: Passwords do not match'})
+}
+  return user;
+}
 
 
 // Utility: Simple slugify function
@@ -32,6 +82,14 @@ export async function generateUniqueUsername(db, name) {
     return username;
 }
 
+
+export async function getUserProfile(db, userId) {
+  const userProfileResult = await db.query(
+    `SELECT * FROM users WHERE user_id = $1`,
+    [userId]
+  );
+  return userProfileResult.rows[0];
+}
 
 
 export async function uploadToCloudinary(encodedImage, itemCategory, imageId) {
@@ -99,11 +157,11 @@ export async function updateImage(db, updateData) {
 export async function saveItem(db, itemData) {
   try {
     console.log(itemData)
-    const { category, condition,  description, available, likes, uploaderId, uploaderEmail, uploaderPhoto, uploadDate } = itemData;
+    const { category, condition,  description, available, likes, uploaderId, uploaderUsername, uploaderEmail, uploaderPhoto, uploadDate } = itemData;
     
     const itemResult = await db.query(
-      "INSERT INTO items (category, condition, description, available, likes, uploader_id, uploader_email, uploader_photo, upload_date) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
-      [category, condition, description, available, likes, uploaderId, uploaderEmail, uploaderPhoto, uploadDate]
+      "INSERT INTO items (category, condition, description, available, likes, uploader_id, uploader_username, uploader_email, uploader_photo, upload_date) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *",
+      [category, condition, description, available, likes, uploaderId, uploaderUsername, uploaderEmail, uploaderPhoto, uploadDate]
     );
     
     return itemResult.rows[0].item_id;
@@ -117,7 +175,7 @@ export async function saveItem(db, itemData) {
 export async function insertCategoryDetails(db, {req, itemId, category}) {
   const generalCategory = category;
   const available = true;
-  const uploaderId = req.user?.user_id;
+  const uploaderId = req.user?.userId;
   const uploadedBy = req.user?.name || req.user?.displayName || "N/A";
   const uploaderUsername = req.user?.username || "N/A";
   const uploaderEmail = req.user?.email || "N/A";
@@ -210,6 +268,12 @@ export async function insertCategoryDetails(db, {req, itemId, category}) {
     default:
       throw new Error(`Unsupported category: ${category}`);
   }
+
+  //update posts count after item is posted
+  await db.query(
+    `UPDATE users SET posts_count = posts_count + 1 WHERE user_id = $1`,
+    [uploaderId]
+  );
 }
 
 
@@ -240,6 +304,16 @@ export async function getImages(db, itemId) {
   const images = imagesResult.rows.map((row) => row.image_url);
 
   return images
+}
+
+export async function updateProfilePhoto(db, updateData) {
+  const { photo, userId } = updateData;
+  try {
+    await db.query("UPDATE users SET photo = $1 WHERE user_id = $2", [photo, userId]);
+  } catch (error) {
+    console.error("Error updating profile photo:", error);
+    throw error;
+  }
 }
 
 
@@ -358,6 +432,22 @@ export async function deletePost(db, itemId, tableName) {
 }
 
 
+export async function manageLikesReceived(db, itemId, updatedLikes) {
+  //get id of user who uploaded the item
+  const uploaderResult = await db.query(
+    "SELECT uploader_id FROM items WHERE item_id = $1",
+    [itemId]
+  );
+  const uploaderId = uploaderResult.rows[0].uploader_id;
+
+  //update user likes received
+  await db.query(
+    "UPDATE users SET likes_received = $1 WHERE user_id = $2",
+    [updatedLikes, uploaderId]
+  );
+}
+
+
 export async function getReportCount(db, itemId) {
   const reportCountResult = await db.query(
     `SELECT report_count FROM report_details WHERE item_id = $1 ORDER BY created_at DESC LIMIT 1`,
@@ -388,6 +478,19 @@ export async function postReview(db, reviewData) {
     `INSERT INTO reviews (reviewer_id, reviewer_name, reviewer_photo, reviewed_user_id, reviewed_user_name, reviewed_user_photo, item_id, item_name, item_category, rating, comment, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
     [reviewerId, reviewerName, reviewerPhoto, reviewedUserId, reviewedUserName, reviewedUserPhoto, itemId, itemName, itemCategory, rating, comment, reviewDate]
   );
+
+  //update user review count
+  await db.query(
+    `UPDATE users SET review_count = review_count + 1 WHERE user_id = $1`,
+    [reviewedUserId]
+  );
+
+  //update user average rating
+  await db.query(
+    `UPDATE users SET average_rating = (SELECT AVG(rating) FROM reviews WHERE reviewed_user_id = $1) WHERE user_id = $1`,
+    [reviewedUserId]
+  );
+
   return reviewsResult.rows;
 }
 

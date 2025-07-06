@@ -133,7 +133,7 @@ const BooksForm = () => {
 
       if (response.data.success) {
         toast.success("Book donation uploaded successfully!", {
-          description: `"${processedData.title}" has been added.`,
+          description: `Book has been added to the database.`,
         });
         setTimeout(() => navigate("/books"), 2500);
       }

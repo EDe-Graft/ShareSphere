@@ -67,7 +67,7 @@ const ReviewsPage = () => {
 
       // Load reviews given by user
       const givenResponse = await axios.get(
-        `${BACKEND_URL}/reviews/given`,
+        `${BACKEND_URL}/reviews/given/${user.userId}`,
         axiosConfig
       );
 
@@ -77,7 +77,7 @@ const ReviewsPage = () => {
 
       // Load reviews received by user
       const receivedResponse = await axios.get(
-        `${BACKEND_URL}/reviews/received`,
+        `${BACKEND_URL}/reviews/received/${user.userId}`,
         axiosConfig
       );
 

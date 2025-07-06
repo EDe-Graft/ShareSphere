@@ -15,7 +15,7 @@ import AdminReportEmail from './dist/emails/AdminReportEmail.js';
 import ReportConfirmationEmail from './dist/emails/ReportConfirmationEmail.js';
 import WarningEmail from './dist/emails/WarningEmail.js';
 import { configurePassport } from "./passport-config.js";
-import { uploadToCloudinary, saveItem, saveImage, updateImage, insertCategoryDetails, getTableName, getImages, getLikes, deleteImages, deletePost, saveReport, postReview, updateReview } from './database-utils.js';
+import { uploadToCloudinary, saveItem, saveImage, updateImage, insertCategoryDetails, getTableName, getImages, getLikes, manageLikesReceived, deleteImages, deletePost, saveReport, postReview, updateReview, getUserProfile, registerUser } from './database-utils.js';
 import { formatLocalISO, capitalizeFirst, toCamelCase, toSnakeCase } from "./format.js";
 
 // Express-app and environment creation
@@ -104,13 +104,11 @@ app.use(passport.session());
 //For credentials auth success/failure
 app.get('/auth/user', (req, res) => {
   if (req.isAuthenticated()) {
-    console.log("User requested: " + req.user)
     res.status(200).json({
       authSuccess: req.isAuthenticated(),
       message: 'User Logged In', 
       user: toCamelCase(req.user) 
     });
-    console.log("User data sent")
   } else {
     res.status(401).json({
       authSuccess: false,
@@ -241,12 +239,36 @@ app.get("/items", async (req, res) => {
 });
 
 
-app.get("/user-posts", async (req, res) => {
+
+app.get("/user-profile/:userId", async (req, res) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ error: "Not authenticated" });
   }
 
-  const userId = req.user?.user_id;
+  const userId = req.params?.userId;
+
+  try {
+    const userProfile = await getUserProfile(db, userId);
+    res.status(200).json({
+      getSuccess: true,
+      userData: toCamelCase(userProfile)
+    });
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    res.status(500).json({
+      getSuccess: false,
+      message: "Internal server error"
+    });
+  }
+});
+
+
+app.get("/user-posts/:userId", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
+  const userId = req.params?.userId;
 
   try {
     // Get all posted item ids by user from items table
@@ -498,13 +520,41 @@ app.post("/update-post", upload.array('newImages', 3), async (req, res) => {
 });
 
 
+app.patch("/update-profile-photo", upload.single('profilePhoto'), async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
+  const userId = req.user.userId;
+  const profilePhoto = req.file;
+  console.log("profilePhoto", profilePhoto)
+
+  try {
+    const updateData = {
+      photo: profilePhoto.path,
+      userId: userId
+    }
+
+    await updateProfilePhoto(db, updateData);
+
+    res.status(200).json({
+      updateSuccess: true,
+      message: "Profile photo updated successfully"
+    });
+  } catch (error) {
+    console.error("Error updating profile photo:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
 
 app.get("/favorites", async (req, res) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ error: "Not authenticated" });
   }
 
-  const userId = req.user.user_id;
+  const userId = req.user.userId;
   const category = capitalizeFirst(req.query.category);
   const includeDetails = req.query.includeDetails === "true";
 
@@ -580,7 +630,7 @@ app.post("/favorites/toggle", async (req, res) => {
     return res.status(401).json({ error: "Not authenticated" });
   }
 
-  const userId = req.user.user_id;
+  const userId = req.user.userId;
   const { itemId } = req.body;
 
   try {
@@ -594,7 +644,7 @@ app.post("/favorites/toggle", async (req, res) => {
     let updatedLikes;
 
     if (checkResult.rowCount === 0) {
-      // Add to favorites
+      // Add like
       const itemResult = await db.query(
         "SELECT category, likes FROM items WHERE item_id = $1",
         [itemId]
@@ -602,34 +652,43 @@ app.post("/favorites/toggle", async (req, res) => {
       const itemCategory = itemResult.rows[0].category;
       updatedLikes = itemResult.rows[0].likes + 1;
 
+      //add to favorites table
       await db.query(
         "INSERT INTO favorites (user_id, item_id, item_category) VALUES ($1, $2, $3)",
         [userId, itemId, itemCategory]
       );
 
+      //update item likes
       await db.query(
         "UPDATE items SET likes = $1 WHERE item_id = $2",
         [updatedLikes, itemId]
       );
 
+      //update user likes received
+      await manageLikesReceived(db, itemId, updatedLikes);
+
       isNowLiked = true;
     } else {
-      // Remove from favorites
+      // Remove like
       const itemResult = await db.query(
         "SELECT likes FROM items WHERE item_id = $1",
         [itemId]
       );
       updatedLikes = Math.max(0, itemResult.rows[0].likes - 1); //avoid negative
 
+      //remove from favorites table
       await db.query(
         "DELETE FROM favorites WHERE user_id = $1 AND item_id = $2",
-        [userId, itemId]
-      );
+        [userId, itemId]);
 
+      //update item likes
       await db.query(
         "UPDATE items SET likes = $1 WHERE item_id = $2",
         [updatedLikes, itemId]
       );
+
+      //update user likes received
+      await manageLikesReceived(db, itemId, updatedLikes);
 
       isNowLiked = false;
     }
@@ -653,13 +712,12 @@ app.post("/favorites/toggle", async (req, res) => {
 // Post Routes
 app.post("/upload", upload.array('images', 3), async (req, res) => {
   if (req.isAuthenticated()) {
-    try {
-      console.log("Form data:", req.body); // This will contain all your form fields
-      console.log("Files:", req.files);  // This will contain the uploaded files      
+    try {    
 
       //retrieve form data for all categories
       const category = capitalizeFirst(req.query.category)
-      const uploaderId = req.user?.user_id;
+      const uploaderId = req.user?.userId;
+      const uploaderUsername = req.user?.username;
       const uploaderEmail = req.user?.email;
       const uploaderPhoto = req.user?.photo;
       const {condition, description} = req.body;
@@ -679,6 +737,7 @@ app.post("/upload", upload.array('images', 3), async (req, res) => {
         available: true,
         likes: 0,
         uploaderId,
+        uploaderUsername,
         uploaderEmail,
         uploaderPhoto,
         uploadDate
@@ -927,18 +986,16 @@ app.post('/report-post', async (req, res) => {
 
 // Review Routes
 // Get reviews given by user
-app.get("/reviews/:type", async (req, res) => {
+app.get("/reviews/:type/:userId", async (req, res) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ error: "Not authenticated" });
   }
 
-  const { type } = req.params;
-  const userId = req.user?.user_id;
+  const { type, userId } = req.params;
 
   if (type === "given") {
     //reviews given by user
     const reviews = await db.query("SELECT * FROM reviews WHERE reviewer_id = $1", [userId]);
-    console.log("reviews", reviews.rows)
 
     res.json({
       success: true,
@@ -964,7 +1021,9 @@ app.post("/reviews", async (req, res) => {
 
   try {
     const reviewData = req.body;
+
     const review = await postReview(db, reviewData); //save review to database
+
     return res.status(200).json({
       reviewSuccess: true,
       message: "Review saved successfully",
@@ -1020,7 +1079,7 @@ app.delete("/reviews/:reviewId", async (req, res) => {
 
   try {
     const { reviewId } = req.params;
-    const userId = req.user?.user_id;
+    const userId = req.user?.userId;
 
     // Check if the review exists and belongs to the authenticated user
     const reviewCheck = await db.query(
@@ -1093,45 +1152,22 @@ app.post("/change-availability", async (req, res) => {
 
 // Register New User
 app.post("/register", async (req, res) => {
-    const {displayName, email, password, confirmPassword} = req.body;
-    console.log(req.body)
+    const userData = req.body;
+    const user = await registerUser(db, userData);
 
-   if (password === confirmPassword) {
-    try {
-      const checkResult = await db.query("SELECT * FROM users WHERE email = $1", [
-          email,
-      ]);
-  
-      if (checkResult.rows.length > 0) {
-          console.log("User already exists")
-          res.status(200).send({message: `User wih credentials ${req.body} already exists. Please Login`});
-      } else {
-          bcrypt.hash(password, saltRounds, async (err, hash) => {
-          if (err) {
-              console.error("Error hashing password:", err);
-          } else {
-              const result = await db.query(
-              "INSERT INTO users (name, email, password, strategy, report_count) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-              [displayName, email, hash, "credentials", 0]
-              );
-              const user = result.rows[0];
-              console.log(user);
+    if (user) {
+    // Log in the user after registration
+    req.login(user, (err) => {
+      if (err) {console.log(error)}
 
-               // Log in the user after registration
-              req.login(user, (err) => {
-                if (err) {console.log(error)}
-
-                res.redirect("/auth/user"); //verify login success or failure
-              });
-          }
-          });
-      }
-  } catch (err) {
-      console.log(err)
+      res.redirect("/auth/user");
+    });
+  } else {
+    res.status(400).json({
+      registerSuccess: false,
+      message: "User registration failed. Please try again."
+    });
   }
-} else {
-  res.status(400).send({message: 'Error: Passwords do not match'})
-}    
 })
 
  // Login Existing User using Passport

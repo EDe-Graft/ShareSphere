@@ -101,7 +101,7 @@ const PostsViewPage = () => {
 
     try {
       const response = await axios.get(
-        `${BACKEND_URL}/user-posts`,
+        `${BACKEND_URL}/user-posts/${user.userId}`,
         axiosConfig
       );
 

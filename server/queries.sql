@@ -1,14 +1,21 @@
 CREATE TABLE users (
     user_id SERIAL PRIMARY KEY,
-    username VARCHAR(30) UNIQUE NOT NULL
+    username VARCHAR(30) UNIQUE NOT NULL,
     name VARCHAR(40),
     email VARCHAR(35) UNIQUE,
     password VARCHAR NOT NULL,
     photo VARCHAR(100),
+    bio TEXT,
     strategy VARCHAR(15),
     profile_url VARCHAR(100) UNIQUE,
-    report_count INTEGER NOT NULL,
-    rating INTEGER NOT NULL,
+    review_count INTEGER,
+    likes_received INTEGER,
+    posts_count INTEGER,
+    active_posts_count INTEGER,
+    inactive_posts_count INTEGER,
+    average_rating INTEGER,
+    report_count INTEGER,
+    joined_on VARCHAR(30) NOT NULL,
 );
 
 CREATE TABLE items (

@@ -275,6 +275,9 @@ const Navbar = () => {
                 </DropdownMenuItem>
               ) : (
                 <>
+                  <DropdownMenuItem onClick={() => navigate("/profile")}>
+                    Profile
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/favorites")}>
                     Favorites
                   </DropdownMenuItem>
@@ -284,9 +287,7 @@ const Navbar = () => {
                   <DropdownMenuItem onClick={() => navigate("/reviews")}>
                     Reviews
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/profile")}>
-                    Profile
-                  </DropdownMenuItem>
+                  
                   <DropdownMenuItem
                     onClick={async () => {
                       console.log("Logging out...");

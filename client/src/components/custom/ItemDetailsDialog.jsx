@@ -146,7 +146,7 @@ export default function ItemDetailsDialog({
     try {
       const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
       const response = await axios.get(
-        `${BACKEND_URL}/user-received-reviews/${item.uploaderId}`,
+        `${BACKEND_URL}/reviews/received/${item.uploaderId}`,
         {
           withCredentials: true,
         }

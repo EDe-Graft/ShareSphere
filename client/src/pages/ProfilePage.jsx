@@ -53,7 +53,7 @@ const ProfilePage = () => {
   };
 
   // Determine if viewing own profile or another user's profile
-  const isOwnProfile = !userId || userId === currentUser?.userId;
+  const isOwnProfile = (userId === currentUser?.userId && userId !== "undefined");
   const targetUserId = isOwnProfile ? currentUser?.userId : userId;
 
   useEffect(() => {
@@ -61,6 +61,7 @@ const ProfilePage = () => {
       loadProfileData();
     }
   }, [targetUserId]);
+
 
   const loadProfileData = async () => {
     try {
@@ -72,8 +73,9 @@ const ProfilePage = () => {
         axiosConfig
       );
 
-      if (profileResponse.data.success) {
-        setProfileUser(profileResponse.data.user);
+      if (profileResponse.data.getSuccess) {
+        setProfileUser(profileResponse.data.userData);
+        setStats(profileResponse.data.userData);
       }
 
       // Load user's posts
@@ -99,7 +101,7 @@ const ProfilePage = () => {
 
       // Load reviews given by user
       const reviewsResponse = await axios.get(
-        `${BACKEND_URL}/user-reviews/${targetUserId}`,
+        `${BACKEND_URL}/reviews/given/${targetUserId}`,
         axiosConfig
       );
 
@@ -109,7 +111,7 @@ const ProfilePage = () => {
 
       // Load reviews received by user
       const receivedReviewsResponse = await axios.get(
-        `${BACKEND_URL}/user-received-reviews/${targetUserId}`,
+        `${BACKEND_URL}/reviews/received/${targetUserId}`,
         axiosConfig
       );
 
@@ -117,15 +119,6 @@ const ProfilePage = () => {
         setReceivedReviews(receivedReviewsResponse.data.reviews);
       }
 
-      // Load user statistics
-      const statsResponse = await axios.get(
-        `${BACKEND_URL}/user-stats/${targetUserId}`,
-        axiosConfig
-      );
-
-      if (statsResponse.data.success) {
-        setStats(statsResponse.data.stats);
-      }
 
       // Load user favorites if viewing own profile
       if (isOwnProfile) {
@@ -270,7 +263,7 @@ const ProfilePage = () => {
       formData.append("profilePhoto", file);
 
       const response = await axios.post(
-        `${BACKEND_URL}/upload-profile-photo`,
+        `${BACKEND_URL}/update-profile-photo`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -347,7 +340,7 @@ const ProfilePage = () => {
                 <Avatar className="h-20 w-20">
                   <AvatarImage
                     src={
-                      profileUser.profilePhoto ||
+                      profileUser.photo ||
                       "/placeholder.svg?height=80&width=80"
                     }
                     alt={profileUser.name || profileUser.displayName}
@@ -391,7 +384,7 @@ const ProfilePage = () => {
                 </div>
 
                 <p className="text-muted-foreground">
-                  @{profileUser.username || "user"}
+                  {profileUser.username || "user"}
                 </p>
 
                 <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
@@ -411,15 +404,13 @@ const ProfilePage = () => {
                     <Calendar className="h-4 w-4" />
                     <span>
                       Joined{" "}
-                      {new Date(
-                        profileUser.createdAt || Date.now()
-                      ).toLocaleDateString()}
+                      {profileUser.joinedOn || new Date(Date.now()).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
 
                 {profileUser.bio && (
-                  <p className="text-sm mt-2">{profileUser.bio}</p>
+                  <p className="text-sm mt-2">{profileUser.bio || "No bio"}</p>
                 )}
               </div>
             </div>
@@ -431,7 +422,7 @@ const ProfilePage = () => {
           <Card>
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-primary">
-                {stats.totalPosts}
+                {stats.postsCount || 0}
               </div>
               <div className="text-sm text-muted-foreground">Posts</div>
             </CardContent>
@@ -440,7 +431,7 @@ const ProfilePage = () => {
           <Card>
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-primary">
-                {stats.totalLikes}
+                {stats.likesReceived || 0}
               </div>
               <div className="text-sm text-muted-foreground">
                 Likes Received
@@ -451,7 +442,7 @@ const ProfilePage = () => {
           <Card>
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-primary">
-                {receivedReviews.length}
+                {stats.reviewCount || 0}
               </div>
               <div className="text-sm text-muted-foreground">Reviews</div>
             </CardContent>
@@ -698,7 +689,9 @@ const ProfilePage = () => {
         existingReview={selectedReview}
         onReviewSubmitted={() => {
           setIsReviewDialogOpen(false);
-          loadProfileData();
+          setTimeout(() => {
+            loadProfileData();
+          }, 1500);
         }}
       />
     </main>
