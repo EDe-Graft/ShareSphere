@@ -66,25 +66,19 @@ const ReviewDialog = ({
 
     try {
       const reviewData = {
-        reviewerId: user?.userId,
-        reviewerName: user?.name,
-        reviewerPhoto: user?.photo,
         reviewedUserId: reviewedUser.userId,
-        reviewedUserName: reviewedUser.name,
-        reviewedUserPhoto: reviewedUser.photo,
-        itemId: relatedItem?.itemId || null,
-        itemName: relatedItem?.name || relatedItem?.title || "N/A",
-        itemCategory: relatedItem?.generalCategory || "N/A",
         rating,
         comment: comment.trim(),
+        itemId: relatedItem?.itemId || null,
+        itemName: relatedItem?.name || relatedItem?.title || null,
       };
 
       let response;
 
       if (existingReview) {
         // Update existing review
-        response = await axios.patch(
-          `${BACKEND_URL}/reviews/update/${existingReview.reviewId}`,
+        response = await axios.put(
+          `${BACKEND_URL}/reviews/${existingReview.id}`,
           reviewData,
           axiosConfig
         );
@@ -97,7 +91,7 @@ const ReviewDialog = ({
         );
       }
 
-      if (response.data.reviewSuccess) {
+      if (response.data.success) {
         toast.success(
           existingReview
             ? "Review updated successfully!"
@@ -127,21 +121,60 @@ const ReviewDialog = ({
     onClose();
   };
 
+  // Add this new function for half-star support
+  const handleStarClick = (starValue, event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const starWidth = rect.width;
+
+    // If clicked on left half, set to .5, if right half, set to full
+    const newRating = clickX < starWidth / 2 ? starValue - 0.5 : starValue;
+    setRating(newRating);
+  };
+
   const renderStars = () => {
     return Array.from({ length: 5 }).map((_, index) => {
       const starValue = index + 1;
-      const isActive = starValue <= (hoveredRating || rating);
+      const currentRating = hoveredRating || rating;
+
+      // Determine star state: empty, half, or full
+      let starState = "empty";
+      if (currentRating >= starValue) {
+        starState = "full";
+      } else if (currentRating >= starValue - 0.5) {
+        starState = "half";
+      }
 
       return (
         <button
           key={index}
           type="button"
-          className={`p-1 transition-colors ${isActive ? "text-yellow-400" : "text-gray-300 hover:text-yellow-200"}`}
+          className={`p-1 transition-colors relative ${
+            starState !== "empty"
+              ? "text-yellow-400"
+              : "text-gray-300 hover:text-yellow-200"
+          }`}
           onMouseEnter={() => setHoveredRating(starValue)}
           onMouseLeave={() => setHoveredRating(0)}
-          onClick={() => setRating(starValue)}
+          onClick={(e) => handleStarClick(starValue, e)}
         >
-          <Star className={`h-8 w-8 ${isActive ? "fill-current" : ""}`} />
+          {starState === "half" ? (
+            <div className="relative">
+              {/* Background empty star */}
+              <Star className="h-8 w-8 text-gray-300" />
+              {/* Half-filled overlay */}
+              <div
+                className="absolute inset-0 overflow-hidden"
+                style={{ width: "50%" }}
+              >
+                <Star className="h-8 w-8 fill-yellow-400 text-yellow-400" />
+              </div>
+            </div>
+          ) : (
+            <Star
+              className={`h-8 w-8 ${starState === "full" ? "fill-current" : ""}`}
+            />
+          )}
         </button>
       );
     });
@@ -169,10 +202,10 @@ const ReviewDialog = ({
             <Avatar className="h-12 w-12">
               <AvatarImage
                 src={
-                  reviewedUser.photo ||
+                  reviewedUser.profilePhoto ||
                   "/placeholder.svg?height=48&width=48"
                 }
-                alt={reviewedUser.name || reviewedUser.displayName || "User"}
+                alt={reviewedUser.name || reviewedUser.displayName}
               />
               <AvatarFallback>
                 {(reviewedUser.name || reviewedUser.displayName || "U")
@@ -182,10 +215,10 @@ const ReviewDialog = ({
             </Avatar>
             <div>
               <p className="font-medium">
-                {reviewedUser.name || reviewedUser.displayName || "User"}
+                {reviewedUser.name || reviewedUser.displayName}
               </p>
               <p className="text-sm text-muted-foreground">
-                {reviewedUser.username || "user"}
+                @{reviewedUser.username || "user"}
               </p>
             </div>
           </div>
@@ -207,7 +240,7 @@ const ReviewDialog = ({
               {renderStars()}
               {rating > 0 && (
                 <span className="ml-2 text-sm text-muted-foreground">
-                  {rating} out of 5 stars
+                  {rating.toFixed(1)} out of 5 stars
                 </span>
               )}
             </div>

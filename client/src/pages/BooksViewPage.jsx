@@ -638,32 +638,6 @@ const BooksViewPage = () => {
         </TabsContent>
       </Tabs>
 
-      {/* {filteredBooks.length > 0 && (
-        <div className="flex justify-center mt-8">
-          <div className="flex items-center gap-1">
-            <Button variant="outline" size="icon" disabled>
-              <ChevronLeft className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-primary text-white hover:bg-primary/90"
-            >
-              1
-            </Button>
-            <Button variant="outline" size="sm">
-              2
-            </Button>
-            <Button variant="outline" size="sm">
-              3
-            </Button>
-            <Button variant="outline" size="icon">
-              <ChevronRight className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-      )} */}
-
       {filteredBooks.length > 0 && (
         <Pagination
           currentPage={currentPage}

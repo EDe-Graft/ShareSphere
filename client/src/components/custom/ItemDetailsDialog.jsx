@@ -1,6 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Trash2, Edit2, Save, Star, X, Flag } from "lucide-react";
+import {
+  Trash2,
+  Edit2,
+  Save,
+  Star,
+  X,
+  Flag,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import ImageCarousel from "./ImageCarousel";
 import { ConditionBadge } from "./CustomBadges";
 import { RequestItemDialog } from "./RequestItemDialog";
@@ -21,6 +32,7 @@ import { CATEGORY_OPTIONS } from "@/lib/utils";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
 import ReviewDialog from "./ReviewDialog";
 import ImageUploadField from "@/components/custom/ImageUploadField";
+import axios from "axios";
 
 export default function ItemDetailsDialog({
   item,
@@ -45,6 +57,15 @@ export default function ItemDetailsDialog({
   const [isOwnItem, setIsOwnItem] = useState(false);
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
   const [selectedReviewUser, setSelectedReviewUser] = useState(null);
+
+  // Reviews state
+  const [ownerReviews, setOwnerReviews] = useState([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+  const [showAllReviews, setShowAllReviews] = useState(false);
+  const [reviewsStats, setReviewsStats] = useState({
+    averageRating: 0,
+    totalReviews: 0,
+  });
 
   // Simplified state management
   const [formData, setFormData] = useState({});
@@ -94,6 +115,16 @@ export default function ItemDetailsDialog({
     }
   }, [initialized, item, user]);
 
+  // Fetch owner reviews when dialog is open for another user's item
+  useEffect(() => {
+    if (isOpen && user && !isOwnItem && item) {
+      fetchOwnerReviews();
+    } else {
+      setOwnerReviews([]);
+      setReviewsStats({ averageRating: 0, totalReviews: 0 });
+    }
+  }, [isOpen, user, isOwnItem, item]);
+
   // Handle inert attribute
   useEffect(() => {
     if (isOpen) {
@@ -107,6 +138,49 @@ export default function ItemDetailsDialog({
   }, [isOpen]);
 
   if (!item || !isOpen) return null;
+
+  const fetchOwnerReviews = async () => {
+    if (!item?.uploaderId) return;
+
+    setIsLoadingReviews(true);
+    try {
+      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+      const response = await axios.get(
+        `${BACKEND_URL}/user-received-reviews/${item.uploaderId}`,
+        {
+          withCredentials: true,
+        }
+      );
+
+      if (response.data.success) {
+        const reviews = response.data.reviews || [];
+        setOwnerReviews(reviews);
+
+        if (reviews.length > 0) {
+          const avgRating =
+            reviews.reduce((sum, review) => sum + review.rating, 0) /
+            reviews.length;
+          setReviewsStats({
+            averageRating: avgRating,
+            totalReviews: reviews.length,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching owner reviews:", error);
+    } finally {
+      setIsLoadingReviews(false);
+    }
+  };
+
+  const renderStars = (rating) => {
+    return Array.from({ length: 5 }).map((_, i) => (
+      <Star
+        key={i}
+        className={`h-4 w-4 ${i < rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+      />
+    ));
+  };
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => {
@@ -536,7 +610,6 @@ export default function ItemDetailsDialog({
                   <h4 className="text-sm font-medium text-muted-foreground">
                     Username
                   </h4>
-                  {/* <p className="text-xs text-primary mb-4">{`${item.uploaderUsername}`}</p> */}
                   <p
                     className="text-xs text-primary mb-4 cursor-pointer hover:underline"
                     onClick={() => navigate(`/profile/${item.uploaderId}`)}
@@ -595,27 +668,149 @@ export default function ItemDetailsDialog({
             )}
           </div>
 
-          <div className={`flex justify-between items-center mt-4 ${isOwnItem ? "flex-row-reverse" : "flex-row"}`}>
+          {/* Owner Reviews Section */}
+          {user && !isOwnItem && (
+            <>
+              <Separator />
+              <div className="py-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <h4 className="text-lg font-semibold">
+                      Reviews for {item.uploadedBy}
+                    </h4>
+                    {reviewsStats.totalReviews > 0 && (
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center">
+                          {renderStars(Math.round(reviewsStats.averageRating))}
+                        </div>
+                        <span className="text-sm text-muted-foreground">
+                          {reviewsStats.averageRating.toFixed(1)} (
+                          {reviewsStats.totalReviews} reviews)
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {isLoadingReviews ? (
+                  <div className="space-y-3">
+                    {[...Array(2)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="flex items-start space-x-3 p-3 border rounded-lg bg-muted/50"
+                      >
+                        <div className="h-8 w-8 bg-muted rounded-full animate-pulse" />
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 bg-muted rounded animate-pulse w-1/4" />
+                          <div className="h-3 bg-muted rounded animate-pulse w-full" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : ownerReviews.length > 0 ? (
+                  <div className="space-y-3">
+                    {(showAllReviews
+                      ? ownerReviews
+                      : ownerReviews.slice(0, 2)
+                    ).map((review) => (
+                      <div
+                        key={review.id}
+                        className="p-4 border rounded-lg bg-muted/30"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center space-x-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage
+                                src={review.reviewerPhoto || "/placeholder.svg"}
+                              />
+                              <AvatarFallback>
+                                {review.reviewerName?.charAt(0).toUpperCase() ||
+                                  "U"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium text-sm">
+                                {review.reviewerName}
+                              </p>
+                              <div className="flex items-center space-x-1">
+                                {renderStars(review.rating)}
+                              </div>
+                            </div>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(review.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        {review.comment && (
+                          <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+                            {review.comment}
+                          </p>
+                        )}
+                        {review.itemName && (
+                          <Badge variant="secondary" className="mt-2 text-xs">
+                            About: {review.itemName}
+                          </Badge>
+                        )}
+                      </div>
+                    ))}
+                    {ownerReviews.length > 2 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowAllReviews(!showAllReviews)}
+                        className="w-full"
+                      >
+                        {showAllReviews ? (
+                          <>
+                            <ChevronUp className="mr-2 h-4 w-4" />
+                            Show Less
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="mr-2 h-4 w-4" />
+                            Show All {ownerReviews.length} Reviews
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Star className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+                    <p className="text-sm">No reviews yet for this user.</p>
+                    <p className="text-xs mt-1">
+                      Be the first to share your experience!
+                    </p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          <div
+            className={`flex justify-between items-center mt-4 ${isOwnItem ? "flex-row-reverse" : "flex-row"}`}
+          >
             {mode !== "edit" && !isEditing && !isOwnItem && (
               <div className="flex gap-2">
                 <Button
                   variant="outline"
                   onClick={() => setIsReportDialogOpen(true)}
                   className="text-red-500 hover:text-red-500"
-              >
+                >
                   <Flag className="mr-2 h-4 w-4" />
                   Report Post
                 </Button>
                 {/* write review button */}
-                {
-                  !isOwnItem && (
-                    <Button className="text-yellow-500 hover:text-yellow-500" variant="outline" onClick={handleWriteReview}>
-                      <Star className="mr-2 h-4 w-4" />
-                      Write Review
-                    </Button>
-                  )
-                }
-                
+                {!isOwnItem && (
+                  <Button
+                    className="text-yellow-500 hover:text-yellow-500 bg-transparent"
+                    variant="outline"
+                    onClick={handleWriteReview}
+                  >
+                    <Star className="mr-2 h-4 w-4" />
+                    Write Review
+                  </Button>
+                )}
               </div>
             )}
 
