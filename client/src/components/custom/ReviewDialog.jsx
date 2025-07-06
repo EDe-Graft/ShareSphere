@@ -126,7 +126,7 @@ const ReviewDialog = ({
     onClose();
   };
 
-  // Enhanced star rendering with precise decimal support
+  // Star rendering with precise decimal support
   const renderStars = (displayRating) => {
     return Array.from({ length: 5 }).map((_, index) => {
       const starValue = index + 1;
@@ -185,8 +185,7 @@ const ReviewDialog = ({
             <Avatar className="h-12 w-12">
               <AvatarImage
                 src={
-                  reviewedUser.photo ||
-                  "/placeholder.svg?height=48&width=48"
+                  reviewedUser.photo || "/placeholder.svg?height=48&width=48"
                 }
                 alt={reviewedUser.name || reviewedUser.displayName}
               />

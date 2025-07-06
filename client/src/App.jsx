@@ -11,6 +11,7 @@ import FurnitureViewPage from "./pages/FurnitureViewPage";
 import ClothingViewPage from "./pages/ClothingViewPage";
 import MiscellaneousViewPage from "./pages/MiscellaneousViewPage";
 import ProfilePage from "./pages/ProfilePage";
+import EditProfilePage from "./pages/EditProfilePage";
 import ReviewsPage from "./pages/ReviewsPage";
 import BooksForm from "./pages/BooksForm";
 import ClothingForm from "./pages/ClothingForm";
@@ -93,6 +94,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/edit-profile"
+            element={
+              <ProtectedRoute>
+                <EditProfilePage />
               </ProtectedRoute>
             }
           />

@@ -53,7 +53,7 @@ const ProfilePage = () => {
   };
 
   // Determine if viewing own profile or another user's profile
-  const isOwnProfile = (userId === currentUser?.userId && userId !== "undefined");
+  const isOwnProfile = userId === currentUser?.userId && userId !== "undefined";
   const targetUserId = isOwnProfile ? currentUser?.userId : userId;
 
   useEffect(() => {
@@ -61,7 +61,6 @@ const ProfilePage = () => {
       loadProfileData();
     }
   }, [targetUserId]);
-
 
   const loadProfileData = async () => {
     try {
@@ -118,7 +117,6 @@ const ProfilePage = () => {
       if (receivedReviewsResponse.data.success) {
         setReceivedReviews(receivedReviewsResponse.data.reviews);
       }
-
 
       // Load user favorites if viewing own profile
       if (isOwnProfile) {
@@ -284,6 +282,29 @@ const ProfilePage = () => {
     }
   };
 
+  // Star rendering with precise decimal support
+  const renderStars = (rating) => {
+    return Array.from({ length: 5 }).map((_, index) => {
+      const fillPercentage = Math.max(0, Math.min(100, (rating - index) * 100));
+
+      return (
+        <div key={index} className="relative inline-block">
+          {/* Background empty star */}
+          <Star className="h-4 w-4 text-gray-300" />
+          {/* Filled portion */}
+          {fillPercentage > 0 && (
+            <div
+              className="absolute inset-0 overflow-hidden"
+              style={{ width: `${fillPercentage}%` }}
+            >
+              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+            </div>
+          )}
+        </div>
+      );
+    });
+  };
+
   if (isLoading) {
     return (
       <main className="container mx-auto px-4 py-8">
@@ -340,8 +361,7 @@ const ProfilePage = () => {
                 <Avatar className="h-20 w-20">
                   <AvatarImage
                     src={
-                      profileUser.photo ||
-                      "/placeholder.svg?height=80&width=80"
+                      profileUser.photo || "/placeholder.svg?height=80&width=80"
                     }
                     alt={profileUser.name || profileUser.displayName}
                   />
@@ -376,7 +396,14 @@ const ProfilePage = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => navigate("/edit-profile")}
+                      onClick={() =>
+                        navigate("/edit-profile", {
+                          state: {
+                            profileData: profileUser,
+                            returnTo: `/profile${userId ? `/${userId}` : ""}`,
+                          },
+                        })
+                      }
                     >
                       <Edit2 className="h-4 w-4" />
                     </Button>
@@ -404,7 +431,8 @@ const ProfilePage = () => {
                     <Calendar className="h-4 w-4" />
                     <span>
                       Joined{" "}
-                      {profileUser.joinedOn || new Date(Date.now()).toLocaleDateString()}
+                      {profileUser.joinedOn ||
+                        new Date(Date.now()).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
@@ -500,7 +528,7 @@ const ProfilePage = () => {
                       : "This user hasn't posted any items yet."}
                   </p>
                   {isOwnProfile && (
-                    <Button onClick={() => navigate("/books-form")}>
+                    <Button onClick={() => navigate("/")}>
                       Create Your First Post
                     </Button>
                   )}
@@ -538,16 +566,7 @@ const ProfilePage = () => {
                           <div>
                             <p className="font-medium">{review.reviewerName}</p>
                             <div className="flex items-center space-x-1">
-                              {Array.from({ length: 5 }).map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`h-4 w-4 ${
-                                    i < review.rating
-                                      ? "fill-yellow-400 text-yellow-400"
-                                      : "text-gray-300"
-                                  }`}
-                                />
-                              ))}
+                              {renderStars(review.rating)}
                             </div>
                           </div>
                         </div>
@@ -606,17 +625,9 @@ const ProfilePage = () => {
                             <p className="font-medium">
                               Review for {review.reviewedUserName}
                             </p>
+
                             <div className="flex items-center space-x-1">
-                              {Array.from({ length: 5 }).map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`h-4 w-4 ${
-                                    i < review.rating
-                                      ? "fill-yellow-400 text-yellow-400"
-                                      : "text-gray-300"
-                                  }`}
-                                />
-                              ))}
+                              {renderStars(review.rating)}
                             </div>
                           </div>
                         </div>

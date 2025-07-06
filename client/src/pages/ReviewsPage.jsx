@@ -460,7 +460,7 @@ const ReviewsPage = () => {
                     You haven't written any reviews yet. Help the community by
                     sharing your experiences!
                   </p>
-                  <Button onClick={() => navigate("/explore")}>
+                  <Button onClick={() => navigate("/all-categories")}>
                     Find Items to Review
                   </Button>
                 </CardContent>
@@ -492,7 +492,6 @@ const ReviewsPage = () => {
           }, 1500);
         }}
       />
-      
     </main>
   );
 };
