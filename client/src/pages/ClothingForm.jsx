@@ -120,9 +120,9 @@ export default function ClothingForm() {
       brand: "",
       color: "",
       material: "",
-      gender: "unisex", // Default gender
+      gender: "",
       description: "",
-      condition: "good", // Default condition
+      condition: "",
       images: [],
     },
   });
@@ -138,9 +138,9 @@ export default function ClothingForm() {
       brand: data.brand.trim() || "N/A",
       color: data.color.trim() || "N/A",
       material: data.material.trim() || "N/A",
-      gender: data.gender || "Unisex",
+      gender: data.gender || "N/A",
       description: data.description.trim() || "N/A",
-      condition: data.condition || "Good",
+      condition: data.condition || "N/A",
       images: data.images,
     };
     const clothingFormData = formatData(clothingProcessedData);
@@ -438,49 +438,26 @@ export default function ClothingForm() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="font-medium">Condition*</FormLabel>
-                      <div className="grid grid-cols-3 gap-3">
-                        <Button
-                          type="button"
-                          variant={
-                            field.value === "like-new" ? "default" : "outline"
-                          }
-                          className={
-                            field.value === "like-new"
-                              ? "bg-violet-500 hover:bg-violet-600"
-                              : ""
-                          }
-                          onClick={() => form.setValue("condition", "like-new")}
-                        >
-                          Like New
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={
-                            field.value === "good" ? "default" : "outline"
-                          }
-                          className={
-                            field.value === "good"
-                              ? "bg-violet-500 hover:bg-violet-600"
-                              : ""
-                          }
-                          onClick={() => form.setValue("condition", "good")}
-                        >
-                          Good
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={
-                            field.value === "fair" ? "default" : "outline"
-                          }
-                          className={
-                            field.value === "fair"
-                              ? "bg-violet-500 hover:bg-violet-600"
-                              : ""
-                          }
-                          onClick={() => form.setValue("condition", "fair")}
-                        >
-                          Fair
-                        </Button>
+                      <div className="grid grid-cols-4 gap-3">
+                        {["like-new", "good", "fair", "poor"].map((cond) => (
+                          <Button
+                            key={cond}
+                            type="button"
+                            variant={
+                              field.value === cond ? "default" : "outline"
+                            }
+                            className={
+                              field.value === cond
+                                ? "bg-violet-500 hover:bg-violet-600"
+                                : ""
+                            }
+                            onClick={() => form.setValue("condition", cond)}
+                          >
+                            {cond
+                              .replace("-", " ")
+                              .replace(/\b\w/g, (c) => c.toUpperCase())}
+                          </Button>
+                        ))}
                       </div>
                       <FormMessage className="text-red-500" />
                     </FormItem>

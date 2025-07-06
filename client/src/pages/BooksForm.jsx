@@ -88,7 +88,7 @@ const BooksForm = () => {
       edition: "",
       year: "",
       description: "",
-      condition: "Good",
+      condition: "",
       images: [],
     },
   });
@@ -110,7 +110,7 @@ const BooksForm = () => {
       author: data.author.trim() || "N/A",
       edition: data.edition.trim() || "N/A",
       year: data.year.trim() || "N/A",
-      condition: data.condition || "Good",
+      condition: data.condition || "N/A",
       description: data.description.trim() || "N/A",
       images: data.images,
     };
@@ -274,8 +274,8 @@ const BooksForm = () => {
                       <FormLabel className="font-medium">
                         Book Condition*
                       </FormLabel>
-                      <div className="grid grid-cols-3 gap-3">
-                        {["like-new", "good", "fair"].map((cond) => (
+                      <div className="grid grid-cols-4 gap-3">
+                        {["like-new", "good", "fair", "poor"].map((cond) => (
                           <Button
                             key={cond}
                             type="button"

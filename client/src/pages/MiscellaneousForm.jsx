@@ -87,7 +87,7 @@ const MiscellaneousForm = () => {
       color: "",
       estimatedValue: "",
       description: "",
-      condition: "Good", // Default condition
+      condition: "",
       images: [],
     },
   });
@@ -104,7 +104,7 @@ const MiscellaneousForm = () => {
       age: data.age.trim() || "N/A",
       estimatedValue: data.estimatedValue.trim() || "N/A",
       description: data.description.trim() || "N/A",
-      condition: formatCondition(data.condition) || "Good",
+      condition: formatCondition(data.condition) || "N/A",
       images: data.images,
     };
     const miscFormData = formatData(miscProcessedData);
@@ -124,7 +124,7 @@ const MiscellaneousForm = () => {
 
       if (response.data.success) {
         toast.success("Miscellaneous donation uploaded successfully!", {
-          description: `"${processedData.type}" has been added to our donation list.`,
+          description: `"${miscProcessedData.type}" has been added to our donation list.`,
         });
         setTimeout(() => navigate("/miscellaneous"), 2500);
       }
@@ -354,49 +354,26 @@ const MiscellaneousForm = () => {
                       <FormLabel className="font-medium">
                         Item Condition*
                       </FormLabel>
-                      <div className="grid grid-cols-3 gap-3">
-                        <Button
-                          type="button"
-                          variant={
-                            field.value === "like-new" ? "default" : "outline"
-                          }
-                          className={
-                            field.value === "like-new"
-                              ? "bg-violet-500 hover:bg-violet-600"
-                              : ""
-                          }
-                          onClick={() => form.setValue("condition", "like-new")}
-                        >
-                          Like New
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={
-                            field.value === "good" ? "default" : "outline"
-                          }
-                          className={
-                            field.value === "good"
-                              ? "bg-violet-500 hover:bg-violet-600"
-                              : ""
-                          }
-                          onClick={() => form.setValue("condition", "good")}
-                        >
-                          Good
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={
-                            field.value === "fair" ? "default" : "outline"
-                          }
-                          className={
-                            field.value === "fair"
-                              ? "bg-violet-500 hover:bg-violet-600"
-                              : ""
-                          }
-                          onClick={() => form.setValue("condition", "fair")}
-                        >
-                          Fair
-                        </Button>
+                      <div className="grid grid-cols-4 gap-3">
+                        {["like-new", "good", "fair", "poor"].map((cond) => (
+                          <Button
+                            key={cond}
+                            type="button"
+                            variant={
+                              field.value === cond ? "default" : "outline"
+                            }
+                            className={
+                              field.value === cond
+                                ? "bg-violet-500 hover:bg-violet-600"
+                                : ""
+                            }
+                            onClick={() => form.setValue("condition", cond)}
+                          >
+                            {cond
+                              .replace("-", " ")
+                              .replace(/\b\w/g, (c) => c.toUpperCase())}
+                          </Button>
+                        ))}
                       </div>
                       <FormMessage className="text-red-500" />
                     </FormItem>
