@@ -58,7 +58,7 @@ const ProfilePage = () => {
   };
 
   //Determine if viewing own profile or another user's profile
-  const isOwnProfile = userId === currentUser?.userId && userId !== "undefined";
+  const isOwnProfile = (String(userId) === String(currentUser?.userId));
   const targetUserId = isOwnProfile ? currentUser?.userId : userId;
 
   useEffect(() => {
@@ -79,8 +79,21 @@ const ProfilePage = () => {
 
       if (profileResponse.data.getSuccess) {
         setProfileUser(profileResponse.data.userData);
-        setStats(profileResponse.data.userData);
+      } else {
+        toast.error("Failed to load profile data");
       }
+
+      //get user stats
+      const statsResponse = await axios.get(
+        `${BACKEND_URL}/user-stats/${targetUserId}`,
+        axiosConfig
+      );
+      
+      if (statsResponse.data.success) {
+        setStats(statsResponse.data.stats);
+      } else {
+        toast.error("Failed to load user stats");
+        }
 
       // Load user's posts
       const postsResponse = await axios.get(
@@ -91,6 +104,7 @@ const ProfilePage = () => {
       if (postsResponse.data.success) {
         const posts = postsResponse.data.posts;
         setUserPosts(posts);
+
 
         // Calculate post statistics
         const activePosts = posts.filter(
@@ -115,6 +129,8 @@ const ProfilePage = () => {
         });
         setLikesById(initialLikes);
         setIsLikedById(initialLikedStatus);
+      } else {
+        toast.error("Failed to load user posts");
       }
 
       // Load reviews given by user
@@ -125,6 +141,8 @@ const ProfilePage = () => {
 
       if (reviewsResponse.data.success) {
         setUserReviews(reviewsResponse.data.reviews);
+      } else {
+        toast.error("Failed to load reviews given by user");
       }
 
       // Load reviews received by user
@@ -135,6 +153,8 @@ const ProfilePage = () => {
 
       if (receivedReviewsResponse.data.success) {
         setReceivedReviews(receivedReviewsResponse.data.reviews);
+      } else {
+        toast.error("Failed to load reviews received by user");
       }
 
       // Load user favorites if viewing own profile
@@ -156,6 +176,7 @@ const ProfilePage = () => {
         axiosConfig
       );
 
+
       if (response.data.getSuccess) {
         const favorites = response.data.userFavorites;
         const newLikedStatus = { ...isLikedById };
@@ -163,11 +184,14 @@ const ProfilePage = () => {
           newLikedStatus[itemId] = true;
         });
         setIsLikedById(newLikedStatus);
+      } else {
+        toast.error("Failed to fetch user favorites");
       }
     } catch (error) {
       console.error("Failed to fetch user favorites:", error);
     }
   };
+
 
   const handleLikeToggle = async (itemId) => {
     try {
@@ -186,6 +210,8 @@ const ProfilePage = () => {
           ...prev,
           [itemId]: res.data.isLiked,
         }));
+      } else {
+        toast.error("Failed to toggle like");
       }
     } catch (error) {
       console.error("Error toggling like:", error);
@@ -233,6 +259,8 @@ const ProfilePage = () => {
         setTimeout(() => {
           window.location.reload();
         }, 2000);
+      } else {
+        toast.error("Failed to update post");
       }
     } catch (error) {
       console.error("Error updating post:", error);
@@ -252,6 +280,8 @@ const ProfilePage = () => {
         setTimeout(() => {
           window.location.reload();
         }, 2000);
+      } else {
+        toast.error("Failed to delete post");
       }
     } catch (error) {
       console.error("Failed to delete post:", error);
@@ -294,6 +324,8 @@ const ProfilePage = () => {
           ...prev,
           profilePhoto: response.data.photoUrl,
         }));
+      } else {
+        toast.error("Failed to upload profile photo");
       }
     } catch (error) {
       console.error("Error uploading profile photo:", error);
@@ -409,7 +441,7 @@ const ProfilePage = () => {
               <div className="flex-1 space-y-2">
                 <div className="flex items-center space-x-2">
                   <h1 className="text-2xl font-bold">
-                    {profileUser.name || profileUser.displayName}
+                    {profileUser.name || profileUser.displayName || "User"}
                   </h1>
                   {isOwnProfile && (
                     <Button
@@ -457,7 +489,7 @@ const ProfilePage = () => {
                 </div>
 
                 {profileUser.bio && (
-                  <p className="text-sm mt-2">{profileUser.bio || "No bio"}</p>
+                  <p className="text-sm mt-2 italic">{profileUser.bio || "No bio"}</p>
                 )}
               </div>
             </div>
@@ -520,7 +552,7 @@ const ProfilePage = () => {
               <div className="flex items-center justify-center space-x-1">
                 <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                 <span className="text-2xl font-bold text-primary">
-                  {stats.averageRating ? stats.averageRating.toFixed(1) : "0.0"}
+                  {stats.averageRating ? stats.averageRating : "0.0"}
                 </span>
               </div>
               <div className="text-sm text-muted-foreground">Rating</div>
@@ -532,8 +564,8 @@ const ProfilePage = () => {
         <Tabs defaultValue="posts" className="space-y-4">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="posts">
-              Posts ({userPosts.length}) • Active: {postStats.activePosts} •
-              Inactive: {postStats.inactivePosts}
+              Posts ({userPosts.length}) • Active: ({postStats.activePosts}) •
+              Inactive: ({postStats.inactivePosts})
             </TabsTrigger>
             <TabsTrigger value="reviews-received">
               Reviews Received ({receivedReviews.length})
@@ -742,9 +774,7 @@ const ProfilePage = () => {
         existingReview={selectedReview}
         onReviewSubmitted={() => {
           setIsReviewDialogOpen(false);
-          setTimeout(() => {
             loadProfileData();
-          }, 1500);
         }}
       />
     </main>

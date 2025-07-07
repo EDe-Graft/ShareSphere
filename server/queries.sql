@@ -1,3 +1,4 @@
+-- users table
 CREATE TABLE users (
     user_id SERIAL PRIMARY KEY,
     username VARCHAR(30) UNIQUE NOT NULL,
@@ -5,19 +6,35 @@ CREATE TABLE users (
     email VARCHAR(35) UNIQUE,
     password VARCHAR NOT NULL,
     photo VARCHAR(100),
-    bio TEXT,
     strategy VARCHAR(15),
     profile_url VARCHAR(100) UNIQUE,
-    review_count INTEGER,
+    bio TEXT,
+    joined_on VARCHAR(30) NOT NULL,
+    CONSTRAINT fk_user_stats
+        FOREIGN KEY (user_id)
+        REFERENCES user_stats(user_id)
+        ON DELETE CASCADE
+);
+    
+-- user stats table
+CREATE TABLE user_stats (
+    user_id INTEGER PRIMARY KEY,
     likes_received INTEGER,
     posts_count INTEGER,
     active_posts_count INTEGER,
     inactive_posts_count INTEGER,
-    average_rating INTEGER,
+    review_count INTEGER,
+    reviews_given INTEGER,
+    reviews_received INTEGER,
     report_count INTEGER,
-    joined_on VARCHAR(30) NOT NULL,
+    average_rating DECIMAL(2, 1),
+    CONSTRAINT fk_users
+        FOREIGN KEY (user_id)
+        REFERENCES users(user_id)
+        ON DELETE CASCADE
 );
 
+-- items table
 CREATE TABLE items (
     item_id SERIAL PRIMARY KEY,
     likes INTEGER NOT NULL,
@@ -32,11 +49,12 @@ CREATE TABLE items (
     uploader_photo VARCHAR(100),
     upload_date VARCHAR(30) UNIQUE,
     CONSTRAINT fk_users
-        FOREIGN KEY (owner_id) 
+        FOREIGN KEY (uploader_id) 
         REFERENCES users(user_id)
         ON DELETE CASCADE
 );
 
+-- books table
 CREATE TABLE books (
     book_id SERIAL PRIMARY KEY,
     item_id INTEGER NOT NULL,
@@ -61,6 +79,7 @@ CREATE TABLE books (
         REFERENCES items(item_id)
 );
 
+-- furniture table
 CREATE TABLE furniture (
     furniture_id SERIAL PRIMARY KEY,
     item_id INTEGER NOT NULL,
@@ -86,6 +105,7 @@ CREATE TABLE furniture (
         REFERENCES items(item_id)
 );
 
+-- clothing table
 CREATE TABLE clothing (
     clothing_id SERIAL PRIMARY KEY,
     item_id INTEGER NOT NULL,
@@ -111,6 +131,7 @@ CREATE TABLE clothing (
         REFERENCES items(item_id)
 );
 
+-- miscellaneous table
 CREATE TABLE miscellaneous (
     miscellaneous_id SERIAL PRIMARY KEY,
     item_id INTEGER NOT NULL,
@@ -135,6 +156,7 @@ CREATE TABLE miscellaneous (
         REFERENCES items(item_id)
 );
 
+-- images table
 CREATE TABLE images (
     image_id SERIAL PRIMARY KEY,
     image_url VARCHAR NOT NULL,
@@ -146,6 +168,7 @@ CREATE TABLE images (
         REFERENCES items(item_id)
 );
 
+-- favorites table
 CREATE TABLE favorites (
     id SERIAL,
     user_id INTEGER NOT NULL,
@@ -158,6 +181,7 @@ CREATE TABLE favorites (
         FOREIGN KEY (item_id) REFERENCES items(item_id)
 );
 
+-- reviews table
 CREATE TABLE reviews (
     review_id SERIAL PRIMARY KEY,
     reviewer_id INTEGER NOT NULL,
@@ -169,7 +193,7 @@ CREATE TABLE reviews (
     item_id INTEGER NOT NULL,
     item_name VARCHAR(100) NOT NULL,
     item_category VARCHAR(20) NOT NULL,
-    rating INTEGER NOT NULL,
+    rating DECIMAL(2,1) NOT NULL,
     comment TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_reviewer 
@@ -179,6 +203,7 @@ CREATE TABLE reviews (
 );
 
 
+-- report details table
 CREATE TABLE report_details (
   id SERIAL PRIMARY KEY,
   report_count INTEGER NOT NULL,
@@ -199,6 +224,7 @@ CREATE TABLE report_details (
     REFERENCES items(item_id)
 );
 
+-- report tracking table
 CREATE TABLE report_tracking (
     id SERIAL PRIMARY KEY,
     reporter_user_id INTEGER NOT NULL,
@@ -210,59 +236,3 @@ CREATE TABLE report_tracking (
     CONSTRAINT fk_users FOREIGN KEY (reported_user_id) REFERENCES users(user_id)
 );
 
--- Join images to items
--- SELECT 
---     images.image_id, 
---     items.item_id, 
---     items.item_owner_id
--- FROM images
--- INNER JOIN items 
---     ON images.item_id = items.item_id;
-
--- -- Views
--- CREATE VIEW book_likes_view AS
--- SELECT 
---     b.book_id,
---     b.title,
---     b.author,
---     b.condition,
---     b.uploaded_by,
---     b.upload_date,
---     i.item_id,
---     i.item_likes
--- FROM books b
--- JOIN items i ON b.item_id = i.item_id;
-
--- CREATE VIEW furniture_likes_view AS
--- SELECT 
---     f.furniture_id,
---     f.type,
---     f.condition,
---     f.upload_date,
---     i.item_id,
---     i.item_likes
--- FROM furniture f
--- JOIN items i ON f.item_id = i.item_id;
-
--- CREATE VIEW clothing_likes_view AS
--- SELECT 
---     c.clothing_id,
---     c.sub_category,
---     c.condition,
---     c.upload_date,
---     i.item_id,
---     i.item_likes
--- FROM clothing c
--- JOIN items i ON c.item_id = i.item_id;
-
--- CREATE VIEW miscellaneous_likes_view AS
--- SELECT 
---     m.miscellaneous_id,
---     m.type,
---     m.sub_category,
---     m.condition,
---     m.upload_date,
---     i.item_id,
---     i.item_likes
--- FROM miscellaneous m
--- JOIN items i ON m.item_id = i.item_id;

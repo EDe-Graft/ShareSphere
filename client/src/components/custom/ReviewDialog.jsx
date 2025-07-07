@@ -241,7 +241,7 @@ const ReviewDialog = ({
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">
                   {rating > 0
-                    ? `${rating.toFixed(1)} out of 5.0`
+                    ? `${rating} out of 5.0`
                     : "Move slider to rate"}
                 </span>
                 <span

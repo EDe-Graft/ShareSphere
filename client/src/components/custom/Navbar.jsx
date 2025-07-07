@@ -275,7 +275,7 @@ const Navbar = () => {
                 </DropdownMenuItem>
               ) : (
                 <>
-                  <DropdownMenuItem onClick={() => navigate("/profile")}>
+                  <DropdownMenuItem onClick={() => navigate(`/profile/${user?.userId}`)}>
                     Profile
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/favorites")}>

@@ -15,7 +15,7 @@ import AdminReportEmail from './dist/emails/AdminReportEmail.js';
 import ReportConfirmationEmail from './dist/emails/ReportConfirmationEmail.js';
 import WarningEmail from './dist/emails/WarningEmail.js';
 import { configurePassport } from "./passport-config.js";
-import { uploadToCloudinary, saveItem, saveImage, updateImage, insertCategoryDetails, getTableName, getImages, getLikes, manageLikesReceived, deleteImages, deletePost, saveReport, postReview, updateReview, getUserProfile, registerUser } from './database-utils.js';
+import { uploadToCloudinary, saveItem, saveImage, updateImage, insertCategoryDetails, getTableName, getImages, getLikes, manageLikesReceived, deleteImages, deletePost, saveReport, postReview, updateReview, getUserProfile, registerUser, getUserStats } from './database-utils.js';
 import { formatLocalISO, capitalizeFirst, toCamelCase, toSnakeCase } from "./format.js";
 
 // Express-app and environment creation
@@ -257,6 +257,29 @@ app.get("/user-profile/:userId", async (req, res) => {
     console.error("Error fetching user profile:", error);
     res.status(500).json({
       getSuccess: false,
+      message: "Internal server error"
+    });
+  }
+});
+
+app.get("/user-stats/:userId", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
+  const userId = req.params?.userId;
+
+  try {
+    const userStats = await getUserStats(db, userId);
+    console.log("userStats", userStats)
+    res.status(200).json({
+      success: true,
+      stats: toCamelCase(userStats)
+    });
+  } catch (error) {
+    console.error("Error fetching user stats:", error);
+    res.status(500).json({
+      success: false,
       message: "Internal server error"
     });
   }
@@ -1021,6 +1044,7 @@ app.post("/reviews", async (req, res) => {
 
   try {
     const reviewData = req.body;
+    console.log(reviewData)
 
     const review = await postReview(db, reviewData); //save review to database
 

@@ -92,6 +92,23 @@ export async function getUserProfile(db, userId) {
 }
 
 
+export async function getUserStats(db, userId) {
+  const userStatsResult = await db.query(
+    `SELECT * FROM user_stats WHERE user_id = $1`,
+    [userId]
+  );
+  return userStatsResult.rows[0];
+}
+
+export async function updateUserStats(db, userId, updateData) {
+  const { likesReceived, postsCount, activePostsCount, inactivePostsCount, reviewCount, reviewsGiven, reviewsReceived, reportCount, averageRating } = updateData;
+  await db.query(
+    `UPDATE user_stats SET likes_received = $1, posts_count = $2, active_posts_count = $3, inactive_posts_count = $4, review_count = $5, reviews_given = $6, reviews_received = $7, report_count = $8, average_rating = $9 WHERE user_id = $10`,
+    [likesReceived, postsCount, activePostsCount, inactivePostsCount, reviewCount, reviewsGiven, reviewsReceived, reportCount, averageRating, userId]
+  );
+}
+
+
 export async function uploadToCloudinary(encodedImage, itemCategory, imageId) {
   // Cloudinary Configuration
   cloudinary.config({
@@ -442,7 +459,7 @@ export async function manageLikesReceived(db, itemId, updatedLikes) {
 
   //update user likes received
   await db.query(
-    "UPDATE users SET likes_received = $1 WHERE user_id = $2",
+    "UPDATE user_stats SET likes_received = $1 WHERE user_id = $2",
     [updatedLikes, uploaderId]
   );
 }
@@ -479,15 +496,21 @@ export async function postReview(db, reviewData) {
     [reviewerId, reviewerName, reviewerPhoto, reviewedUserId, reviewedUserName, reviewedUserPhoto, itemId, itemName, itemCategory, rating, comment, reviewDate]
   );
 
-  //update user review count
+  //update user review count for reviewer (saving for user contribution to platform)
+  await db.query(`
+    UPDATE user_stats SET review_count = review_count + 1 WHERE user_id = $1`,
+    [reviewerId]
+  );
+
+  //update user review count for reviewedUser
   await db.query(
-    `UPDATE users SET review_count = review_count + 1 WHERE user_id = $1`,
+    `UPDATE user_stats SET review_count = review_count + 1 WHERE user_id = $1`,
     [reviewedUserId]
   );
 
   //update user average rating
   await db.query(
-    `UPDATE users SET average_rating = (SELECT AVG(rating) FROM reviews WHERE reviewed_user_id = $1) WHERE user_id = $1`,
+    `UPDATE user_stats SET average_rating = (SELECT AVG(rating) FROM reviews WHERE reviewed_user_id = $1) WHERE user_id = $1`,
     [reviewedUserId]
   );
 
