@@ -45,6 +45,11 @@ const ProfilePage = () => {
     averageRating: 0,
     totalLikes: 0,
   });
+  const [postStats, setPostStats] = useState({
+    activePosts: 0,
+    inactivePosts: 0,
+    totalPosts: 0,
+  });
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   const axiosConfig = {
@@ -52,7 +57,7 @@ const ProfilePage = () => {
     withCredentials: true,
   };
 
-  // Determine if viewing own profile or another user's profile
+  //Determine if viewing own profile or another user's profile
   const isOwnProfile = userId === currentUser?.userId && userId !== "undefined";
   const targetUserId = isOwnProfile ? currentUser?.userId : userId;
 
@@ -86,6 +91,20 @@ const ProfilePage = () => {
       if (postsResponse.data.success) {
         const posts = postsResponse.data.posts;
         setUserPosts(posts);
+
+        // Calculate post statistics
+        const activePosts = posts.filter(
+          (post) => post.available === "true" || post.available === true
+        ).length;
+        const inactivePosts = posts.filter(
+          (post) => post.available === "false" || post.available === false
+        ).length;
+
+        setPostStats({
+          activePosts,
+          inactivePosts,
+          totalPosts: posts.length,
+        });
 
         // Initialize likes data
         const initialLikes = {};
@@ -446,13 +465,33 @@ const ProfilePage = () => {
         </Card>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <Card>
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-primary">
                 {stats.postsCount || 0}
               </div>
-              <div className="text-sm text-muted-foreground">Posts</div>
+              <div className="text-sm text-muted-foreground">Total Posts</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-green-600">
+                {postStats.activePosts}
+              </div>
+              <div className="text-sm text-muted-foreground">Active Posts</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-orange-600">
+                {postStats.inactivePosts}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Inactive Posts
+              </div>
             </CardContent>
           </Card>
 
@@ -492,7 +531,10 @@ const ProfilePage = () => {
         {/* Content Tabs */}
         <Tabs defaultValue="posts" className="space-y-4">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="posts">Posts ({userPosts.length})</TabsTrigger>
+            <TabsTrigger value="posts">
+              Posts ({userPosts.length}) • Active: {postStats.activePosts} •
+              Inactive: {postStats.inactivePosts}
+            </TabsTrigger>
             <TabsTrigger value="reviews-received">
               Reviews Received ({receivedReviews.length})
             </TabsTrigger>
