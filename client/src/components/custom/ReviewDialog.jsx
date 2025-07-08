@@ -129,7 +129,6 @@ const ReviewDialog = ({
   // Star rendering with precise decimal support
   const renderStars = (displayRating) => {
     return Array.from({ length: 5 }).map((_, index) => {
-      const starValue = index + 1;
       const fillPercentage = Math.max(
         0,
         Math.min(100, (displayRating - index) * 100)
@@ -240,9 +239,7 @@ const ReviewDialog = ({
               {/* Rating Display */}
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">
-                  {rating > 0
-                    ? `${rating} out of 5.0`
-                    : "Move slider to rate"}
+                  {rating > 0 ? `${rating} out of 5.0` : "Move slider to rate"}
                 </span>
                 <span
                   className={`font-medium ${

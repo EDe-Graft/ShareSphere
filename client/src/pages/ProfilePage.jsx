@@ -58,7 +58,7 @@ const ProfilePage = () => {
   };
 
   //Determine if viewing own profile or another user's profile
-  const isOwnProfile = (String(userId) === String(currentUser?.userId));
+  const isOwnProfile = String(userId) === String(currentUser?.userId);
   const targetUserId = isOwnProfile ? currentUser?.userId : userId;
 
   useEffect(() => {
@@ -88,12 +88,12 @@ const ProfilePage = () => {
         `${BACKEND_URL}/user-stats/${targetUserId}`,
         axiosConfig
       );
-      
+
       if (statsResponse.data.success) {
         setStats(statsResponse.data.stats);
       } else {
         toast.error("Failed to load user stats");
-        }
+      }
 
       // Load user's posts
       const postsResponse = await axios.get(
@@ -104,7 +104,6 @@ const ProfilePage = () => {
       if (postsResponse.data.success) {
         const posts = postsResponse.data.posts;
         setUserPosts(posts);
-
 
         // Calculate post statistics
         const activePosts = posts.filter(
@@ -176,7 +175,6 @@ const ProfilePage = () => {
         axiosConfig
       );
 
-
       if (response.data.getSuccess) {
         const favorites = response.data.userFavorites;
         const newLikedStatus = { ...isLikedById };
@@ -191,7 +189,6 @@ const ProfilePage = () => {
       console.error("Failed to fetch user favorites:", error);
     }
   };
-
 
   const handleLikeToggle = async (itemId) => {
     try {
@@ -489,7 +486,9 @@ const ProfilePage = () => {
                 </div>
 
                 {profileUser.bio && (
-                  <p className="text-sm mt-2 italic">{profileUser.bio || "No bio"}</p>
+                  <p className="text-sm mt-2 italic">
+                    {profileUser.bio || "No bio"}
+                  </p>
                 )}
               </div>
             </div>
@@ -774,7 +773,7 @@ const ProfilePage = () => {
         existingReview={selectedReview}
         onReviewSubmitted={() => {
           setIsReviewDialogOpen(false);
-            loadProfileData();
+          loadProfileData();
         }}
       />
     </main>

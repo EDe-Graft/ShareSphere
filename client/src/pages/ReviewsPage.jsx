@@ -192,13 +192,27 @@ const ReviewsPage = () => {
     setSortBy("newest");
   };
 
+  // Star rendering with precise decimal support
   const renderStars = (rating) => {
-    return Array.from({ length: 5 }).map((_, i) => (
-      <Star
-        key={i}
-        className={`h-4 w-4 ${i < rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
-      />
-    ));
+    return Array.from({ length: 5 }).map((_, index) => {
+      const fillPercentage = Math.max(0, Math.min(100, (rating - index) * 100));
+
+      return (
+        <div key={index} className="relative inline-block">
+          {/* Background empty star */}
+          <Star className="h-4 w-4 text-gray-300" />
+          {/* Filled portion */}
+          {fillPercentage > 0 && (
+            <div
+              className="absolute inset-0 overflow-hidden"
+              style={{ width: `${fillPercentage}%` }}
+            >
+              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+            </div>
+          )}
+        </div>
+      );
+    });
   };
 
   const ReviewCard = ({ review, type, onEdit, onDelete }) => (
