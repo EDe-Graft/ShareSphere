@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import ItemCard from "@/components/custom/ItemCard";
 import ItemDetailsDialog from "@/components/custom/ItemDetailsDialog";
 import ReviewDialog from "@/components/custom/ReviewDialog";
+import Pagination from "@/components/custom/Pagination";
 import { useAuth } from "@/components/context/AuthContext";
 import axios from "axios";
 import { formatData } from "@/lib/utils";
@@ -39,6 +40,14 @@ const ProfilePage = () => {
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
   const [selectedReview, setSelectedReview] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Pagination states
+  const [currentPostsPage, setCurrentPostsPage] = useState(1);
+  const [currentReceivedReviewsPage, setCurrentReceivedReviewsPage] =
+    useState(1);
+  const [currentGivenReviewsPage, setCurrentGivenReviewsPage] = useState(1);
+  const itemsPerPage = 6;
+
   const [stats, setStats] = useState({
     totalPosts: 0,
     totalReviews: 0,
@@ -66,6 +75,17 @@ const ProfilePage = () => {
       loadProfileData();
     }
   }, [targetUserId]);
+
+  // Reset pagination when tab changes
+  const handleTabChange = (value) => {
+    if (value === "posts") {
+      setCurrentPostsPage(1);
+    } else if (value === "reviews-received") {
+      setCurrentReceivedReviewsPage(1);
+    } else if (value === "reviews-given") {
+      setCurrentGivenReviewsPage(1);
+    }
+  };
 
   const loadProfileData = async () => {
     try {
@@ -353,6 +373,25 @@ const ProfilePage = () => {
     });
   };
 
+  // Pagination helpers
+  const getPaginatedPosts = () => {
+    const startIndex = (currentPostsPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return userPosts.slice(startIndex, endIndex);
+  };
+
+  const getPaginatedReceivedReviews = () => {
+    const startIndex = (currentReceivedReviewsPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return receivedReviews.slice(startIndex, endIndex);
+  };
+
+  const getPaginatedGivenReviews = () => {
+    const startIndex = (currentGivenReviewsPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return userReviews.slice(startIndex, endIndex);
+  };
+
   if (isLoading) {
     return (
       <main className="container mx-auto px-4 py-8">
@@ -560,7 +599,11 @@ const ProfilePage = () => {
         </div>
 
         {/* Content Tabs */}
-        <Tabs defaultValue="posts" className="space-y-4">
+        <Tabs
+          defaultValue="posts"
+          className="space-y-4"
+          onValueChange={handleTabChange}
+        >
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="posts">
               Posts ({userPosts.length}) • Active: ({postStats.activePosts}) •
@@ -576,20 +619,28 @@ const ProfilePage = () => {
 
           <TabsContent value="posts" className="space-y-4">
             {userPosts.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {userPosts.map((item) => (
-                  <ItemCard
-                    key={item.itemId}
-                    item={item}
-                    onViewDetails={handleViewDetails}
-                    onDelete={isOwnProfile ? handleDeletePost : undefined}
-                    likes={likesById[item.itemId] || 0}
-                    isLiked={isLikedById[item.itemId] || false}
-                    onLikeToggle={handleLikeToggle}
-                    viewMode="grid"
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {getPaginatedPosts().map((item) => (
+                    <ItemCard
+                      key={item.itemId}
+                      item={item}
+                      onViewDetails={handleViewDetails}
+                      onDelete={isOwnProfile ? handleDeletePost : undefined}
+                      likes={likesById[item.itemId] || 0}
+                      isLiked={isLikedById[item.itemId] || false}
+                      onLikeToggle={handleLikeToggle}
+                      viewMode="grid"
+                    />
+                  ))}
+                </div>
+                <Pagination
+                  currentPage={currentPostsPage}
+                  totalItems={userPosts.length}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentPostsPage}
+                />
+              </>
             ) : (
               <Card>
                 <CardContent className="p-8 text-center">
@@ -622,43 +673,53 @@ const ProfilePage = () => {
             </div>
 
             {receivedReviews.length > 0 ? (
-              <div className="space-y-4">
-                {receivedReviews.map((review) => (
-                  <Card key={review.reviewId}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center space-x-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage
-                              src={review.reviewerPhoto || "/placeholder.svg"}
-                            />
-                            <AvatarFallback>
-                              {review.reviewerName?.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{review.reviewerName}</p>
-                            <div className="flex items-center space-x-1">
-                              {renderStars(review.rating)}
+              <>
+                <div className="space-y-4">
+                  {getPaginatedReceivedReviews().map((review) => (
+                    <Card key={review.reviewId}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center space-x-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage
+                                src={review.reviewerPhoto || "/placeholder.svg"}
+                              />
+                              <AvatarFallback>
+                                {review.reviewerName?.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">
+                                {review.reviewerName}
+                              </p>
+                              <div className="flex items-center space-x-1">
+                                {renderStars(review.rating)}
+                              </div>
                             </div>
                           </div>
+                          <span className="text-sm text-muted-foreground">
+                            {new Date(review.createdAt).toLocaleDateString()}
+                          </span>
                         </div>
-                        <span className="text-sm text-muted-foreground">
-                          {new Date(review.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      {review.comment && (
-                        <p className="mt-3 text-sm">{review.comment}</p>
-                      )}
-                      {review.itemName && (
-                        <Badge variant="secondary" className="mt-2">
-                          About: {review.itemName}
-                        </Badge>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                        {review.comment && (
+                          <p className="mt-3 text-sm">{review.comment}</p>
+                        )}
+                        {review.itemName && (
+                          <Badge variant="secondary" className="mt-2">
+                            About: {review.itemName}
+                          </Badge>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+                <Pagination
+                  currentPage={currentReceivedReviewsPage}
+                  totalItems={receivedReviews.length}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentReceivedReviewsPage}
+                />
+              </>
             ) : (
               <Card>
                 <CardContent className="p-8 text-center">
@@ -678,59 +739,69 @@ const ProfilePage = () => {
             <h3 className="text-lg font-semibold">Reviews Given</h3>
 
             {userReviews.length > 0 ? (
-              <div className="space-y-4">
-                {userReviews.map((review) => (
-                  <Card key={review.reviewId}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center space-x-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage
-                              src={
-                                review.reviewedUserPhoto || "/placeholder.svg"
-                              }
-                            />
-                            <AvatarFallback>
-                              {review.reviewedUserName?.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">
-                              Review for {review.reviewedUserName}
-                            </p>
+              <>
+                <div className="space-y-4">
+                  {getPaginatedGivenReviews().map((review) => (
+                    <Card key={review.reviewId}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center space-x-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage
+                                src={
+                                  review.reviewedUserPhoto || "/placeholder.svg"
+                                }
+                              />
+                              <AvatarFallback>
+                                {review.reviewedUserName
+                                  ?.charAt(0)
+                                  .toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">
+                                Review for {review.reviewedUserName}
+                              </p>
 
-                            <div className="flex items-center space-x-1">
-                              {renderStars(review.rating)}
+                              <div className="flex items-center space-x-1">
+                                {renderStars(review.rating)}
+                              </div>
                             </div>
                           </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm text-muted-foreground">
+                              {new Date(review.createdAt).toLocaleDateString()}
+                            </span>
+                            {isOwnProfile && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditReview(review)}
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm text-muted-foreground">
-                            {new Date(review.createdAt).toLocaleDateString()}
-                          </span>
-                          {isOwnProfile && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditReview(review)}
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                      {review.comment && (
-                        <p className="mt-3 text-sm">{review.comment}</p>
-                      )}
-                      {review.itemName && (
-                        <Badge variant="secondary" className="mt-2">
-                          About: {review.itemName}
-                        </Badge>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                        {review.comment && (
+                          <p className="mt-3 text-sm">{review.comment}</p>
+                        )}
+                        {review.itemName && (
+                          <Badge variant="secondary" className="mt-2">
+                            About: {review.itemName}
+                          </Badge>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+                <Pagination
+                  currentPage={currentGivenReviewsPage}
+                  totalItems={userReviews.length}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentGivenReviewsPage}
+                />
+              </>
             ) : (
               <Card>
                 <CardContent className="p-8 text-center">

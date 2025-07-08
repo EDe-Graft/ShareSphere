@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import ReviewDialog from "@/components/custom/ReviewDialog";
+import Pagination from "@/components/custom/Pagination";
 import { useAuth } from "@/components/context/AuthContext";
 import axios from "axios";
 
@@ -44,6 +45,11 @@ const ReviewsPage = () => {
   const [selectedReview, setSelectedReview] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
 
+  // Pagination states
+  const [currentReceivedPage, setCurrentReceivedPage] = useState(1);
+  const [currentGivenPage, setCurrentGivenPage] = useState(1);
+  const itemsPerPage = 5;
+
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   const axiosConfig = {
     headers: { "Content-Type": "application/json" },
@@ -56,7 +62,18 @@ const ReviewsPage = () => {
 
   useEffect(() => {
     filterReviews();
+    setCurrentReceivedPage(1);
+    setCurrentGivenPage(1);
   }, [reviewsGiven, reviewsReceived, searchQuery, ratingFilter, sortBy]);
+
+  // Reset pagination when tab changes
+  const handleTabChange = (value) => {
+    if (value === "received") {
+      setCurrentReceivedPage(1);
+    } else if (value === "given") {
+      setCurrentGivenPage(1);
+    }
+  };
 
   //load reviews
   const loadReviews = async () => {
@@ -213,6 +230,19 @@ const ReviewsPage = () => {
         </div>
       );
     });
+  };
+
+  // Pagination helpers
+  const getPaginatedReceivedReviews = () => {
+    const startIndex = (currentReceivedPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredReviewsReceived.slice(startIndex, endIndex);
+  };
+
+  const getPaginatedGivenReviews = () => {
+    const startIndex = (currentGivenPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredReviewsGiven.slice(startIndex, endIndex);
   };
 
   const ReviewCard = ({ review, type, onEdit, onDelete }) => (
@@ -410,7 +440,11 @@ const ReviewsPage = () => {
         </Card>
 
         {/* Reviews Tabs */}
-        <Tabs defaultValue="received" className="space-y-4">
+        <Tabs
+          defaultValue="received"
+          className="space-y-4"
+          onValueChange={handleTabChange}
+        >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="received">
               Reviews Received ({filteredReviewsReceived.length})
@@ -422,15 +456,23 @@ const ReviewsPage = () => {
 
           <TabsContent value="received" className="space-y-4">
             {filteredReviewsReceived.length > 0 ? (
-              <div className="space-y-4">
-                {filteredReviewsReceived.map((review, index) => (
-                  <ReviewCard
-                    key={review.reviewId || `received-${index}`}
-                    review={review}
-                    type="received"
-                  />
-                ))}
-              </div>
+              <>
+                <div className="space-y-4">
+                  {getPaginatedReceivedReviews().map((review, index) => (
+                    <ReviewCard
+                      key={review.reviewId || `received-${index}`}
+                      review={review}
+                      type="received"
+                    />
+                  ))}
+                </div>
+                <Pagination
+                  currentPage={currentReceivedPage}
+                  totalItems={filteredReviewsReceived.length}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentReceivedPage}
+                />
+              </>
             ) : (
               <Card>
                 <CardContent className="p-8 text-center">
@@ -452,17 +494,25 @@ const ReviewsPage = () => {
 
           <TabsContent value="given" className="space-y-4">
             {filteredReviewsGiven.length > 0 ? (
-              <div className="space-y-4">
-                {filteredReviewsGiven.map((review, index) => (
-                  <ReviewCard
-                    key={review.reviewId || `given-${index}`}
-                    review={review}
-                    type="given"
-                    onEdit={handleEditReview}
-                    onDelete={handleDeleteReview}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="space-y-4">
+                  {getPaginatedGivenReviews().map((review, index) => (
+                    <ReviewCard
+                      key={review.reviewId || `given-${index}`}
+                      review={review}
+                      type="given"
+                      onEdit={handleEditReview}
+                      onDelete={handleDeleteReview}
+                    />
+                  ))}
+                </div>
+                <Pagination
+                  currentPage={currentGivenPage}
+                  totalItems={filteredReviewsGiven.length}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentGivenPage}
+                />
+              </>
             ) : (
               <Card>
                 <CardContent className="p-8 text-center">
