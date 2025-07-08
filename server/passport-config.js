@@ -3,7 +3,7 @@ import GoogleStrategy from "passport-google-oauth2";
 import GitHubStrategy from "passport-github2"; //  import GitHub strategy
 import bcrypt from "bcrypt";
 import { generateUniqueUsername } from "./database-utils.js";
-import { formatLocalISO } from "./format.js";
+import { formatLocalISO, toCamelCase } from "./format.js";
 
 
 export function configurePassport(passport, db) {
@@ -21,7 +21,8 @@ export function configurePassport(passport, db) {
         const passwordMatch = await bcrypt.compare(password, user.password);
 
         if (passwordMatch) {
-          return cb(null, user);
+          console.log(user)
+          return cb(null, toCamelCase(user));
         } else {
           return cb(null, false, { message: 'incorrect password' });
         }
@@ -49,8 +50,10 @@ export function configurePassport(passport, db) {
       let password = "google";
       let email = profile.email;
       let authStrategy = "google";
-      let photo = profile.picture;
+      let photo;
+      let photoPublicId = null;
       let profileUrl = profile.profileUrl || null;
+      let location;
       let bio;
       let joinedOn;
 
@@ -74,7 +77,9 @@ export function configurePassport(passport, db) {
         username = await generateUniqueUsername(db, name)
 
         //initialize variables for user profile
-        joinedOn = formatLocalISO(new Date());
+        joinedOn = formatLocalISO()
+        photo = profile.picture;
+        location = 'USA';
         bio = `Hi, I'm ${name}!`;
 
         //initialize variables for user stats
@@ -91,8 +96,8 @@ export function configurePassport(passport, db) {
 
         //insert new user into users table
         const newUserResults = await db.query(
-          "INSERT INTO users (username, name, email, password, photo, strategy, profile_url, joined_on, bio) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
-          [username, name, email, password, photo, authStrategy, profileUrl, joinedOn, bio]
+          "INSERT INTO users (username, name, email, password, strategy, photo, photo_public_id, profile_url, location, joined_on, bio) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *",
+          [username, name, email, password, authStrategy, photo, photoPublicId, profileUrl, location, joinedOn, bio]
         );
 
         //get new user from result
@@ -111,6 +116,9 @@ export function configurePassport(passport, db) {
         username = newUser.username;
         joinedOn = newUser.joined_on;
         authStrategy = newUser.strategy;
+        location = newUser.locaton;
+        photo = newUser.photo;
+        photoPublicId = newUser.photoPublicId;
         bio = newUser.bio;
       } else {
         //get user from result
@@ -121,6 +129,9 @@ export function configurePassport(passport, db) {
         username = user.username;
         joinedOn = user.joined_on;
         authStrategy = user.strategy;
+        location = user.location;
+        photo = user.photo;
+        photoPublicId = user.photoPublicId;
         bio = user.bio;
       }
 
@@ -131,10 +142,11 @@ export function configurePassport(passport, db) {
       profile.photo = photo;
       profile.authStrategy = authStrategy;
       profile.joinedOn = joinedOn;
+      profile.location = location;
+      profile.photoPublicId = photoPublicId;
       profile.bio = bio;
 
       //return profile object
-      console.log("profile", profile);
       cb(null, profile);
     } catch (error) {
       console.error("Error in Google strategy:", error);
@@ -157,9 +169,11 @@ export function configurePassport(passport, db) {
       let username;
       let name = profile.displayName;
       let password = "github";
-      let photo = profile.photos?.[0]?.value;
+      let photo;
+      let photoPublicId = null;
       let authStrategy = "github";
       let profileUrl = profile.profileUrl || null;
+      let location;
       let joinedOn;
       let bio;
       
@@ -194,7 +208,12 @@ export function configurePassport(passport, db) {
         email = state?.email || profile.email || null;
 
         //initialize variables for user stats
-        joinedOn = formatLocalISO(new Date());
+        joinedOn = formatLocalISO();
+        photo = profile.photos?.[0]?.value;
+        location = `USA`;
+        bio = `Hi, I'm ${name}!`;
+
+
         reviewCount = 0;
         postsCount = 0;
         activePostsCount = 0;
@@ -204,12 +223,11 @@ export function configurePassport(passport, db) {
         reviewsReceived = 0;
         reportCount = 0;
         averageRating = 0;
-        bio = `Hi, I'm ${name}!`;
 
         //insert new user into users table
         const newUserResults = await db.query(
-          "INSERT INTO users (username, name, email, password, photo, strategy, profile_url, joined_on, bio) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
-          [username, name, email, password, photo, authStrategy, profileUrl, joinedOn, bio]
+          "INSERT INTO users (username, name, email, password, strategy, photo, photo_public_id, profile_url, location, joined_on, bio) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *",
+          [username, name, email, password, authStrategy, photo, photoPublicId, profileUrl, location, joinedOn, bio]
         );
 
         //get new user from result
@@ -229,6 +247,9 @@ export function configurePassport(passport, db) {
         email = newUser.email;
         authStrategy = newUser.strategy
         joinedOn = newUser.joined_on;
+        location = newUser.location;
+        photo = newUser.photo;
+        photoPublicId = newUser.photoPublicId;
         bio = newUser.bio;
       } else {
         //get user from result
@@ -240,6 +261,9 @@ export function configurePassport(passport, db) {
         email = user.email;
         authStrategy = user.strategy;
         joinedOn = user.joined_on;
+        location = user.location;
+        photo = user.photo;
+        photoPublicId = user.photoPublicId;
         bio = user.bio;
       }
 
@@ -247,13 +271,14 @@ export function configurePassport(passport, db) {
       profile.userId = userId;
       profile.email = email;
       profile.photo = photo;
+      profile.photoPublicId = photoPublicId;
       profile.name = name;
       profile.joinedOn = joinedOn;
       profile.authStrategy = authStrategy;
+      profile.location = location;
       profile.bio = bio;
 
       //return profile object
-      console.log("profile", profile);
       cb(null, profile);
     } catch (error) {
       console.error("Error in GitHub strategy:", error);

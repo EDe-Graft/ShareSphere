@@ -25,7 +25,6 @@ export function AuthProvider({ children }) {
       );
       // if 200 OK comes back:
       if (data.authSuccess) {
-        console.log("AuthContext: Setting user", data.user);
         setUser(data.user);
         setAuthSuccess(true);
       }

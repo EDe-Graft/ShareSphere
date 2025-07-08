@@ -15,7 +15,7 @@ import AdminReportEmail from './dist/emails/AdminReportEmail.js';
 import ReportConfirmationEmail from './dist/emails/ReportConfirmationEmail.js';
 import WarningEmail from './dist/emails/WarningEmail.js';
 import { configurePassport } from "./passport-config.js";
-import { uploadToCloudinary, saveItem, saveImage, updateImage, insertCategoryDetails, getTableName, getImages, getLikes, manageLikesReceived, deleteImages, deletePost, saveReport, postReview, updateReview, getUserProfile, registerUser, getUserStats } from './database-utils.js';
+import { uploadToCloudinary, saveItem, saveImage, updateImage, insertCategoryDetails, getTableName, getImages, getLikes, manageLikesReceived, deleteImages, deletePost, saveReport, postReview, updateReview, getUserProfile, updateUserProfile, registerUser, getUserStats, deleteFromCloudinary, checkImageExists } from './database-utils.js';
 import { formatLocalISO, capitalizeFirst, toCamelCase, toSnakeCase } from "./format.js";
 
 // Express-app and environment creation
@@ -271,7 +271,6 @@ app.get("/user-stats/:userId", async (req, res) => {
 
   try {
     const userStats = await getUserStats(db, userId);
-    console.log("userStats", userStats)
     res.status(200).json({
       success: true,
       stats: toCamelCase(userStats)
@@ -429,9 +428,9 @@ app.post("/update-post", upload.array('newImages', 3), async (req, res) => {
     let categoryParamIndex = 1;
 
     // Process all fields from converted data
-    Object.entries(updateData).forEach(([key, value]) => {
+    Object.entries(toSnakeCase(updateData)).forEach(([key, value]) => {
       // Skip identifiers
-      if (key === 'itemId' || key === 'itemCategory' || key === 'removedImages' || key === 'newImages') return;
+      if (key === 'item_id' || key === 'item_category' || key === 'removed_images' || key === 'new_images') return;
 
       // Update items table parameters
       if (commonFields.includes(key)) {
@@ -485,9 +484,6 @@ app.post("/update-post", upload.array('newImages', 3), async (req, res) => {
 
     if (newImages) {
       const uploadDate = formatLocalISO(); //upload date
-      
-      console.log("Processing newImages:", newImages.length, "files");
-      console.log("First image properties:", Object.keys(newImages[0] || {}));
 
       // Process each file and upload to cloudinary
       const uploadPromises = newImages.map(async (image) => {
@@ -543,29 +539,55 @@ app.post("/update-post", upload.array('newImages', 3), async (req, res) => {
 });
 
 
-app.patch("/update-profile-photo", upload.single('profilePhoto'), async (req, res) => {
+
+app.patch("/update-profile", upload.single('profilePhoto'), async (req, res) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ error: "Not authenticated" });
   }
-
-  const userId = req.user.userId;
-  const profilePhoto = req.file;
-  console.log("profilePhoto", profilePhoto)
+  const userId = req.user?.userId;
+  const image = req.file || null;
+  let updateData = {
+    ...req.body,
+    userId
+  };
 
   try {
-    const updateData = {
-      photo: profilePhoto.path,
-      userId: userId
+    // 1. Check if old photo exists before trying to delete it
+    if (image && updateData.photoPublicId) {
+      let oldPublicId = updateData.photoPublicId;
+      const imageExists = await checkImageExists(oldPublicId);
+      if (imageExists) {
+        await deleteFromCloudinary(oldPublicId);
+      } else {
+        console.log(`Old profile image ${oldPublicId} does not exist on Cloudinary, skipping deletion`);
+      }
     }
 
-    await updateProfilePhoto(db, updateData);
+    // 2. Upload new image to Cloudinary
+    if (image) {
+      const mimeType = image.mimetype || image.type || 'image/jpeg';
+      const itemCategory = "profile";
+
+      const [formattedImageUrl, newPublicId] = await uploadToCloudinary(
+        `data:${mimeType};base64,${image.buffer.toString('base64')}`,
+        itemCategory,
+        userId
+      );
+
+      updateData.photo = formattedImageUrl;
+      updateData.photoPublicId = newPublicId;
+    }
+
+    // 3. Update user profile
+    const userData = await updateUserProfile(db, updateData);
 
     res.status(200).json({
-      updateSuccess: true,
-      message: "Profile photo updated successfully"
+      success: true,
+      userData,
+      message: "Your profile updated successfully"
     });
   } catch (error) {
-    console.error("Error updating profile photo:", error);
+    console.error("Error updating profile:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -1176,20 +1198,34 @@ app.post("/change-availability", async (req, res) => {
 
 // Register New User
 app.post("/register", async (req, res) => {
+  try {
     const userData = req.body;
     const user = await registerUser(db, userData);
+    console.log("user registered successfully")
 
     if (user) {
-    // Log in the user after registration
-    req.login(user, (err) => {
-      if (err) {console.log(error)}
-
-      res.redirect("/auth/user");
-    });
-  } else {
+      // Log in the user after registration
+      req.login(user, (err) => {
+        if (err) {
+          console.log(err)
+          return res.status(500).json({
+            registerSuccess: false,
+            message: "Registration successful but login failed"
+          });
+        }
+        res.redirect("/auth/user");
+      });
+    } else {
+      res.status(400).json({
+        registerSuccess: false,
+        message: "User registration failed. Please try again."
+      });
+    }
+  } catch (error) {
+    console.error("Registration error:", error);
     res.status(400).json({
       registerSuccess: false,
-      message: "User registration failed. Please try again."
+      message: error.message || "User registration failed. Please try again."
     });
   }
 })
@@ -1222,6 +1258,7 @@ app.post("/register", async (req, res) => {
     });
   })(req, res, next);
 });
+
 
 // Logout user and terminate session
 app.post("/logout/user", (req, res) => {

@@ -326,8 +326,8 @@ const ProfilePage = () => {
       const formData = new FormData();
       formData.append("profilePhoto", file);
 
-      const response = await axios.post(
-        `${BACKEND_URL}/update-profile-photo`,
+      const response = await axios.patch(
+        `${BACKEND_URL}/update-profile`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -335,14 +335,22 @@ const ProfilePage = () => {
         }
       );
 
+
       if (response.data.success) {
         toast.success("Profile photo updated successfully");
+        
+        let userData = response.data.userData 
         setProfileUser((prev) => ({
           ...prev,
-          profilePhoto: response.data.photoUrl,
-        }));
+          profilePhoto: userData.photo,
+        }))
+
+        setTimeout(() => {
+          navigate(`/profile/${userId}`)
+          , 1500
+        })
       } else {
-        toast.error("Failed to upload profile photo");
+        toast.error("Failed to update profile photo");
       }
     } catch (error) {
       console.error("Error uploading profile photo:", error);
@@ -606,8 +614,7 @@ const ProfilePage = () => {
         >
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="posts">
-              Posts ({userPosts.length}) • Active: ({postStats.activePosts}) •
-              Inactive: ({postStats.inactivePosts})
+              Posts ({userPosts.length})
             </TabsTrigger>
             <TabsTrigger value="reviews-received">
               Reviews Received ({receivedReviews.length})

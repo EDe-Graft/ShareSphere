@@ -22,7 +22,7 @@ import { useAuth } from "@/components/context/AuthContext";
 import axios from "axios";
 
 const EditProfilePage = () => {
-  const { user, updateUser } = useAuth();
+  const { user, setUser } = useAuth();
   const navigate = useNavigate();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -46,7 +46,7 @@ const EditProfilePage = () => {
 
   const location = useLocation();
   const passedProfileData = location.state?.profileData;
-  const returnPath = location.state?.returnTo || "/profile";
+  const returnPath = location.state?.returnTo || `/profile/${user?.userId}`;
 
   useEffect(() => {
     if (passedProfileData) {
@@ -58,6 +58,7 @@ const EditProfilePage = () => {
         bio: passedProfileData.bio || "",
         location: passedProfileData.location || "",
         photo: passedProfileData.photo || "",
+        photoPublicId: passedProfileData.photoPublicId || null
       });
       setPhotoPreview(passedProfileData.photo || "");
       setIsLoading(false);
@@ -80,14 +81,14 @@ const EditProfilePage = () => {
       if (response.data.getSuccess) {
         const userData = response.data.userData;
         setProfileData({
-          name: userData.name || userData.displayName || "",
-          username: userData.username || "",
-          email: userData.email || "",
-          bio: userData.bio || "",
-          location: userData.location || "",
-          photo: userData.photo || "",
+          name: userData.name || userData.displayName || "N/A",
+          username: userData.username || "N/A",
+          email: userData.email || "N/A",
+          bio: userData.bio || "N/A",
+          location: userData.location || "N/A",
+          photo: userData.photo || "N/A",
         });
-        setPhotoPreview(userData.photo || "");
+        setPhotoPreview(userData.photo || "N/A");
       }
     } catch (error) {
       console.error("Error loading profile data:", error);
@@ -157,47 +158,39 @@ const EditProfilePage = () => {
         return;
       }
 
-      let photoUrl = profileData.photo;
+      const formData = new FormData();
 
-      // Upload photo if changed
-      if (photoFile) {
-        const photoFormData = new FormData();
-        photoFormData.append("profilePhoto", photoFile);
-
-        const photoResponse = await axios.post(
-          `${BACKEND_URL}/update-profile-photo`,
-          photoFormData,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-            withCredentials: true,
-          }
-        );
-
-        if (photoResponse.data.success) {
-          photoUrl = photoResponse.data.photoUrl;
-        } else {
-          throw new Error("Failed to upload photo");
+      //append data fields to Form Data
+      for (const [key, value] of Object.entries(profileData)) {
+        //only append fields that changed and are defined or non empty
+        if (profileData[key] && (profileData[key] !== passedProfileData[key])) {
+          formData.append(key, value)
         }
       }
 
-      // Update profile data
-      const updateData = {
-        ...profileData,
-        photo: photoUrl,
-      };
+      // append photo if changed
+      if (photoFile) {
+        formData.append("profilePhoto", photoFile);
+      } 
 
-      const response = await axios.put(
+      //send patch request to backend
+      const updateResponse = await axios.patch(
         `${BACKEND_URL}/update-profile`,
-        updateData,
-        axiosConfig
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+          withCredentials: true,
+        }
       );
 
-      if (response.data.success) {
+      if (updateResponse.data.success) {
         toast.success("Profile updated successfully!");
 
-        // Update user context if available
-        if (updateUser) {
-          updateUser({
+        const updateData = updateResponse.data.userData;
+
+         // Update user context if available
+         if (setUser) {
+          setUser({
             ...user,
             ...updateData,
           });
@@ -341,7 +334,7 @@ const EditProfilePage = () => {
                 </Label>
                 <Input
                   id="username"
-                  value={profileData.username}
+                  value={profileData.username.slice(1)}
                   onChange={(e) =>
                     handleInputChange(
                       "username",

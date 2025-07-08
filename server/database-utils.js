@@ -1,7 +1,7 @@
 import { v2 as cloudinary } from 'cloudinary';
 import { formatLocalISO } from './format.js ';
 import bcrypt from "bcrypt";
-import { toCamelCase } from "./format.js";
+import { toCamelCase, toSnakeCase } from "./format.js";
 
 
 export async function registerUser(db, userData) {
@@ -9,15 +9,26 @@ export async function registerUser(db, userData) {
   const saltRounds = 10;
 
   const username = slugify(displayName);
-  const postsCount = 0;
-  const activePostsCount = 0;
-  const inactivePostsCount = 0;
-  const likesReceived = 0;
-  const reportCount = 0;
-  const reviewCount = 0;
-  const averageRating = 0;
-  const joinedOn = formatLocalISO(new Date());
+  const strategy = 'credentials';
+  const joinedOn = formatLocalISO().slice(0,10);
+
+  let photo = null;
+  let photoPublicId = null;
+  let profileUrl = null;
+  let location = 'USA';
   const bio = `Hi, I'm ${displayName}!`;
+
+  //user stats
+  let postsCount = 0;
+  let activePostsCount = 0;
+  let inactivePostsCount = 0;
+  let likesReceived = 0;
+  let reportCount = 0;
+  let reviewCount = 0;
+  let reviewsGiven = 0;
+  let reviewsReceived = 0;
+  let averageRating = 0;
+  
 
   if (password === confirmPassword) {
     try {
@@ -26,29 +37,42 @@ export async function registerUser(db, userData) {
       ]);
   
       if (checkResult.rows.length > 0) {
-          console.log("User already exists")
-          res.status(400).send({message: `User wih credentials ${req.body} already exists. Please Login`});
+          throw new Error("User already exists. Please sign in.");
       } else {
-          bcrypt.hash(password, saltRounds, async (err, hash) => {
-          if (err) {
-              console.error("Error hashing password:", err);
-          } else {
-              const result = await db.query(
-              "INSERT INTO users (name, email, password, strategy, posts_count, active_posts_count, inactive_posts_count, likes_received, review_count, average_rating, report_count, joined_on, bio) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *",
-              [username, email, hash, "credentials", postsCount, activePostsCount, inactivePostsCount, likesReceived, reviewCount, averageRating, reportCount, joinedOn, bio]
-              );
-              const user = toCamelCase(result.rows[0]);
-              console.log(user);
-          }
+          // Convert bcrypt.hash to use promises
+          const hash = await new Promise((resolve, reject) => {
+            bcrypt.hash(password, saltRounds, (err, hash) => {
+              if (err) {
+                console.error("Error hashing password:", err);
+                reject(err);
+              } else {
+                resolve(hash);
+              }
+            });
           });
+
+          const result = await db.query(
+            "INSERT INTO users (username, name, email, password, strategy, joined_on, profile_url, bio, photo, photo_public_id, location) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *",
+            [username, displayName, email, hash, strategy, joinedOn, profileUrl, bio, photo, photoPublicId, location]
+          );
+          
+          const user = result.rows[0];
+          const userId = user.user_id;
+
+          await db.query(
+            `INSERT INTO user_stats (user_id, likes_received, posts_count, active_posts_count, inactive_posts_count, review_count, reviews_given, reviews_received, report_count, average_rating) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+            [userId, likesReceived, postsCount, activePostsCount, inactivePostsCount, reviewCount, reviewsGiven, reviewsReceived, reportCount, averageRating]
+          );
+
+          return user;
       }
   } catch (err) {
       console.log(err)
-  }
+      throw new Error("Unable to register user");
+    }
 } else {
-  res.status(400).send({message: 'Error: Passwords do not match'})
+  throw new Error("Passwords don't match. Try again");
 }
-  return user;
 }
 
 
@@ -92,6 +116,47 @@ export async function getUserProfile(db, userId) {
 }
 
 
+//update user profile data
+export async function updateUserProfile(db, updateData) {
+  const { userId, ...fieldsToUpdate } = updateData;
+
+  try {
+    const dataSetClause = [];
+    const dataValues = [];
+
+    let index = 1;
+    for (const [key, value] of Object.entries(toSnakeCase(fieldsToUpdate))) {
+      dataSetClause.push(`${key} = $${index}`);
+      dataValues.push(value);
+      index++;
+    }
+
+    // Append userId for WHERE clause
+    dataValues.push(userId);
+
+    const updateQuery = {
+      text: `
+        UPDATE users
+        SET ${dataSetClause.join(', ')}
+        WHERE user_id = $${index}
+        RETURNING *
+      `,
+      values: dataValues,
+    };
+
+    const updateResults = await db.query(updateQuery);
+    const userData = updateResults.rows[0];
+
+    return userData;
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    throw error;
+  }
+}
+
+
+
+
 export async function getUserStats(db, userId) {
   const userStatsResult = await db.query(
     `SELECT * FROM user_stats WHERE user_id = $1`,
@@ -125,8 +190,23 @@ export async function uploadToCloudinary(encodedImage, itemCategory, imageId) {
       }
     );
     
-    const formattedImageURL = cloudinary.url(uploadResult.public_id, {
-      transformation: [
+    // Different transformation settings based on image type
+    let transformation;
+    if (itemCategory === 'profile') {
+      // Profile images: circular crop, smaller size
+      transformation = [
+        {
+          width: 150,
+          height: 150,
+          crop: 'fill',
+          gravity: 'face', // Focus on face if detected
+          quality: 'auto:best',
+          fetch_format: 'auto'
+        }
+      ];
+    } else {
+      // Item images: rectangular with padding
+      transformation = [
         {
           width: 330,
           height: 200,
@@ -135,7 +215,11 @@ export async function uploadToCloudinary(encodedImage, itemCategory, imageId) {
           quality: 'auto:best', // Highest quality preservation
           fetch_format: 'auto'
         }
-      ]
+      ];
+    }
+    
+    const formattedImageURL = cloudinary.url(uploadResult.public_id, {
+      transformation: transformation
     });
     
     return [formattedImageURL, publicId];
@@ -323,15 +407,7 @@ export async function getImages(db, itemId) {
   return images
 }
 
-export async function updateProfilePhoto(db, updateData) {
-  const { photo, userId } = updateData;
-  try {
-    await db.query("UPDATE users SET photo = $1 WHERE user_id = $2", [photo, userId]);
-  } catch (error) {
-    console.error("Error updating profile photo:", error);
-    throw error;
-  }
-}
+
 
 
 export async function getLikes(db, itemId) {
@@ -342,6 +418,33 @@ export async function getLikes(db, itemId) {
 
     const likes = likesResult.rows[0].likes
     return likes
+}
+
+
+export async function deleteFromCloudinary (publicId) {
+  try {
+    await cloudinary.uploader.destroy(publicId);
+    console.log("Old photo deleted from Cloudinary");
+  } catch (deleteErr) {
+    console.warn("Failed to delete old photo:", deleteErr.message);
+    // Continue anyway
+  }
+}
+
+export async function checkImageExists(publicId) {
+  try {
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
+      api_key: process.env.CLOUDINARY_API_KEY, 
+      api_secret: process.env.CLOUDINARY_API_SECRET 
+    });
+    
+    const result = await cloudinary.api.resource(publicId);
+    return result && result.public_id;
+  } catch (error) {
+    console.warn(`Image ${publicId} does not exist on Cloudinary:`, error.message);
+    return false;
+  }
 }
 
 
