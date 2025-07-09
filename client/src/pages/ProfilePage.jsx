@@ -346,8 +346,8 @@ const ProfilePage = () => {
         }));
 
         setTimeout(() => {
-          navigate(`/profile/${userId}`), 1500;
-        });
+          navigate(`/profile/${userId}`);
+        }, 1500);
       } else {
         toast.error("Failed to update profile photo");
       }
@@ -466,7 +466,7 @@ const ProfilePage = () => {
                   </AvatarFallback>
                 </Avatar>
                 {isOwnProfile && (
-                  <label className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-1 cursor-pointer hover:bg-primary/90">
+                  <label className="absolute bottom-0 right-0 z-10 bg-primary text-primary-foreground rounded-full p-1 cursor-pointer hover:bg-primary/90">
                     <Camera className="h-3 w-3" />
                     <input
                       type="file"
@@ -474,7 +474,18 @@ const ProfilePage = () => {
                       className="hidden"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) handleProfilePhotoUpload(file);
+                        if (file) {
+                          // Add file validation
+                          if (!file.type.startsWith("image/")) {
+                            toast.error("Please select a valid image file");
+                            return;
+                          }
+                          if (file.size > 5 * 1024 * 1024) {
+                            toast.error("Image size should be less than 5MB");
+                            return;
+                          }
+                          handleProfilePhotoUpload(file);
+                        }
                       }}
                     />
                   </label>
