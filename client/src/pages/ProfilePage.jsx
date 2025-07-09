@@ -9,7 +9,7 @@ import {
   Calendar,
   Mail,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast, Toaster } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -27,7 +27,7 @@ import { formatData } from "@/lib/utils";
 
 const ProfilePage = () => {
   const { userId } = useParams(); // For viewing other users' profiles
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, setUser } = useAuth();
   const navigate = useNavigate();
 
   const [profileUser, setProfileUser] = useState(null);
@@ -94,7 +94,7 @@ const ProfilePage = () => {
 
       // Load user profile info
       const profileResponse = await axios.get(
-        `${BACKEND_URL}/user-profile/${targetUserId}`,
+       `${BACKEND_URL}/user-profile/${targetUserId}`,
         axiosConfig
       );
 
@@ -339,15 +339,15 @@ const ProfilePage = () => {
       if (response.data.success) {
         toast.success("Profile photo updated successfully");
 
-        let userData = response.data.userData;
-        setProfileUser((prev) => ({
-          ...prev,
-          profilePhoto: userData.photo,
-        }));
-
+        let userData = response.data.userData 
+        
         setTimeout(() => {
-          navigate(`/profile/${userId}`);
-        }, 1500);
+          setUser(userData);
+          setProfileUser((prev) => ({
+            ...prev,
+            profilePhoto: userData.photo,
+          }))
+        ,1500})
       } else {
         toast.error("Failed to update profile photo");
       }
@@ -446,6 +446,7 @@ const ProfilePage = () => {
 
   return (
     <main className="container mx-auto px-4 py-8">
+      <Toaster position="bottom-right"/>
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Profile Header */}
         <Card>
