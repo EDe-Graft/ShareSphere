@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import ItemCard from "@/components/custom/ItemCard";
 import ItemDetailsDialog from "@/components/custom/ItemDetailsDialog";
+import DonateItemDialog from "@/components/custom/DonateItemDialog";
 import ReviewDialog from "@/components/custom/ReviewDialog";
 import Pagination from "@/components/custom/Pagination";
 import { useAuth } from "@/components/context/AuthContext";
@@ -335,20 +336,18 @@ const ProfilePage = () => {
         }
       );
 
-
       if (response.data.success) {
         toast.success("Profile photo updated successfully");
-        
-        let userData = response.data.userData 
+
+        let userData = response.data.userData;
         setProfileUser((prev) => ({
           ...prev,
           profilePhoto: userData.photo,
-        }))
+        }));
 
         setTimeout(() => {
-          navigate(`/profile/${userId}`)
-          , 1500
-        })
+          navigate(`/profile/${userId}`), 1500;
+        });
       } else {
         toast.error("Failed to update profile photo");
       }
@@ -613,9 +612,7 @@ const ProfilePage = () => {
           onValueChange={handleTabChange}
         >
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="posts">
-              Posts ({userPosts.length})
-            </TabsTrigger>
+            <TabsTrigger value="posts">Posts ({userPosts.length})</TabsTrigger>
             <TabsTrigger value="reviews-received">
               Reviews Received ({receivedReviews.length})
             </TabsTrigger>
@@ -659,9 +656,13 @@ const ProfilePage = () => {
                       : "This user hasn't posted any items yet."}
                   </p>
                   {isOwnProfile && (
-                    <Button onClick={() => navigate("/")}>
-                      Create Your First Post
-                    </Button>
+                    <DonateItemDialog
+                      trigger={<Button>Create Your First Post</Button>}
+                      isOpen={isDonateDialogOpen}
+                      onOpenChange={setIsDonateDialogOpen}
+                      title="Create Your First Post"
+                      description="Choose a category to get started with your first donation post."
+                    />
                   )}
                 </CardContent>
               </Card>

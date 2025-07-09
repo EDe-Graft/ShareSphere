@@ -7,33 +7,14 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import SharedInfoCard from "./SharedInfoCard";
+import DonateItemDialog from "./DonateItemDialog";
 import { motion } from "framer-motion";
 import { useMediaQuery } from "@/hooks/use-mobile";
-import { useNavigate } from "react-router-dom";
-import {
-  BookOpen,
-  Shirt,
-  Sofa,
-  Package,
-  Circle,
-  CircleDot,
-  Play,
-  Pause,
-} from "lucide-react";
+import { Circle, CircleDot, Play, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { useAuth } from "@/components/context/AuthContext";
 import { cn } from "@/lib/utils";
 
 export function CategoryCarousel({ items, isVisible }) {
-  const navigate = useNavigate();
-  const { authSuccess, user } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const isMobile = useMediaQuery("(max-width: 640px)");
   const isTablet = useMediaQuery("(min-width: 641px) and (max-width: 1024px)");
@@ -125,17 +106,6 @@ export function CategoryCarousel({ items, isVisible }) {
     if (isMobile) return 1;
     if (isTablet) return 2;
     return 3;
-  };
-
-  const handleCategorySelection = (formPath) => {
-    setIsDialogOpen(false);
-
-    if (authSuccess && user) {
-      navigate(formPath);
-    } else {
-      localStorage.setItem("redirectAfterLogin", formPath);
-      navigate("/sign-in");
-    }
   };
 
   const handleDonateClick = () => {
@@ -266,72 +236,8 @@ export function CategoryCarousel({ items, isVisible }) {
         </Carousel>
       </div>
 
-      {/* Donation Category Selection Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Choose Donation Category</DialogTitle>
-            <DialogDescription>
-              Select the category that best describes the item you want to
-              donate.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid grid-cols-1 gap-3 py-4">
-            <Button
-              variant="outline"
-              className="justify-start h-auto p-4 hover:bg-accent"
-              onClick={() => handleCategorySelection("/books-form")}
-            >
-              <BookOpen className="mr-3 h-5 w-5" />
-              <div className="text-left">
-                <div className="font-medium">Books</div>
-                <div className="text-sm text-muted-foreground">
-                  Textbooks, novels, reference materials
-                </div>
-              </div>
-            </Button>
-            <Button
-              variant="outline"
-              className="justify-start h-auto p-4 hover:bg-accent"
-              onClick={() => handleCategorySelection("/furniture-form")}
-            >
-              <Sofa className="mr-3 h-5 w-5" />
-              <div className="text-left">
-                <div className="font-medium">Furniture</div>
-                <div className="text-sm text-muted-foreground">
-                  Chairs, desks, tables, storage
-                </div>
-              </div>
-            </Button>
-            <Button
-              variant="outline"
-              className="justify-start h-auto p-4 hover:bg-accent"
-              onClick={() => handleCategorySelection("/clothing-form")}
-            >
-              <Shirt className="mr-3 h-5 w-5" />
-              <div className="text-left">
-                <div className="font-medium">Clothing</div>
-                <div className="text-sm text-muted-foreground">
-                  Shirts, pants, jackets, accessories
-                </div>
-              </div>
-            </Button>
-            <Button
-              variant="outline"
-              className="justify-start h-auto p-4 hover:bg-accent"
-              onClick={() => handleCategorySelection("/miscellaneous-form")}
-            >
-              <Package className="mr-3 h-5 w-5" />
-              <div className="text-left">
-                <div className="font-medium">Miscellaneous</div>
-                <div className="text-sm text-muted-foreground">
-                  Electronics, supplies, tools, other items
-                </div>
-              </div>
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* DonateItemDialog Component */}
+      <DonateItemDialog isOpen={isDialogOpen} onOpenChange={setIsDialogOpen} />
     </>
   );
 }
