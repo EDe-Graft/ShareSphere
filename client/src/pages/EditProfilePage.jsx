@@ -58,7 +58,7 @@ const EditProfilePage = () => {
         bio: passedProfileData.bio || "",
         location: passedProfileData.location || "",
         photo: passedProfileData.photo || "",
-        photoPublicId: passedProfileData.photoPublicId || null
+        photoPublicId: passedProfileData.photoPublicId || null,
       });
       setPhotoPreview(passedProfileData.photo || "");
       setIsLoading(false);
@@ -106,28 +106,30 @@ const EditProfilePage = () => {
   };
 
   const handlePhotoChange = (e) => {
+    console.log("Photo change triggered");
     const file = e.target.files?.[0];
+    console.log("Selected file:", file);
+
     if (file) {
       // Validate file type
       if (!file.type.startsWith("image/")) {
         toast.error("Please select a valid image file");
         return;
       }
-
       // Validate file size (5MB limit)
       if (file.size > 5 * 1024 * 1024) {
         toast.error("Image size should be less than 5MB");
         return;
       }
-
       setPhotoFile(file);
-
       // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
         setPhotoPreview(e.target.result);
       };
       reader.readAsDataURL(file);
+    } else {
+      console.log("No file selected");
     }
   };
 
@@ -163,15 +165,15 @@ const EditProfilePage = () => {
       //append data fields to Form Data
       for (const [key, value] of Object.entries(profileData)) {
         //only append fields that changed and are defined or non empty
-        if (profileData[key] && (profileData[key] !== passedProfileData[key])) {
-          formData.append(key, value)
+        if (profileData[key] && profileData[key] !== passedProfileData[key]) {
+          formData.append(key, value);
         }
       }
 
       // append photo if changed
       if (photoFile) {
         formData.append("profilePhoto", photoFile);
-      } 
+      }
 
       //send patch request to backend
       const updateResponse = await axios.patch(
@@ -188,8 +190,8 @@ const EditProfilePage = () => {
 
         const updateData = updateResponse.data.userData;
 
-         // Update user context if available
-         if (setUser) {
+        // Update user context if available
+        if (setUser) {
           setUser({
             ...user,
             ...updateData,
@@ -201,7 +203,9 @@ const EditProfilePage = () => {
           navigate(returnPath);
         }, 1500);
       } else {
-        throw new Error(response.data.message || "Failed to update profile");
+        throw new Error(
+          updateResponse.data.message || "Failed to update profile"
+        );
       }
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -288,7 +292,7 @@ const EditProfilePage = () => {
                     {profileData.name.charAt(0).toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
-                <label className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-2 cursor-pointer hover:bg-primary/90 transition-colors">
+                <label className="absolute bottom-0 right-0 z-10 bg-primary text-primary-foreground rounded-full p-2 cursor-pointer hover:bg-primary/90 transition-colors">
                   <Camera className="h-3 w-3" />
                   <input
                     type="file"
