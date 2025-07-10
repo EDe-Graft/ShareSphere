@@ -559,6 +559,7 @@ app.patch("/update-profile", upload.single('profilePhoto'), async (req, res) => 
     userId
   };
 
+
   try {
     // 1. Check if old photo exists before trying to delete it
     if (image && updateData.photoPublicId) {

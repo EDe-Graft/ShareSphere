@@ -109,10 +109,8 @@ export function SignInPage() {
   // Handle social login
   const handleSocialLogIn = async (provider) => {
     setIsLoading(provider.id);
-    console.log("social login requested");
     try {
       const response = await socialLogin(provider.id);
-      console.log(response);
       if (response.authSuccess) {
         const user = response.user;
 

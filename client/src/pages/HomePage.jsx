@@ -6,10 +6,15 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, ArrowDown, Heart, Users, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
+import { GitHubEmailDialog } from "@/components/custom/GithubEmailDialog";
+import axios from "axios";
 
 const HomePage = () => {
   const { authSuccess, user } = useAuth();
   const navigate = useNavigate();
+  const [githubDialogOpen, setGithubDialogOpen] = useState((user?.authStrategy === 'github' && user?.email === null) || false);
+
+
   const [isVisible, setIsVisible] = useState(false);
   const categoriesSectionRef = useRef(null);
 
@@ -33,6 +38,12 @@ const HomePage = () => {
   const [displayedText, setDisplayedText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+  const axiosConfig = {
+    headers: { "Content-Type": "application/json" },
+    withCredentials: true,
+  };
+
   // typewrite effect using useEffect
   useEffect(() => {
     const currentPhrase = phrases[currentPhraseIndex];
@@ -55,6 +66,21 @@ const HomePage = () => {
 
     return () => clearTimeout(timeout);
   }, [displayedText, isDeleting, currentPhraseIndex]);
+
+  // Handle GitHub email submission
+  const handleGithubEmailSubmit = async (data) => {
+    //update user email in backend for github auth
+    const updateResult = await axios.patch(
+      `${BACKEND_URL}/update-profile`,
+      data, 
+      axiosConfig
+    )
+
+    if (updateResult.data.success) {
+      setGithubDialogOpen(false);
+    }
+    
+  };
 
   const handleCategorySelection = (formPath) => {
     if (authSuccess && user) {
@@ -258,6 +284,18 @@ const HomePage = () => {
               </motion.div>
             ))}
           </div>
+
+          {/* GitHub Email Dialog */}
+          {!(user?.email) &&
+            <GitHubEmailDialog
+              isOpen={githubDialogOpen}
+              onClose={() => setGithubDialogOpen(false)}
+              onSubmit={handleGithubEmailSubmit}
+              title="GitHub Sign Up"
+              description="Please provide your email address to finalize Github registration."
+              submitButtonText="Confirm Email"
+            />
+          }
         </div>
       </section>
     </main>
