@@ -113,11 +113,11 @@ export function SignUpPage() {
   const handleGithubEmailSubmit = async (data) => {
     setIsLoading("github");
     setGithubDialogOpen(false);
-    handleSocialSignIn(providers[0], data);
+    handleSocialSignUp(providers[0], data);
   };
 
   // Handle social login
-  const handleSocialSignIn = async (provider, data = null) => {
+  const handleSocialSignUp = async (provider, data = null) => {
     setIsLoading(provider.id);
 
     try {
@@ -127,6 +127,7 @@ export function SignUpPage() {
       } else {
         console.log(result);
         if (result.authSuccess) {
+          
           const user = result.user;
           setAuthSuccess(true);
           setUser(user);
@@ -177,7 +178,7 @@ export function SignUpPage() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => handleSocialSignIn(providers[1])}
+              onClick={() => handleSocialSignUp(providers[1])}
               disabled={!!isLoading}
               className="w-full"
             >

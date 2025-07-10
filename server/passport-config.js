@@ -77,7 +77,7 @@ export function configurePassport(passport, db) {
         username = await generateUniqueUsername(db, name)
 
         //initialize variables for user profile
-        joinedOn = formatLocalISO()
+        joinedOn = formatLocalISO().slice(0,10);
         photo = profile.picture;
         location = 'USA';
         bio = `Hi, I'm ${name}!`;
@@ -188,10 +188,6 @@ export function configurePassport(passport, db) {
       let reportCount;
       let averageRating;
 
-      //check if profile url is valid
-      profileUrl = profile.profileUrl || null;
-      if (!profileUrl) return cb(null, false, { message: "No profile found" });
-
       //log that the strategy is activated
       console.log("GitHub strategy activated");
 
@@ -203,12 +199,26 @@ export function configurePassport(passport, db) {
         // Generate a unique username
         username = await generateUniqueUsername(db, name)
 
-        //get email from state or profile
-        const state = req.query?.state;
-        email = state?.email || profile.email || null;
+      //get email from state or profile
+      const state = req.query?.state;
+      let emailFromState = null;
+      
+      // Try to decode email from state if it exists
+      if (state) {
+        try {
+          // If state contains encoded email data
+          const decodedState = JSON.parse(decodeURIComponent(state));
+          emailFromState = decodedState.email;
+        } catch (e) {
+          // If state is just a plain string, treat it as email
+          emailFromState = state;
+        }
+      }
+      
+      email = emailFromState || profile.email || null;
 
         //initialize variables for user stats
-        joinedOn = formatLocalISO();
+        joinedOn = formatLocalISO().slice(0,10);
         photo = profile.photos?.[0]?.value;
         location = `USA`;
         bio = `Hi, I'm ${name}!`;

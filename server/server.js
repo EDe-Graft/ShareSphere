@@ -166,9 +166,16 @@ app.get("/auth/google/callback",
 
 //GITHUB AUTH ROUTES
 app.get("/auth/github", (req, res) => {
+  // If email is provided in query params, encode it in state
+  let state = req.query?.state || null;
+  if (req.query?.email) {
+    const stateData = { email: req.query.email };
+    state = encodeURIComponent(JSON.stringify(stateData));
+  }
+  
   passport.authenticate("github", {
     scope: ['user:email'],
-    state: req.query?.state || null
+    state: state
   })(req, res);
 });
 
@@ -271,9 +278,10 @@ app.get("/user-stats/:userId", async (req, res) => {
 
   try {
     const userStats = await getUserStats(db, userId);
+    console.log(userStats)
     res.status(200).json({
       success: true,
-      stats: toCamelCase(userStats)
+      stats: userStats
     });
   } catch (error) {
     console.error("Error fetching user stats:", error);

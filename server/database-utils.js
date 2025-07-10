@@ -8,7 +8,7 @@ export async function registerUser(db, userData) {
   const {displayName, email, password, confirmPassword} = userData;
   const saltRounds = 10;
 
-  const username = slugify(displayName);
+  const username = generateUniqueUsername(db, displayName);
   const strategy = 'credentials';
   const joinedOn = formatLocalISO().slice(0,10);
 
@@ -84,7 +84,7 @@ export function slugify(name) {
 // Generate unique username
 export async function generateUniqueUsername(db, name) {
     let baseUsername = slugify(name);
-    let username = baseUsername;
+    let username = `@${baseUsername}`;
     let isUnique = false;
     let attempt = 0;
 
@@ -96,7 +96,7 @@ export async function generateUniqueUsername(db, name) {
         } else {
             // Append random 3-digit number to base username
             const randomSuffix = Math.floor(100 + Math.random() * 900); // 100 - 999
-            username = `@${baseUsername}${randomSuffix}`;
+            username = `${baseUsername}${randomSuffix}`;
         }
 
         attempt++;
@@ -112,7 +112,7 @@ export async function getUserProfile(db, userId) {
     `SELECT * FROM users WHERE user_id = $1`,
     [userId]
   );
-  return userProfileResult.rows[0];
+  return toCamelCase(userProfileResult.rows[0]);
 }
 
 
@@ -162,7 +162,7 @@ export async function getUserStats(db, userId) {
     `SELECT * FROM user_stats WHERE user_id = $1`,
     [userId]
   );
-  return userStatsResult.rows[0];
+  return toCamelCase(userStatsResult.rows[0]);
 }
 
 export async function updateUserStats(db, userId, updateData) {
