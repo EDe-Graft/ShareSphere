@@ -250,13 +250,13 @@ app.get("/user-profile/:userId", async (req, res) => {
   try {
     const userProfile = await getUserProfile(db, userId);
     res.status(200).json({
-      getSuccess: true,
+      success: true,
       userData: toCamelCase(userProfile)
     });
   } catch (error) {
     console.error("Error fetching user profile:", error);
     res.status(500).json({
-      getSuccess: false,
+      success: false,
       message: "Internal server error"
     });
   }

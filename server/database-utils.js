@@ -372,7 +372,7 @@ export async function insertCategoryDetails(db, {req, itemId, category}) {
 
   //update posts count after item is posted
   await db.query(
-    `UPDATE users SET posts_count = posts_count + 1 WHERE user_id = $1`,
+    `UPDATE user_stats SET posts_count = posts_count + 1 WHERE user_id = $1`,
     [uploaderId]
   );
 }

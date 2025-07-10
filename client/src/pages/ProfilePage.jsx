@@ -39,6 +39,7 @@ const ProfilePage = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
+  const [isDonateDialogOpen, setIsDonateDialogOpen] = useState(false);
   const [selectedReview, setSelectedReview] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -98,7 +99,7 @@ const ProfilePage = () => {
         axiosConfig
       );
 
-      if (profileResponse.data.getSuccess) {
+      if (profileResponse.data.success) {
         setProfileUser(profileResponse.data.userData);
       } else {
         toast.error("Failed to load profile data");
@@ -343,9 +344,10 @@ const ProfilePage = () => {
         
         setTimeout(() => {
           setUser(userData);
+          console.log("user data", userData)
           setProfileUser((prev) => ({
             ...prev,
-            profilePhoto: userData.photo,
+            photo: userData.photo,
           }))
         ,1500})
       } else {
@@ -433,7 +435,7 @@ const ProfilePage = () => {
     );
   }
 
-  if (!profileUser) {
+  if (!profileUser && !isLoading) {
     return (
       <main className="container mx-auto px-4 py-8">
         <div className="text-center">
