@@ -93,9 +93,25 @@ const ProfilePage = () => {
     try {
       setIsLoading(true);
 
+      // Load user favorites if logged in
+      let userFavorites = [];
+      if (currentUser) {
+        try {
+          const favoritesResponse = await axios.get(
+            `${BACKEND_URL}/favorites?category=all`,
+            axiosConfig
+          );
+          if (favoritesResponse.data.getSuccess) {
+            userFavorites = favoritesResponse.data.userFavorites || [];
+          }
+        } catch (error) {
+          console.error("Failed to fetch user favorites:", error);
+        }
+      }
+
       // Load user profile info
       const profileResponse = await axios.get(
-       `${BACKEND_URL}/user-profile/${targetUserId}`,
+        `${BACKEND_URL}/user-profile/${targetUserId}`,
         axiosConfig
       );
 
@@ -146,7 +162,8 @@ const ProfilePage = () => {
         const initialLikedStatus = {};
         posts.forEach((post) => {
           initialLikes[post.itemId] = post.likes || 0;
-          initialLikedStatus[post.itemId] = false;
+          // Check if this item is in user's favorites
+          initialLikedStatus[post.itemId] = userFavorites.includes(post.itemId);
         });
         setLikesById(initialLikes);
         setIsLikedById(initialLikedStatus);
@@ -177,11 +194,6 @@ const ProfilePage = () => {
       } else {
         toast.error("Failed to load reviews received by user");
       }
-
-      // Load user favorites if viewing own profile
-      if (isOwnProfile) {
-        await getUserFavorites();
-      }
     } catch (error) {
       console.error("Error loading profile data:", error);
       toast.error("Failed to load profile data");
@@ -189,28 +201,27 @@ const ProfilePage = () => {
       setIsLoading(false);
     }
   };
+  // const getUserFavorites = async () => {
+  //   try {
+  //     const response = await axios.get(
+  //       `${BACKEND_URL}/favorites?category=all`,
+  //       axiosConfig
+  //     );
 
-  const getUserFavorites = async () => {
-    try {
-      const response = await axios.get(
-        `${BACKEND_URL}/favorites?category=all`,
-        axiosConfig
-      );
-
-      if (response.data.getSuccess) {
-        const favorites = response.data.userFavorites;
-        const newLikedStatus = { ...isLikedById };
-        favorites.forEach((itemId) => {
-          newLikedStatus[itemId] = true;
-        });
-        setIsLikedById(newLikedStatus);
-      } else {
-        toast.error("Failed to fetch user favorites");
-      }
-    } catch (error) {
-      console.error("Failed to fetch user favorites:", error);
-    }
-  };
+  //     if (response.data.getSuccess) {
+  //       const favorites = response.data.userFavorites;
+  //       const newLikedStatus = { ...isLikedById };
+  //       favorites.forEach((itemId) => {
+  //         newLikedStatus[itemId] = true;
+  //       });
+  //       setIsLikedById(newLikedStatus);
+  //     } else {
+  //       toast.error("Failed to fetch user favorites");
+  //     }
+  //   } catch (error) {
+  //     console.error("Failed to fetch user favorites:", error);
+  //   }
+  // };
 
   const handleLikeToggle = async (itemId) => {
     try {
@@ -340,16 +351,17 @@ const ProfilePage = () => {
       if (response.data.success) {
         toast.success("Profile photo updated successfully");
 
-        let userData = response.data.userData 
-        
+        let userData = response.data.userData;
+
         setTimeout(() => {
           setUser(userData);
-          console.log("user data", userData)
+          console.log("user data", userData);
           setProfileUser((prev) => ({
             ...prev,
             photo: userData.photo,
-          }))
-        ,1500})
+          })),
+            1500;
+        });
       } else {
         toast.error("Failed to update profile photo");
       }
@@ -448,7 +460,7 @@ const ProfilePage = () => {
 
   return (
     <main className="container mx-auto px-4 py-8">
-      <Toaster position="bottom-right"/>
+      <Toaster position="bottom-right" />
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Profile Header */}
         <Card>
@@ -559,7 +571,7 @@ const ProfilePage = () => {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-primary">
+              <div className="text-xl sm:text-2xl font-bold text-primary">
                 {stats.postsCount || 0}
               </div>
               <div className="text-sm text-muted-foreground">Total Posts</div>
@@ -568,7 +580,7 @@ const ProfilePage = () => {
 
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-xl sm:text-2xl font-bold text-green-600">
                 {postStats.activePosts}
               </div>
               <div className="text-sm text-muted-foreground">Active Posts</div>
@@ -577,7 +589,7 @@ const ProfilePage = () => {
 
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-orange-600">
+              <div className="text-xl sm:text-2xl font-bold text-orange-600">
                 {postStats.inactivePosts}
               </div>
               <div className="text-sm text-muted-foreground">
@@ -588,7 +600,7 @@ const ProfilePage = () => {
 
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-primary">
+              <div className="text-xl sm:text-2xl font-bold text-primary">
                 {stats.likesReceived || 0}
               </div>
               <div className="text-sm text-muted-foreground">
@@ -599,7 +611,7 @@ const ProfilePage = () => {
 
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-primary">
+              <div className="text-xl sm:text-2xl font-bold text-primary">
                 {stats.reviewCount || 0}
               </div>
               <div className="text-sm text-muted-foreground">Reviews</div>
@@ -610,7 +622,7 @@ const ProfilePage = () => {
             <CardContent className="p-4 text-center">
               <div className="flex items-center justify-center space-x-1">
                 <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                <span className="text-2xl font-bold text-primary">
+                <span className="text-xl sm:text-2xl font-bold text-primary">
                   {stats.averageRating ? stats.averageRating : "0.0"}
                 </span>
               </div>
@@ -626,12 +638,17 @@ const ProfilePage = () => {
           onValueChange={handleTabChange}
         >
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="posts">Posts ({userPosts.length})</TabsTrigger>
-            <TabsTrigger value="reviews-received">
-              Reviews Received ({receivedReviews.length})
+            <TabsTrigger value="posts" className="text-xs sm:text-sm">
+              Posts ({userPosts.length})
             </TabsTrigger>
-            <TabsTrigger value="reviews-given">
-              Reviews Given ({userReviews.length})
+            <TabsTrigger
+              value="reviews-received"
+              className="text-xs sm:text-sm"
+            >
+              Reviews For ({receivedReviews.length})
+            </TabsTrigger>
+            <TabsTrigger value="reviews-given" className="text-xs sm:text-sm">
+              Reviews By ({userReviews.length})
             </TabsTrigger>
           </TabsList>
 
@@ -685,7 +702,7 @@ const ProfilePage = () => {
 
           <TabsContent value="reviews-received" className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Reviews Received</h3>
+              <h3 className="text-lg font-semibold">Reviews For</h3>
               {!isOwnProfile && (
                 <Button onClick={handleAddReview}>
                   <Star className="h-4 w-4 mr-2" />
@@ -758,7 +775,7 @@ const ProfilePage = () => {
           </TabsContent>
 
           <TabsContent value="reviews-given" className="space-y-4">
-            <h3 className="text-lg font-semibold">Reviews Given</h3>
+            <h3 className="text-lg font-semibold">Reviews By</h3>
 
             {userReviews.length > 0 ? (
               <>

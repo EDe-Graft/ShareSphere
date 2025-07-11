@@ -447,10 +447,10 @@ const ReviewsPage = () => {
         >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="received">
-              Reviews Received ({filteredReviewsReceived.length})
+              Reviews For ({filteredReviewsReceived.length})
             </TabsTrigger>
             <TabsTrigger value="given">
-              Reviews Given ({filteredReviewsGiven.length})
+              Reviews By ({filteredReviewsGiven.length})
             </TabsTrigger>
           </TabsList>
 
