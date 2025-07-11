@@ -616,27 +616,35 @@ export default function ItemDetailsDialog({
 
               <div className="space-y-4">
                 <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">
+                  <h4 className="text-sm font-medium text-muted-foreground mb-1">
                     Uploaded By
                   </h4>
-                  <p className="mb-4">{`${item.uploadedBy}`}</p>
+                  <div className={`${isEditing ? "py-1" : ""}`}>
+                    <p>{`${item.uploadedBy}`}</p>
+                  </div>
+                </div>
 
-                  <h4 className="text-sm font-medium text-muted-foreground">
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-1">
                     Username
                   </h4>
-                  <p
-                    className="text-xs text-primary mb-4 cursor-pointer hover:underline"
-                    onClick={() => navigate(`/profile/${item.uploaderId}`)}
-                  >
-                    {`${item.uploaderUsername || "user"}`}
-                  </p>
+                  <div className={`${isEditing ? "py-2" : ""}`}>
+                    <p
+                      className="text text-primary cursor-pointer hover:underline"
+                      onClick={() => navigate(`/profile/${item.uploaderId}`)}
+                    >
+                      {`${item.uploaderUsername || "user"}`}
+                    </p>
+                  </div>
                 </div>
 
                 <div>
                   <h4 className="text-sm font-medium text-muted-foreground mb-1">
                     Upload Date
                   </h4>
-                  <p>{new Date(item.uploadDate).toLocaleDateString()}</p>
+                  <div className={`${isEditing ? "py-2" : ""}`}>
+                    <p>{new Date(item.uploadDate).toLocaleDateString()}</p>
+                  </div>
                 </div>
 
                 {item.generalCategory === "Book" &&
@@ -653,7 +661,9 @@ export default function ItemDetailsDialog({
                           }
                         />
                       ) : (
-                        <p>{item.subCategory || "Not specified"}</p>
+                        <div className={`${isEditing ? "py-2" : ""}`}>
+                          <p>{item.subCategory || "Not specified"}</p>
+                        </div>
                       )}
                     </div>
                   )}
