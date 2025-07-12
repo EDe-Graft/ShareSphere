@@ -97,6 +97,19 @@ export default function ItemCard({
               ) : (
                 <BookOpen className="h-12 w-12 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-muted-foreground/50" />
               )}
+              {/* Main Image Badge - only show if item has images */}
+              {item.displayImage && item.images && item.images.length > 0 && (
+                <div className="absolute bottom-2 left-2">
+                  <div className="bg-black/70 text-white text-xs px-2 py-1 rounded-md backdrop-blur-sm border border-white/20">
+                    Main Image
+                    {item.images.length > 1 && (
+                      <span className="ml-1 opacity-80">
+                        (1 of {item.images.length})
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Report menu - only show for items owned by current user */}
               <div className="absolute top-2 right-2">
@@ -233,7 +246,7 @@ export default function ItemCard({
       >
         <Card className="overflow-hidden hover:shadow-md transition-shadow duration-300">
           <div className="flex flex-col sm:flex-row">
-            <div className="relative h-[150px] sm:w-[150px] overflow-hidden bg-muted">
+            <div className="relative h-[180px] sm:w-[150px] overflow-hidden bg-muted">
               {item.displayImage ? (
                 <img
                   src={item.displayImage || "/placeholder.svg"}
@@ -243,6 +256,20 @@ export default function ItemCard({
                 />
               ) : (
                 <BookOpen className="h-8 w-8 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-muted-foreground/50" />
+              )}
+
+              {/* Main Image Badge for List View - only show if item has images */}
+              {item.displayImage && item.images && item.images.length > 0 && (
+                <div className="absolute bottom-2 left-2">
+                  <div className="bg-black/70 text-white text-xs px-2 py-1 rounded-md backdrop-blur-sm border border-white/20">
+                    Main Image
+                    {item.images.length > 1 && (
+                      <span className="ml-1 opacity-80">
+                        (1 of {item.images.length})
+                      </span>
+                    )}
+                  </div>
+                </div>
               )}
 
               {!item.available && (

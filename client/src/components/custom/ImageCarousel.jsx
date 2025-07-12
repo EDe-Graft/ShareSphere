@@ -65,7 +65,7 @@ const ImageCarousel = ({ item, images, isLiked, likes, onLikeToggle }) => {
 
   return (
     <div
-      className="relative w-full h-[300px] md:h-[350px]"
+      className="relative w-full h-[200px] sm:h-[250px] md:h-[300px] lg:h-[350px]"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

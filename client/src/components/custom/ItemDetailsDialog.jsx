@@ -425,7 +425,7 @@ export default function ItemDetailsDialog({
       >
         <div
           ref={dialogRef}
-          className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg sm:rounded-lg sm:max-w-[600px] max-h-[90vh] overflow-y-auto"
+          className="fixed left-[50%] top-[50%] w-full z-50 grid max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-4 sm:p-6 shadow-lg rounded-lg sm:max-w-[600px] max-h-[95vh] sm:max-h-[90vh] overflow-y-auto mx-0"
           role="dialog"
           aria-modal="true"
           onClick={(e) => e.stopPropagation()}
@@ -812,7 +812,7 @@ export default function ItemDetailsDialog({
           )}
 
           <div
-            className={`flex justify-between items-center mt-4 ${isOwnItem ? "flex-row-reverse" : "flex-row"}`}
+            className={` flex flex-col gap-3 items-start sm:flex-row sm:justify-between sm:items-center mt-4 ${isOwnItem ? "flex-row-reverse" : "flex-row"}`}
           >
             {mode !== "edit" && !isEditing && !isOwnItem && (
               <div className="flex gap-2">
