@@ -27,6 +27,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AuthSkeleton } from "@/components/custom/AuthSkeleton";
+import axios from "axios";
+import { EmailVerificationDialog } from "@/components/custom/EmailVerificationDialog";
 
 // Define the authentication providers
 const providers = [
@@ -52,13 +54,20 @@ const signIn = async (provider, credentials) => {
     }, 500);
   });
 };
+// Backend configuration
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+const axiosConfig = {
+  headers: { "Content-Type": "application/json" },
+  withCredentials: true,
+};
 
 export function SignInPage() {
   const { setAuthSuccess, user, setUser, localLogin, socialLogin } = useAuth();
   const [isLoading, setIsLoading] = useState(null);
   const [error, setError] = useState(null);
   const [pageLoading, setPageLoading] = useState(true);
-
+  const [emailVerificationOpen, setEmailVerificationOpen] = useState(false);
+  const [unverifiedUserData, setUnverifiedUserData] = useState(null);
   const navigate = useNavigate();
 
   // Initialize form
@@ -69,6 +78,20 @@ export function SignInPage() {
       password: "",
     },
   });
+
+  // Check email verification status
+  const checkEmailVerification = async (email) => {
+    try {
+      const response = await axios.get(
+        `${BACKEND_URL}/verification-status/${email}`,
+        axiosConfig
+      );
+      return response.data.isVerified;
+    } catch (error) {
+      console.error("Failed to check verification status:", error);
+      return true; // Assume verified if check fails
+    }
+  };
 
   // Simulate page loading
   useEffect(() => {
@@ -83,6 +106,19 @@ export function SignInPage() {
     setIsLoading("credentials");
 
     try {
+      // First check if email is verified
+      const isVerified = await checkEmailVerification(credentials.email);
+
+      if (!isVerified) {
+        setUnverifiedUserData({
+          email: credentials.email,
+          userName: credentials.email.split("@")[0], // Use email prefix as fallback
+        });
+        setEmailVerificationOpen(true);
+        setIsLoading(null);
+        return;
+      }
+
       const response = await localLogin(credentials);
       if (response.data.message === "no user found") {
         navigate("/sign-up");
@@ -255,6 +291,17 @@ export function SignInPage() {
         </CardFooter>
       </Card>
 
+      {/* Email Verification Dialog */}
+      <EmailVerificationDialog
+        isOpen={emailVerificationOpen}
+        onClose={() => setEmailVerificationOpen(false)}
+        email={unverifiedUserData?.email}
+        userName={unverifiedUserData?.userName}
+        onVerificationComplete={() => {
+          setEmailVerificationOpen(false);
+          setUnverifiedUserData(null);
+        }}
+      />
     </div>
   );
 }

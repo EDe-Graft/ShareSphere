@@ -28,6 +28,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { GitHubEmailDialog } from "@/components/custom/GithubEmailDialog";
+import axios from "axios";
+import { EmailVerificationDialog } from "@/components/custom/EmailVerificationDialog";
 
 // Define the authentication providers
 const providers = [
@@ -51,12 +53,21 @@ const formSchema = z
     path: ["confirmPassword"], // error will show under confirmPassword
   });
 
+//Backend configuration
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+const axiosConfig = {
+  headers: { "Content-Type": "application/json" },
+  withCredentials: true,
+};
+
 export function SignUpPage() {
   const { setAuthSuccess, setUser, register, socialLogin } = useAuth();
   const [isLoading, setIsLoading] = useState(null);
   const [error, setError] = useState(null);
   const [pageLoading, setPageLoading] = useState(true);
   const [githubDialogOpen, setGithubDialogOpen] = useState(false);
+  const [emailVerificationOpen, setEmailVerificationOpen] = useState(false);
+  const [registeredUserData, setRegisteredUserData] = useState(null);
 
   const navigate = useNavigate();
 
@@ -79,6 +90,22 @@ export function SignUpPage() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Send verification email
+  const sendVerificationEmail = async (email, userName) => {
+    try {
+      const response = await axios.post(
+        `${BACKEND_URL}/send-verification`,
+        { email, userName },
+        axiosConfig
+      );
+
+      return response.data.success;
+    } catch (error) {
+      console.error("Failed to send verification email:", error);
+      return false;
+    }
+  };
+
   // Handle form submission
   const handleUserRegistration = async (credentials) => {
     setIsLoading("credentials");
@@ -88,12 +115,25 @@ export function SignUpPage() {
       if (response.data.authSuccess) {
         const user = response.data.user;
 
-        setAuthSuccess(true);
-        setUser(user);
-        navigate("/"),
-          {
-            state: { replace: true },
-          };
+        // Send verification email
+        const emailSent = await sendVerificationEmail(
+          credentials.email,
+          credentials.displayName
+        );
+
+        if (emailSent) {
+          // Store user data for verification dialog
+          setRegisteredUserData({
+            email: credentials.email,
+            userName: credentials.displayName,
+          });
+          setEmailVerificationOpen(true);
+        } else {
+          // If email sending fails, still proceed with login
+          setAuthSuccess(true);
+          setUser(user);
+          navigate("/");
+        }
       } else {
         navigate("/sign-up");
       }
@@ -127,13 +167,28 @@ export function SignUpPage() {
       } else {
         console.log(result);
         if (result.authSuccess) {
-          
           const user = result.user;
+
+          // For social login, send verification email if email is provided
+          if (data?.email) {
+            const emailSent = await sendVerificationEmail(
+              data.email,
+              user.displayName || user.name
+            );
+
+            if (emailSent) {
+              setRegisteredUserData({
+                email: data.email,
+                userName: user.displayName || user.name,
+              });
+              setEmailVerificationOpen(true);
+              return;
+            }
+          }
+
           setAuthSuccess(true);
           setUser(user);
-          navigate("/", {
-            state: { replace: true },
-          });
+          navigate("/");
         }
       }
     } catch (err) {
@@ -141,6 +196,18 @@ export function SignUpPage() {
     } finally {
       setIsLoading(null);
     }
+  };
+
+  // Handle verification completion
+  const handleVerificationComplete = () => {
+    setEmailVerificationOpen(false);
+    setRegisteredUserData(null);
+    // Redirect to sign-in page for user to log in with verified account
+    navigate("/sign-in", {
+      state: {
+        message: "Email verified successfully! Please sign in to continue.",
+      },
+    });
   };
 
   // Show skeleton while page is loading
@@ -312,6 +379,14 @@ export function SignUpPage() {
         title="GitHub Sign Up"
         description="Please provide your email address to continue with GitHub registration."
         submitButtonText="Continue with GitHub"
+      />
+
+      <EmailVerificationDialog
+        isOpen={emailVerificationOpen}
+        onClose={() => setEmailVerificationOpen(false)}
+        email={registeredUserData?.email}
+        userName={registeredUserData?.userName}
+        onVerificationComplete={handleVerificationComplete}
       />
     </div>
   );
