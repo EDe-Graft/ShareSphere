@@ -22,6 +22,7 @@ import { ThemeProvider } from "@/components/context/theme-provider";
 import ProtectedRoute from "./components/custom/ProtectedRoute";
 import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
+import EmailVerificationSuccessPage from "./pages/EmailVerificationSuccessPage";
 import FavoritesViewPage from "./pages/FavoritesViewPage";
 import PostsViewPage from "./pages/PostsViewPage";
 import ReportsManagementPage from "./pages/ReportsManagementPage";
@@ -35,6 +36,10 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/sign-in" element={<SignInPage />} />
           <Route path="/sign-up" element={<SignUpPage />} />
+          <Route
+            path="/verify-email"
+            element={<EmailVerificationSuccessPage />}
+          />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route
