@@ -78,7 +78,7 @@ export function AuthProvider({ children }) {
     return response;
   };
 
-  const socialLogin = (socialStrategy, data = {}) => {
+  const socialLogin = (socialStrategy, data = null) => {
     try {
       return new Promise((resolve) => {
         const popup = window.open(

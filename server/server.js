@@ -14,8 +14,9 @@ import ItemRequestEmail from './dist/emails/ItemRequestEmail.js';
 import AdminReportEmail from './dist/emails/AdminReportEmail.js';
 import ReportConfirmationEmail from './dist/emails/ReportConfirmationEmail.js';
 import WarningEmail from './dist/emails/WarningEmail.js';
+import EmailVerificationEmail from './dist/emails/EmailVerificationEmail.js';
 import { configurePassport } from "./passport-config.js";
-import { uploadToCloudinary, saveItem, saveImage, updateImage, insertCategoryDetails, getTableName, getImages, getLikes, manageLikesReceived, deleteImages, deletePost, saveReport, postReview, updateReview, getUserProfile, updateUserProfile, registerUser, getUserStats, deleteFromCloudinary, checkImageExists } from './database-utils.js';
+import { uploadToCloudinary, saveItem, saveImage, updateImage, insertCategoryDetails, getTableName, getImages, getLikes, manageLikesReceived, deleteImages, deletePost, saveReport, postReview, updateReview, getUserProfile, updateUserProfile, registerUser, getUserStats, deleteFromCloudinary, checkImageExists, createVerificationToken, verifyToken, markTokenAsUsed, verifyUserEmail, checkEmailVerificationStatus, getUserByEmail, deleteExpiredTokens } from './database-utils.js';
 import { formatLocalISO, capitalizeFirst, toCamelCase, toSnakeCase } from "./format.js";
 
 // Express-app and environment creation
@@ -864,7 +865,254 @@ app.post("/upload", upload.array('images', 3), async (req, res) => {
 });
 
 
-// Send request email
+// Email verification routes
+app.post('/verify-email', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        isValid: false,
+        reason: "Email is required"
+      });
+    }
+
+    // Check if email already exists in database
+    const existingUser = await getUserByEmail(db, email);
+    
+    if (existingUser) {
+      return res.status(200).json({
+        isValid: false,
+        reason: "Email is already registered. Please sign in",
+        confidence: "high"
+      });
+    }
+
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(200).json({
+        isValid: false,
+        reason: "Please enter a valid email address",
+        confidence: "high"
+      });
+    }
+
+    // Check for common disposable email domains (optional)
+    const disposableDomains = [
+      'tempmail.org', 'guerrillamail.com', '10minutemail.com',
+      'mailinator.com', 'yopmail.com', 'temp-mail.org'
+    ];
+    
+    const domain = email.split('@')[1]?.toLowerCase();
+    if (disposableDomains.includes(domain)) {
+      return res.status(200).json({
+        isValid: false,
+        reason: "Please use a valid email address (disposable emails not allowed)",
+        confidence: "medium"
+      });
+    }
+
+    // Email is valid and available
+    return res.status(200).json({
+      isValid: true,
+      reason: "Email is available for registration",
+      confidence: "high"
+    });
+
+  } catch (error) {
+    console.error('Error verifying email:', error);
+    res.status(500).json({
+      isValid: false,
+      reason: "Unable to verify email at this time",
+      confidence: "low"
+    });
+  }
+});
+
+
+app.post('/send-verification', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
+  try {
+    const { email, userName } = req.body;
+    const userId = req.user?.userId;
+
+
+    if (!email || !userName) {
+      return res.status(400).json({ 
+        success: false, 
+        error: "Email and userName are required" 
+      });
+    }
+
+    // Create verification token
+    const token = await createVerificationToken(db, userId);
+    
+    // Create token verification URL route
+    const verificationUrl = `${process.env.BACKEND_URL}/verify-email/${token}`;
+    
+    // Render email template
+    const emailHtml = await render(
+      createElement(EmailVerificationEmail, {
+        userName,
+        verificationUrl,
+        logoUrl: process.env.SHARESPHERE_LOGO_URL
+      })
+    );
+
+    // Send email
+    const mailOptions = {
+      from: `"ShareSphere" <${process.env.APP_USERNAME}>`,
+      to: email,
+      subject: "Verify your email address - ShareSphere",
+      html: emailHtml,
+      text: `Hi ${userName},\n\nWelcome to ShareSphere! To complete your registration, please verify your email address by clicking this link:\n\n${verificationUrl}\n\nThis link will expire in 24 hours.\n\nThanks,\nThe ShareSphere Team`
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({
+      success: true,
+      message: "Verification email sent successfully"
+    });
+  } catch (error) {
+    console.error('Error sending verification email:', error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to send verification email"
+    });
+  }
+});
+
+app.post('/resend-verification', async (req, res) => {
+  try {
+    const { email } = req.body;
+    const tokenType = 'email_verification'
+
+    if (!email) {
+      return res.status(400).json({ 
+        success: false, 
+        error: "Email is required" 
+      });
+    }
+
+    // Get user by email
+    const user = await getUserByEmail(db, email);
+    const { userId } = user;
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found"
+      });
+    }
+
+    // Delete any existing verification tokens for this user
+    await db.query(
+      'DELETE FROM verification_tokens WHERE user_id = $1 AND token_type = $2',
+      [userId, tokenType]
+    );
+
+    // Create new verification token
+    const token = await createVerificationToken(db, userId);
+    
+    // Create verification URL
+    const verificationUrl = `${process.env.BACKEND_URL}/verify-email/${token}`;
+    
+    // Render email template
+    const emailHtml = await render(
+      createElement(EmailVerificationEmail, {
+        userName: user.name,
+        verificationUrl,
+        logoUrl: process.env.SHARESPHERE_LOGO_URL
+      })
+    );
+
+    // Send email
+    const mailOptions = {
+      from: `"ShareSphere" <${process.env.APP_USERNAME}>`,
+      to: email,
+      subject: "Verify your email address - ShareSphere",
+      html: emailHtml,
+      text: `Hi ${user.name},\n\nPlease verify your email address by clicking this link:\n\n${verificationUrl}\n\nThis link will expire in 24 hours.\n\nThanks,\nThe ShareSphere Team`
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({
+      success: true,
+      message: "Verification email sent successfully"
+    });
+  } catch (error) {
+    console.error('Error resending verification email:', error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to resend verification email"
+    });
+  }
+});
+
+
+app.get('/verify-email/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    // Verify the token
+    const tokenData = await verifyToken(db, token, 'email_verification');
+    
+    if (!tokenData) {
+      // Redirect to frontend with failure parameter
+      return res.redirect(`${process.env.FRONTEND_URL}/email-verified?success=false&reason=invalid_or_expired`);
+    }
+
+    // Mark token as used
+    await markTokenAsUsed(db, tokenData.tokenId);
+
+    // Verify user's email
+    await verifyUserEmail(db, tokenData.userId);
+
+    // Clean up expired tokens
+    await deleteExpiredTokens(db);
+
+    // Redirect to frontend with success parameter
+    res.redirect(`${process.env.FRONTEND_URL}/email-verified?success=true`);
+  } catch (error) {
+    console.error('Error verifying email:', error);
+    res.redirect(`${process.env.FRONTEND_URL}/email-verified?success=false&reason=server_error`);
+  }
+});
+
+app.get('/verification-status/:email', async (req, res) => {
+  try {
+    const { email } = req.params;
+    
+    const isVerified = await checkEmailVerificationStatus(db, email);
+    
+    if (isVerified === null) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      isVerified: isVerified
+    });
+  } catch (error) {
+    console.error('Error checking verification status:', error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to check verification status"
+    });
+  }
+});
+
+
+// Send item request email
 app.post('/send-request', async (req, res) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ error: "Not authenticated" });
@@ -1210,6 +1458,7 @@ app.post("/register", async (req, res) => {
   try {
     const userData = req.body;
     const user = await registerUser(db, userData);
+    const userId = user?.userId;
     console.log("user registered successfully")
 
     if (user) {
@@ -1241,7 +1490,7 @@ app.post("/register", async (req, res) => {
 
  // Login Existing User using Passport
  app.post("/login", (req, res, next) => {
-  passport.authenticate('local', (err, user, info) => {
+  passport.authenticate('local', async (err, user, info) => {
     if (err) {
       console.error('Passport error:', err);
       return next(err);
@@ -1254,6 +1503,24 @@ app.post("/register", async (req, res) => {
         message: info?.message || 'no user found',
         user: null
       });
+    }
+
+    // Check if email is verified for credential-based users
+    if (user.strategy === 'credentials') {
+      try {
+        const isVerified = await checkEmailVerificationStatus(db, user.email);
+        if (!isVerified) {
+          return res.json({
+            authSuccess: false,
+            message: "Please verify your email address before signing in",
+            user: null,
+            requiresVerification: true
+          });
+        }
+      } catch (error) {
+        console.error('Error checking email verification:', error);
+        // Continue with login if verification check fails
+      }
     }
 
     // Log the user in

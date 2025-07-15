@@ -28,6 +28,7 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AuthSkeleton } from "@/components/custom/AuthSkeleton";
 import axios from "axios";
+import { GitHubEmailDialog } from "@/components/custom/GithubEmailDialog";
 import { EmailVerificationDialog } from "@/components/custom/EmailVerificationDialog";
 
 // Define the authentication providers
@@ -45,15 +46,6 @@ const formSchema = z.object({
     .min(6, { message: "Password must be at least 6 characters" }),
 });
 
-// Mock sign-in function
-const signIn = async (provider, credentials) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      console.log(`Sign in with ${provider.id}`, credentials);
-      resolve({ error: "This is a mock error message." });
-    }, 500);
-  });
-};
 // Backend configuration
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 const axiosConfig = {
@@ -66,6 +58,7 @@ export function SignInPage() {
   const [isLoading, setIsLoading] = useState(null);
   const [error, setError] = useState(null);
   const [pageLoading, setPageLoading] = useState(true);
+  const [githubDialogOpen, setGithubDialogOpen] = useState(false);
   const [emailVerificationOpen, setEmailVerificationOpen] = useState(false);
   const [unverifiedUserData, setUnverifiedUserData] = useState(null);
   const navigate = useNavigate();
@@ -101,6 +94,37 @@ export function SignInPage() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Handle GitHub email submission
+  const handleGithubEmailSubmit = async (data) => {
+    console.log("submit button clicked")
+    setIsLoading("github");
+    setGithubDialogOpen(false);
+    handleSocialLogIn(providers[0], data);
+  };
+
+  // Send verification email
+  const sendVerificationEmail = async (email, userName) => {
+    try {
+      const response = await axios.post(
+        `${BACKEND_URL}/send-verification`,
+        { email, userName },
+        axiosConfig
+      );
+
+      return response.data.success;
+    } catch (error) {
+      console.error("Failed to send verification email:", error);
+      return false;
+    }
+  };
+
+
+  // Handle verification completion
+  const handleVerificationComplete = () => {
+    setEmailVerificationOpen(false);
+    setRegisteredUserData(null);    
+  };
+
   // Handle form submission
   const onSubmit = async (credentials) => {
     setIsLoading("credentials");
@@ -124,15 +148,15 @@ export function SignInPage() {
         navigate("/sign-up");
       } else {
         //login successful
-        console.log(response);
         if (response.data.authSuccess) {
           const user = response.data.user;
           setAuthSuccess(true);
           setUser(user);
-          navigate("/"),
+          navigate("/",
             {
               state: { replace: true },
-            };
+            }
+          );
         }
       }
     } catch (err) {
@@ -143,22 +167,56 @@ export function SignInPage() {
   };
 
   // Handle social login
-  const handleSocialLogIn = async (provider) => {
+  const handleSocialLogIn = async (provider, data = null) => {
     setIsLoading(provider.id);
     try {
-      const response = await socialLogin(provider.id);
-      if (response.authSuccess) {
-        const user = response.user;
-
-        setAuthSuccess(true);
-        setUser(user);
-
-        navigate("/"),
-          {
-            state: { replace: true },
-          };
+      const response = await socialLogin(provider.id, data);
+      if (response.error) {
+        setError(response.error)
       } else {
-        navigate("/sign-in");
+        if (response.authSuccess) {
+          const user = response.user;
+          
+          console.log(user)
+          if (user?.emailVerified) {
+            setAuthSuccess(true);
+            setUser(user);
+            navigate("/",
+              {
+                state: { replace: true },
+              }
+            );
+          } else {
+          //if user email is empty
+          if (provider.id === 'github' && user?.email === 'null') {
+            setGithubDialogOpen(true);
+          }
+
+          if (provider.id === 'github' && !user.emailVerified) {
+            //verify email if not verified
+            if (data?.email) {
+              const emailSent = await sendVerificationEmail(
+                data.email,
+                user.displayName || user.name
+              );
+
+              if (emailSent) {
+                setUnverifiedUserData({
+                  email: data.email,
+                  userName: user.name || user.displayName,
+                });
+
+                setGithubDialogOpen(false)
+                setEmailVerificationOpen(true);
+                return;
+              }
+            }
+
+            setAuthSuccess(true);
+            setUser(user);
+            }
+          } 
+        } 
       }
     } catch (err) {
       setError("An unexpected error occurred");
@@ -291,16 +349,24 @@ export function SignInPage() {
         </CardFooter>
       </Card>
 
+      {/* GitHub Email Dialog */}
+      <GitHubEmailDialog
+        isOpen={githubDialogOpen}
+        onClose={() => setGithubDialogOpen(false)}
+        onSubmit={handleGithubEmailSubmit}
+        isLoading={isLoading === "github"}
+        title="GitHub Sign Up"
+        description="Please provide your email address to continue with GitHub registration."
+        submitButtonText="Continue with GitHub"
+      />
+
       {/* Email Verification Dialog */}
       <EmailVerificationDialog
         isOpen={emailVerificationOpen}
         onClose={() => setEmailVerificationOpen(false)}
         email={unverifiedUserData?.email}
         userName={unverifiedUserData?.userName}
-        onVerificationComplete={() => {
-          setEmailVerificationOpen(false);
-          setUnverifiedUserData(null);
-        }}
+        onVerificationComplete={handleVerificationComplete}
       />
     </div>
   );

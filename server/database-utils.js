@@ -8,7 +8,7 @@ export async function registerUser(db, userData) {
   const {displayName, email, password, confirmPassword} = userData;
   const saltRounds = 10;
 
-  const username = generateUniqueUsername(db, displayName);
+  const username = await generateUniqueUsername(db, displayName);
   const strategy = 'credentials';
   const joinedOn = formatLocalISO().slice(0,10);
 
@@ -17,6 +17,9 @@ export async function registerUser(db, userData) {
   let profileUrl = null;
   let location = 'USA';
   const bio = `Hi, I'm ${displayName}!`;
+
+  let emailVerified = false;
+  let emailVerifiedAt = null;
 
   //user stats
   let postsCount = 0;
@@ -52,12 +55,12 @@ export async function registerUser(db, userData) {
           });
 
           const result = await db.query(
-            "INSERT INTO users (username, name, email, password, strategy, joined_on, profile_url, bio, photo, photo_public_id, location) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *",
-            [username, displayName, email, hash, strategy, joinedOn, profileUrl, bio, photo, photoPublicId, location]
+            "INSERT INTO users (username, name, email, password, strategy, joined_on, profile_url, bio, photo, photo_public_id, location, email_verified, email_verified_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *",
+            [username, displayName, email, hash, strategy, joinedOn, profileUrl, bio, photo, photoPublicId, location, emailVerified, emailVerifiedAt]
           );
           
-          const user = result.rows[0];
-          const userId = user.user_id;
+          const user = toCamelCase(result.rows[0]);
+          const userId = user.userId;
 
           await db.query(
             `INSERT INTO user_stats (user_id, likes_received, posts_count, active_posts_count, inactive_posts_count, review_count, reviews_given, reviews_received, report_count, average_rating) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
@@ -84,7 +87,7 @@ export function slugify(name) {
 // Generate unique username
 export async function generateUniqueUsername(db, name) {
     let baseUsername = slugify(name);
-    let username = `@${baseUsername}`;
+    let username = baseUsername;
     let isUnique = false;
     let attempt = 0;
 
@@ -103,7 +106,7 @@ export async function generateUniqueUsername(db, name) {
         if (attempt > 10) throw new Error('Unable to generate unique username. Try again.');
     }
 
-    return username;
+    return `@${username}`;
 }
 
 
@@ -736,4 +739,117 @@ export async function saveReport(db, reportData) {
       console.error("Error in making report:", error);
       throw error; // Propagate the error to the route handler
     }
+}
+
+// Email verification functions
+export async function createVerificationToken(db, userId, tokenType = 'email_verification') {
+  const crypto = await import('crypto');
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
+
+  try {
+    await db.query(
+      'INSERT INTO verification_tokens (user_id, token, token_type, expires_at) VALUES ($1, $2, $3, $4)',
+      [userId, token, tokenType, expiresAt]
+    );
+    return token;
+  } catch (error) {
+    console.error('Error creating verification token:', error);
+    throw new Error('Failed to create verification token');
+  }
+}
+
+export async function verifyToken(db, token, tokenType = 'email_verification') {
+  try {
+    const result = await db.query(
+      `SELECT vt.*, u.email, u.name 
+       FROM verification_tokens vt 
+       JOIN users u ON vt.user_id = u.user_id 
+       WHERE vt.token = $1 AND vt.token_type = $2 AND vt.expires_at > NOW() AND vt.used_at IS NULL`,
+      [token, tokenType]
+    );
+
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    return toCamelCase(result.rows[0]);
+  } catch (error) {
+    console.error('Error verifying token:', error);
+    throw new Error('Failed to verify token');
+  }
+}
+
+export async function markTokenAsUsed(db, tokenId) {
+  try {
+    await db.query(
+      'UPDATE verification_tokens SET used_at = NOW() WHERE token_id = $1',
+      [tokenId]
+    );
+  } catch (error) {
+    console.error('Error marking token as used:', error);
+    throw new Error('Failed to mark token as used');
+  }
+}
+
+export async function verifyUserEmail(db, userId) {
+  try {
+    await db.query(
+      'UPDATE users SET email_verified = TRUE, email_verified_at = NOW() WHERE user_id = $1',
+      [userId]
+    );
+  } catch (error) {
+    console.error('Error verifying user email:', error);
+    throw new Error('Failed to verify user email');
+  }
+}
+
+export async function checkEmailVerificationStatus(db, email) {
+  try {
+    const result = await db.query(
+      'SELECT email_verified FROM users WHERE email = $1',
+      [email]
+    );
+
+    if (result.rows.length === 0) {
+      return null; // User not found
+    }
+
+    let isUserVerified = result.rows[0].email_verified;
+    return isUserVerified
+
+  } catch (error) {
+    console.error('Error checking email verification status:', error);
+    throw new Error('Failed to check email verification status');
+  }
+}
+
+
+export async function getUserByEmail(db, email) {
+  try {
+    const result = await db.query(
+      'SELECT * FROM users WHERE email = $1',
+      [email]
+    );
+
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    return toCamelCase(result.rows[0]);
+  } catch (error) {
+    console.error('Error getting user by email:', error);
+    throw new Error('Failed to get user by email');
+  }
+}
+
+export async function deleteExpiredTokens(db) {
+  try {
+    await db.query(
+      'DELETE FROM verification_tokens WHERE expires_at < NOW()'
+    );
+  } catch (error) {
+    console.error('Error deleting expired tokens:', error);
+    throw new Error('Failed to delete expired tokens');
+  }
 }

@@ -161,15 +161,14 @@ export function SignUpPage() {
     setIsLoading(provider.id);
 
     try {
-      const result = await socialLogin(provider.id, data);
-      if (result.error) {
-        setError(result.error);
+      const response = await socialLogin(provider.id, data);
+      if (response.error) {
+        setError(response.error);
       } else {
-        console.log(result);
-        if (result.authSuccess) {
-          const user = result.user;
+        if (response.authSuccess) {
+          const user = response.user;
 
-          // For social login, send verification email if email is provided
+          // For github social login and credentials login, send verification email if email is provided
           if (data?.email) {
             const emailSent = await sendVerificationEmail(
               data.email,

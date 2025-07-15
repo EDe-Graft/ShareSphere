@@ -284,18 +284,6 @@ const HomePage = () => {
               </motion.div>
             ))}
           </div>
-
-          {/* GitHub Email Dialog */}
-          {!(user?.email) &&
-            <GitHubEmailDialog
-              isOpen={githubDialogOpen}
-              onClose={() => setGithubDialogOpen(false)}
-              onSubmit={handleGithubEmailSubmit}
-              title="GitHub Sign Up"
-              description="Please provide your email address to finalize Github registration."
-              submitButtonText="Confirm Email"
-            />
-          }
         </div>
       </section>
     </main>

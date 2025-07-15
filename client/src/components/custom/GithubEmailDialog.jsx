@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Github, Loader2, CheckCircle, Clock } from "lucide-react";
+import { Github, Loader2, CheckCircle, Clock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -42,6 +43,8 @@ const verifyEmailExists = async (email) => {
       { email },
       axiosConfig
     );
+
+    console.log(response.data)
 
     return {
       isValid: response.data.isValid,
@@ -92,10 +95,12 @@ export function GitHubEmailDialog({
     try {
       const result = await verifyEmailExists(email);
       setEmailVerification(result);
+
     } catch (error) {
       setEmailVerification({
         isValid: false,
         reason: "Unable to verify email at this time",
+        confidence: 'low'
       });
     } finally {
       setIsVerifying(false);

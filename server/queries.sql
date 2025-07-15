@@ -7,14 +7,32 @@ CREATE TABLE users (
     password VARCHAR NOT NULL,
     strategy VARCHAR(15),
     photo VARCHAR,
-    photo_public_id VARCHAR(20);
+    photo_public_id VARCHAR(30),
     profile_url VARCHAR(100) UNIQUE,
     location VARCHAR(100),
     bio TEXT,
     joined_on VARCHAR(30) NOT NULL,
-    CONSTRAINT fk_user_stats
+    email_verified BOOLEAN DEFAULT FALSE,
+    email_verified_at TIMESTAMP,
+    --add this constraint to users table after creating user_stats table
+    --      ADD CONSTRAINT fk_user_stats
+    --     FOREIGN KEY (user_id)
+    --     REFERENCES user_stats(user_id)
+    --     ON DELETE CASCADE
+);
+
+-- verification tokens table
+CREATE TABLE verification_tokens (
+    token_id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    token VARCHAR(255) UNIQUE NOT NULL,
+    token_type VARCHAR(20) NOT NULL, -- 'email_verification', 'password_reset'
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    used_at TIMESTAMP,
+    CONSTRAINT fk_users
         FOREIGN KEY (user_id)
-        REFERENCES user_stats(user_id)
+        REFERENCES users(user_id)
         ON DELETE CASCADE
 );
     
@@ -79,6 +97,7 @@ CREATE TABLE books (
     CONSTRAINT fk_items 
         FOREIGN KEY (item_id)
         REFERENCES items(item_id)
+        ON DELETE CASCADE
 );
 
 -- furniture table
@@ -105,6 +124,7 @@ CREATE TABLE furniture (
     CONSTRAINT fk_items 
         FOREIGN KEY (item_id)
         REFERENCES items(item_id)
+        ON DELETE CASCADE
 );
 
 -- clothing table
@@ -131,6 +151,7 @@ CREATE TABLE clothing (
     CONSTRAINT fk_items 
         FOREIGN KEY (item_id)
         REFERENCES items(item_id)
+        ON DELETE CASCADE
 );
 
 -- miscellaneous table
@@ -156,6 +177,7 @@ CREATE TABLE miscellaneous (
     CONSTRAINT fk_items 
         FOREIGN KEY (item_id)
         REFERENCES items(item_id)
+        ON DELETE CASCADE
 );
 
 -- images table
@@ -168,6 +190,7 @@ CREATE TABLE images (
     CONSTRAINT fk_items 
         FOREIGN KEY (item_id)
         REFERENCES items(item_id)
+        ON DELETE CASCADE
 );
 
 -- favorites table
@@ -178,9 +201,12 @@ CREATE TABLE favorites (
     item_category VARCHAR(20) NOT NULL,
     PRIMARY KEY (user_id, item_id),
     CONSTRAINT fk_user 
-        FOREIGN KEY (user_id) REFERENCES users(user_id),
+        FOREIGN KEY (user_id) 
+		REFERENCES users(user_id)
+        ON DELETE CASCADE,
     CONSTRAINT fk_item 
         FOREIGN KEY (item_id) REFERENCES items(item_id)
+        ON DELETE CASCADE
 );
 
 -- reviews table
@@ -199,9 +225,13 @@ CREATE TABLE reviews (
     comment TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_reviewer 
-        FOREIGN KEY (reviewer_id) REFERENCES users(user_id),
+        FOREIGN KEY (reviewer_id) 
+        REFERENCES users(user_id)
+        ON DELETE CASCADE,
     CONSTRAINT fk_reviewed_user 
-        FOREIGN KEY (reviewed_user_id) REFERENCES users(user_id)
+        FOREIGN KEY (reviewed_user_id)
+        REFERENCES users(user_id)
+        ON DELETE CASCADE
 );
 
 
@@ -224,6 +254,7 @@ CREATE TABLE report_details (
     CONSTRAINT fk_items 
     FOREIGN KEY (item_id)
     REFERENCES items(item_id)
+    ON DELETE CASCADE
 );
 
 -- report tracking table
@@ -237,5 +268,6 @@ CREATE TABLE report_tracking (
     CONSTRAINT fk_users 
     FOREIGN KEY (reported_user_id) 
     REFERENCES users(user_id)
+    ON DELETE CASCADE
 );
 

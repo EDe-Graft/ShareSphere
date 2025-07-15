@@ -130,7 +130,7 @@ export function EmailVerificationDialog({
               )}
             </Button>
 
-            <Button variant="ghost" onClick={onClose} className="w-full">
+            <Button variant="outline" onClick={onClose} className="w-full">
               {userName ? "I'll Verify Later" : "Back to Sign In"}
             </Button>
           </div>
