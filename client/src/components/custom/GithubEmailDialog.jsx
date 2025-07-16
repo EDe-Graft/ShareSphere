@@ -44,7 +44,6 @@ const checkEmailExists = async (email) => {
       axiosConfig
     );
 
-    console.log(response.data)
 
     return {
       isValid: response.data.isValid,
@@ -77,7 +76,7 @@ export function GitHubEmailDialog({
   const githubEmailForm = useForm({
     resolver: zodResolver(githubEmailSchema),
     defaultValues: {
-      email: "",
+      email: '',
     },
   });
 

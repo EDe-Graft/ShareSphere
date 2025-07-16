@@ -194,6 +194,28 @@ export function configurePassport(passport, db) {
       let reportCount;
       let averageRating;
 
+
+      //get email from state or profile
+      const state = req.query?.state;
+
+      let emailProvided = state !== 'null';
+      let emailFromState = null;
+      
+      // Try to decode email from state if it exists
+      if (emailProvided) {
+        try {
+          // If state contains encoded email data
+          const decodedState = JSON.parse(decodeURIComponent(state));
+          emailFromState = decodedState.email;
+        } catch (e) {
+          // If state is just a plain string, convert it to null object
+          emailFromState = state;
+          if (emailFromState === 'null') {emailFromState = null};
+        }
+      }
+      
+      email = emailFromState || profile.email || null;
+
       //log that the strategy is activated
       console.log("GitHub strategy activated");
 
@@ -205,30 +227,11 @@ export function configurePassport(passport, db) {
         // Generate a unique username
         username = await generateUniqueUsername(db, name)
 
-      //get email from state or profile
-      const state = req.query?.state;
-      let emailFromState = null;
-      
-      // Try to decode email from state if it exists
-      if (state) {
-        try {
-          // If state contains encoded email data
-          const decodedState = JSON.parse(decodeURIComponent(state));
-          emailFromState = decodedState.email;
-        } catch (e) {
-          // If state is just a plain string, treat it as email
-          emailFromState = state;
-        }
-      }
-      
-      email = emailFromState || profile.email || null;
-
         //initialize variables for user stats
         joinedOn = formatLocalISO().slice(0,10);
         photo = profile.photos?.[0]?.value;
         location = `USA`;
         bio = `Hi, I'm ${name}!`;
-
 
         reviewCount = 0;
         postsCount = 0;
@@ -247,10 +250,10 @@ export function configurePassport(passport, db) {
         );
 
         //get new user from result
-        const newUser = newUserResults.rows[0];
+        const newUser = toCamelCase(newUserResults.rows[0]);
 
         //get user id to insert into user_stats table
-        userId = newUser.user_id;
+        userId = newUser.userId;
 
         //insert new user stats into user_stats table
         const newUserStats = await db.query(
@@ -262,7 +265,7 @@ export function configurePassport(passport, db) {
         name = newUser.name;
         email = newUser.email;
         authStrategy = newUser.strategy
-        joinedOn = newUser.joined_on;
+        joinedOn = newUser.joinedOn;
         location = newUser.location;
         photo = newUser.photo;
         photoPublicId = newUser.photoPublicId;
@@ -270,26 +273,13 @@ export function configurePassport(passport, db) {
       } else {
 
         //get user from result
-        const user = result.rows[0];
+        const user = toCamelCase(result.rows[0]);
         //if user exists, update user profile with existing user profile data
-        userId = user.user_id;
+        userId = user.userId;
         email = user.email;
-
-        //get email from state or profile
-        const state = req.query?.state;
-        let emailFromState = null;
         
         // Try to decode email from state if it exists
-        if (state) {
-          try {
-            // If state contains encoded email data
-            const decodedState = JSON.parse(decodeURIComponent(state));
-            emailFromState = decodedState.email;
-          } catch (e) {
-            // If state is just a plain string, treat it as email
-            emailFromState = state;
-          }
-
+        if (emailProvided) {
         //update user email
         const updateResult = await db.query(`UPDATE users SET email = $1 WHERE user_id = $2 RETURNING email`, 
           [emailFromState, userId])
@@ -299,12 +289,12 @@ export function configurePassport(passport, db) {
 
 
         //if user exists, update user profile with existing user profile data
-        userId = user.user_id;
+        userId = user.userId;
         name = user.name;
         emailVerified = user.emailVerified;
         emailVerifiedAt = user.emailVerifiedAt;
         authStrategy = user.strategy;
-        joinedOn = user.joined_on;
+        joinedOn = user.joinedOn;
         location = user.location;
         photo = user.photo;
         photoPublicId = user.photoPublicId;

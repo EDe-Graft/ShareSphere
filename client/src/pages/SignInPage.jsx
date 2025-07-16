@@ -54,7 +54,7 @@ const axiosConfig = {
 };
 
 export function SignInPage() {
-  const { setAuthSuccess, user, setUser, localLogin, socialLogin } = useAuth();
+  const { setAuthSuccess, user, setUser, localLogin, socialLogin, logout } = useAuth();
   const [isLoading, setIsLoading] = useState(null);
   const [error, setError] = useState(null);
   const [pageLoading, setPageLoading] = useState(true);
@@ -96,7 +96,9 @@ export function SignInPage() {
 
   // Handle GitHub email submission
   const handleGithubEmailSubmit = async (data) => {
-    console.log("submit button clicked")
+    //logout to refresh session
+    await logout();
+
     setIsLoading("github");
     setGithubDialogOpen(false);
     handleSocialLogIn(providers[0], data);
@@ -176,24 +178,18 @@ export function SignInPage() {
       } else {
         if (response.authSuccess) {
           const user = response.user;
-          
-          console.log(user)
-          if (user?.emailVerified) {
+
+          // 1. If user has a valid, verified email
+          if (user?.email && user?.emailVerified) {
             setAuthSuccess(true);
             setUser(user);
-            navigate("/",
-              {
-                state: { replace: true },
-              }
-            );
-          } else {
-          //if user email is empty
-          if (provider.id === 'github' && user?.email === 'null') {
-            setGithubDialogOpen(true);
+            navigate("/", { state: { replace: true } });
+            return;
           }
 
-          if (provider.id === 'github' && !user.emailVerified) {
-            //verify email if not verified
+          // 2. If user has an email but it's not verified
+          if (provider.id === 'github' && user?.email && !user?.emailVerified) {
+            // If we already have the email from the dialog, send verification
             if (data?.email) {
               const emailSent = await sendVerificationEmail(
                 data.email,
@@ -206,16 +202,30 @@ export function SignInPage() {
                   userName: user.name || user.displayName,
                 });
 
-                setGithubDialogOpen(false)
+                //logout user before verification confirmation
+                await logout();
+
+                setGithubDialogOpen(false);
                 setEmailVerificationOpen(true);
                 return;
               }
             }
+            // If we don't have the email from the dialog, just show the verification dialog
+            setUnverifiedUserData({
+              email: user.email,
+              userName: user.name || user.displayName,
+            });
+            setGithubDialogOpen(false);
+            setEmailVerificationOpen(true);
+            return;
+          }
 
-            setAuthSuccess(true);
-            setUser(user);
-            }
-          } 
+          // 3. If user has no email, open the GitHub email dialog
+          if (provider.id === 'github' && !user?.email) {
+            setGithubDialogOpen(true);
+            return;
+          }
+
         } 
       }
     } catch (err) {
@@ -364,7 +374,7 @@ export function SignInPage() {
       <EmailVerificationDialog
         isOpen={emailVerificationOpen}
         onClose={() => setEmailVerificationOpen(false)}
-        email={unverifiedUserData?.email}
+        email={unverifiedUserData?.email || null}
         userName={unverifiedUserData?.userName}
         onVerificationComplete={handleVerificationComplete}
       />

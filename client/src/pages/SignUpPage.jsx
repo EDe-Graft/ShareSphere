@@ -61,7 +61,7 @@ const axiosConfig = {
 };
 
 export function SignUpPage() {
-  const { setAuthSuccess, setUser, register, socialLogin } = useAuth();
+  const { setAuthSuccess, setUser, register, socialLogin, logout } = useAuth();
   const [isLoading, setIsLoading] = useState(null);
   const [error, setError] = useState(null);
   const [pageLoading, setPageLoading] = useState(true);
@@ -151,6 +151,9 @@ export function SignUpPage() {
 
   // Handle GitHub email submission
   const handleGithubEmailSubmit = async (data) => {
+    //refresh session to load updated user data
+    await logout();
+
     setIsLoading("github");
     setGithubDialogOpen(false);
     handleSocialSignUp(providers[0], data);

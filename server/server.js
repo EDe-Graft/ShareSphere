@@ -105,6 +105,7 @@ app.use(passport.session());
 //For credentials auth success/failure
 app.get('/auth/user', (req, res) => {
   if (req.isAuthenticated()) {
+    console.log(req.user)
     res.status(200).json({
       authSuccess: req.isAuthenticated(),
       message: 'User Logged In', 

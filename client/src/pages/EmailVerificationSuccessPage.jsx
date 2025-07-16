@@ -18,6 +18,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AuthSkeleton } from "@/components/custom/AuthSkeleton";
 import axios from "axios";
+import { useAuth } from "@/components/context/AuthContext";
 
 // Backend configuration
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -34,6 +35,7 @@ export function EmailVerificationSuccessPage() {
   const [pageLoading, setPageLoading] = useState(true);
   const navigate = useNavigate();
 
+  const { user, logout } = useAuth();
   const token = searchParams.get("token");
 
   // Verify the email token when component mounts
@@ -59,6 +61,19 @@ export function EmailVerificationSuccessPage() {
             email: response.data.email,
             message: response.data.message,
           });
+
+        //fetch updated user profile data
+          // let userId = user.userId;
+          // const profileResponse = await axios.get(
+          //   `${BACKEND_URL}/user-profile/${userId}`,
+          //   axiosConfig
+          // )
+
+          // if (profileResponse.data.success) {
+          //   const userData = profileResponse.data.userData;
+          //   setUser(userData)
+          // }
+          
         } else {
           setError(response.data.error || "Verification failed");
         }
@@ -80,13 +95,15 @@ export function EmailVerificationSuccessPage() {
   // Auto redirect to sign-in after 5 seconds
   useEffect(() => {
     if (verificationResult?.success) {
-      const timer = setTimeout(() => {
-        navigate("/sign-in", {
-          state: {
-            message: "Email verified successfully! Please sign in to continue.",
-          },
-        });
-      }, 5000);
+      const timer = setTimeout( async () => {
+        const logoutSuccess = await logout();
+        if (logoutSuccess) {
+          navigate("/sign-in", {
+            state: {
+              message: "Email verified successfully! Please sign in to continue.",
+            },
+          });
+      }}, 5000);
 
       return () => clearTimeout(timer);
     }

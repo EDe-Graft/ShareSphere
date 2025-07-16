@@ -57,7 +57,7 @@ export default function EmailVerificationEmail({
             </Text>
             
             <Text style={text}>
-              If the button above doesn't work, you can copy and paste this link into your browser:
+              If the button above doesn't work, or you already have ShareSphere open, you can copy and paste this link into your browser:
             </Text>
             
             <Text style={linkText}>
