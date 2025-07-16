@@ -865,25 +865,14 @@ app.post("/upload", upload.array('images', 3), async (req, res) => {
 });
 
 
-// Email verification routes
-app.post('/verify-email', async (req, res) => {
+app.post('/check-email', async (req, res) => {
   try {
     const { email } = req.body;
-
+    // Basic validation
     if (!email) {
       return res.status(400).json({
         isValid: false,
-        reason: "Email is required"
-      });
-    }
-
-    // Check if email already exists in database
-    const existingUser = await getUserByEmail(db, email);
-    
-    if (existingUser) {
-      return res.status(200).json({
-        isValid: false,
-        reason: "Email is already registered. Please sign in",
+        reason: "Email is required",
         confidence: "high"
       });
     }
@@ -898,35 +887,58 @@ app.post('/verify-email', async (req, res) => {
       });
     }
 
-    // Check for common disposable email domains (optional)
-    const disposableDomains = [
-      'tempmail.org', 'guerrillamail.com', '10minutemail.com',
-      'mailinator.com', 'yopmail.com', 'temp-mail.org'
-    ];
-    
-    const domain = email.split('@')[1]?.toLowerCase();
-    if (disposableDomains.includes(domain)) {
+    // Check if email exists in the database
+    const user = await getUserByEmail(db, email);
+    if (user) {
       return res.status(200).json({
         isValid: false,
-        reason: "Please use a valid email address (disposable emails not allowed)",
-        confidence: "medium"
+        reason: "Email is already registered. Please sign in",
+        confidence: "high"
       });
     }
 
-    // Email is valid and available
+    // Email is available
     return res.status(200).json({
       isValid: true,
       reason: "Email is available for registration",
       confidence: "high"
     });
-
   } catch (error) {
-    console.error('Error verifying email:', error);
+    console.error('Error checking email:', error);
     res.status(500).json({
       isValid: false,
       reason: "Unable to verify email at this time",
       confidence: "low"
     });
+  }
+});
+
+
+// Email verification routes
+app.post('/verify-email', async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ success: false, error: "No token provided" });
+    }
+
+    const tokenData = await verifyToken(db, token, 'email_verification');
+    if (!tokenData) {
+      return res.status(400).json({ success: false, error: "Invalid or expired token" });
+    }
+
+    await markTokenAsUsed(db, tokenData.tokenId);
+    await verifyUserEmail(db, tokenData.userId);
+    await deleteExpiredTokens(db);
+
+    res.status(200).json({
+      success: true,
+      email: tokenData.email,
+      message: "Email verified successfully"
+    });
+  } catch (error) {
+    console.error('Error verifying email:', error);
+    res.status(500).json({ success: false, error: "Server error" });
   }
 });
 
@@ -952,7 +964,7 @@ app.post('/send-verification', async (req, res) => {
     const token = await createVerificationToken(db, userId);
     
     // Create token verification URL route
-    const verificationUrl = `${process.env.BACKEND_URL}/verify-email/${token}`;
+    const verificationUrl = `${process.env.FRONTEND_URL}/email-verified?token=${token}`;
     
     // Render email template
     const emailHtml = await render(
@@ -987,6 +999,7 @@ app.post('/send-verification', async (req, res) => {
   }
 });
 
+
 app.post('/resend-verification', async (req, res) => {
   try {
     const { email } = req.body;
@@ -1020,7 +1033,7 @@ app.post('/resend-verification', async (req, res) => {
     const token = await createVerificationToken(db, userId);
     
     // Create verification URL
-    const verificationUrl = `${process.env.BACKEND_URL}/verify-email/${token}`;
+    const verificationUrl = `${process.env.FRONTEND_URL}/email-verified?token=${token}`;
     
     // Render email template
     const emailHtml = await render(
@@ -1056,12 +1069,13 @@ app.post('/resend-verification', async (req, res) => {
 });
 
 
-app.get('/verify-email/:token', async (req, res) => {
+app.post('/verify-email/:token', async (req, res) => {
   try {
     const { token } = req.params;
 
     // Verify the token
     const tokenData = await verifyToken(db, token, 'email_verification');
+    console.log(tokenData)
     
     if (!tokenData) {
       // Redirect to frontend with failure parameter
@@ -1084,6 +1098,7 @@ app.get('/verify-email/:token', async (req, res) => {
     res.redirect(`${process.env.FRONTEND_URL}/email-verified?success=false&reason=server_error`);
   }
 });
+
 
 app.get('/verification-status/:email', async (req, res) => {
   try {

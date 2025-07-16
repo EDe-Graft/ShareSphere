@@ -37,7 +37,7 @@ function App() {
           <Route path="/sign-in" element={<SignInPage />} />
           <Route path="/sign-up" element={<SignUpPage />} />
           <Route
-            path="/verify-email"
+            path="/email-verified"
             element={<EmailVerificationSuccessPage />}
           />
           <Route path="/about" element={<AboutPage />} />

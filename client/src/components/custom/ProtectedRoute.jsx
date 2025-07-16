@@ -3,9 +3,8 @@ import { useAuth } from "../context/AuthContext";
 import { Navigate, useLocation } from "react-router-dom";
 
 export default function ProtectedRoute({ children }) {
-  const { authSuccess } = useAuth();
+  const { user, authSuccess } = useAuth();
   const location = useLocation();
-  console.log("Navigating to: " + location.pathname);
 
   if (!authSuccess) {
     // Redirect to sign-in page, preserving the location they tried to access

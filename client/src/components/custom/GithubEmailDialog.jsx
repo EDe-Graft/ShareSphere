@@ -36,10 +36,10 @@ const axiosConfig = {
 };
 
 // Verify Email Exists
-const verifyEmailExists = async (email) => {
+const checkEmailExists = async (email) => {
   try {
     const response = await axios.post(
-      `${BACKEND_URL}/verify-email`,
+      `${BACKEND_URL}/check-email`,
       { email },
       axiosConfig
     );
@@ -93,7 +93,7 @@ export function GitHubEmailDialog({
     setVerificationAttempted(true);
 
     try {
-      const result = await verifyEmailExists(email);
+      const result = await checkEmailExists(email);
       setEmailVerification(result);
 
     } catch (error) {

@@ -48,7 +48,7 @@ export function EmailVerificationSuccessPage() {
 
       try {
         const response = await axios.post(
-          `${BACKEND_URL}/verify-email`,
+          `${BACKEND_URL}/verify-email/`,
           { token },
           axiosConfig
         );
