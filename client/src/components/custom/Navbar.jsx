@@ -36,7 +36,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const mainNavItems = [
@@ -107,6 +114,63 @@ const Navbar = () => {
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="container flex h-16 items-center justify-between mx-auto p-2">
+        {/* Mobile Menu */}
+        <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+          <SheetTrigger asChild className="md:hidden">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setIsMenuOpen(true)}
+            >
+              <Menu className="h-[1.2rem] w-[1.2rem]" />
+              <span className="sr-only">Toggle menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left">
+            <SheetHeader className="sr-only">
+              <SheetTitle>Navigation Menu</SheetTitle>
+              <SheetDescription>
+                Access main navigation and resource categories
+              </SheetDescription>
+            </SheetHeader>
+            <div className="grid gap-6 py-6">
+              <div className="flex flex-col space-y-3">
+                <h3 className="font-medium">Navigation</h3>
+                {mainNavItems.map((item) => (
+                  <button
+                    key={item.path}
+                    onClick={() => handleNavigation(item.path)}
+                    className={cn(
+                      "flex items-center text-sm transition-colors hover:text-primary text-left",
+                      isActive(item.path) && "text-primary font-medium"
+                    )}
+                  >
+                    {item.icon}
+                    {item.name}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex flex-col space-y-3">
+                <h3 className="font-medium">Resources</h3>
+                {resourceCategories.map((category) => (
+                  <button
+                    key={category.path}
+                    onClick={() => handleNavigation(category.path)}
+                    className={cn(
+                      "flex items-center text-sm transition-colors hover:text-primary text-left",
+                      isActive(category.path) && "text-primary font-medium"
+                    )}
+                  >
+                    <div className="mr-2">{category.icon}</div>
+                    {category.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+
         {/* Logo */}
         <Link to="/" className="flex items-center group">
           <img
@@ -239,9 +303,7 @@ const Navbar = () => {
               <Avatar className="cursor-pointer bg-white dark:bg-[hsl(224,71.4%,4.1%)]">
                 {user && (
                   <>
-                    <AvatarImage
-                      src={user.photo ? user.photo : null}
-                    />
+                    <AvatarImage src={user.photo ? user.photo : null} />
                     <AvatarFallback className="bg-primary text-primary-foreground">
                       {user.displayName ? (
                         user.displayName[0].toUpperCase()
@@ -275,7 +337,9 @@ const Navbar = () => {
                 </DropdownMenuItem>
               ) : (
                 <>
-                  <DropdownMenuItem onClick={() => navigate(`/profile/${user?.userId}`)}>
+                  <DropdownMenuItem
+                    onClick={() => navigate(`/profile/${user?.userId}`)}
+                  >
                     Profile
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/favorites")}>
@@ -287,7 +351,7 @@ const Navbar = () => {
                   <DropdownMenuItem onClick={() => navigate("/reviews")}>
                     Reviews
                   </DropdownMenuItem>
-                  
+
                   <DropdownMenuItem
                     onClick={async () => {
                       console.log("Logging out...");
@@ -303,65 +367,6 @@ const Navbar = () => {
               )}
             </DropdownMenuContent>
           </DropdownMenu>
-
-          {/* Mobile Menu */}
-          <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-            <SheetTrigger asChild className="md:hidden">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setIsMenuOpen(true)}
-              >
-                <Menu className="h-[1.2rem] w-[1.2rem]" />
-                <span className="sr-only">Toggle menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right">
-              <div className="grid gap-6 py-6">
-                <div className="flex flex-col space-y-3">
-                  <h3 className="font-medium">Navigation</h3>
-                  {mainNavItems.map((item) => (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      className={cn(
-                        "flex items-center text-sm transition-colors hover:text-primary",
-                        isActive(item.path) && "text-primary font-medium"
-                      )}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleNavigation(item.path);
-                      }}
-                    >
-                      {item.icon}
-                      {item.name}
-                    </Link>
-                  ))}
-                </div>
-
-                <div className="flex flex-col space-y-3">
-                  <h3 className="font-medium">Resources</h3>
-                  {resourceCategories.map((category) => (
-                    <Link
-                      key={category.path}
-                      to={category.path}
-                      className={cn(
-                        "flex items-center text-sm transition-colors hover:text-primary",
-                        isActive(category.path) && "text-primary font-medium"
-                      )}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleNavigation(category.path);
-                      }}
-                    >
-                      <div className="mr-2">{category.icon}</div>
-                      {category.name}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
         </div>
       </div>
     </nav>
