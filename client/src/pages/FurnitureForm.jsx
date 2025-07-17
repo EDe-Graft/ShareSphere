@@ -365,7 +365,7 @@ const FurnitureForm = () => {
                         Furniture Condition*
                       </FormLabel>
                       <div className="grid grid-cols-4 gap-3">
-                        {["like-new", "good", "fair", "poor"].map((cond) => (
+                        {["new", "good", "fair", "poor"].map((cond) => (
                           <Button
                             key={cond}
                             type="button"
