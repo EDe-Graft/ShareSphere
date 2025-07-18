@@ -127,12 +127,28 @@ const Navbar = () => {
             </Button>
           </SheetTrigger>
           <SheetContent side="left">
-            <SheetHeader className="sr-only">
-              <SheetTitle>Navigation Menu</SheetTitle>
-              <SheetDescription>
+            <SheetHeader className="flex-row items-center justify-between space-y-0 pb-4 border-b">
+              <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+              <SheetDescription className="sr-only">
                 Access main navigation and resource categories
               </SheetDescription>
+              <Link
+                to="/"
+                className="flex items-center group"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleNavigation("/");
+                }}
+              >
+                <img
+                  src="/ShareSphereLogo.png"
+                  alt="ShareSpehereLogo"
+                  className="w-10 h-10 rounded-full flex-shrink-0"
+                />
+                <h3 className="font-bold text-primary ">ShareSphere</h3>
+              </Link>
             </SheetHeader>
+
             <div className="grid gap-6 py-6">
               <div className="flex flex-col space-y-3">
                 <h3 className="font-medium">Navigation</h3>
