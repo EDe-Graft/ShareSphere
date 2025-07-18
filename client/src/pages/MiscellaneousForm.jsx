@@ -177,7 +177,7 @@ const MiscellaneousForm = () => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="font-medium">
-                          Misc. Name*
+                          Misc. Name<span className="text-red-500 ml-1">*</span>
                         </FormLabel>
                         <FormControl>
                           <Input
@@ -196,7 +196,9 @@ const MiscellaneousForm = () => {
                     name="type"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="font-medium">Type*</FormLabel>
+                        <FormLabel className="font-medium">
+                          Type<span className="text-red-500 ml-1">*</span>
+                        </FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           defaultValue={field.value}
@@ -240,7 +242,9 @@ const MiscellaneousForm = () => {
                     name="color"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="font-medium">Color*</FormLabel>
+                        <FormLabel className="font-medium">
+                          Color<span className="text-red-500 ml-1">*</span>
+                        </FormLabel>
                         <FormControl>
                           <Input
                             placeholder="E.g., Black, White, Red... "
@@ -332,7 +336,7 @@ const MiscellaneousForm = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="font-medium">
-                        Description*
+                        Description<span className="text-red-500 ml-1">*</span>
                       </FormLabel>
                       <FormControl>
                         <Textarea
@@ -352,7 +356,8 @@ const MiscellaneousForm = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="font-medium">
-                        Item Condition*
+                        Item Condition
+                        <span className="text-red-500 ml-1">*</span>
                       </FormLabel>
                       <div className="grid grid-cols-4 gap-3">
                         {["new", "good", "fair", "poor"].map((cond) => (

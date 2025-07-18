@@ -212,7 +212,9 @@ export default function ClothingForm() {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="font-medium">Name*</FormLabel>
+                        <FormLabel className="font-medium">
+                          Name<span className="text-red-500 ml-1">*</span>
+                        </FormLabel>
                         <FormControl>
                           <Input
                             placeholder="E.g., Winter Jacket, Denim Jeans"
@@ -230,7 +232,9 @@ export default function ClothingForm() {
                     name="type"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="font-medium">Type*</FormLabel>
+                        <FormLabel className="font-medium">
+                          Type<span className="text-red-500 ml-1">*</span>
+                        </FormLabel>
                         <Select
                           onValueChange={(value) => {
                             field.onChange(value);
@@ -275,7 +279,9 @@ export default function ClothingForm() {
                     name="size"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="font-medium">Size*</FormLabel>
+                        <FormLabel className="font-medium">
+                          Size<span className="text-red-500 ml-1">*</span>
+                        </FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           defaultValue={field.value}
@@ -327,7 +333,9 @@ export default function ClothingForm() {
                     name="color"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="font-medium">Color*</FormLabel>
+                        <FormLabel className="font-medium">
+                          Color<span className="text-red-500 ml-1">*</span>
+                        </FormLabel>
                         <FormControl>
                           <Input
                             placeholder="E.g., Blue, Black, Red"
@@ -366,7 +374,9 @@ export default function ClothingForm() {
                   name="gender"
                   render={({ field }) => (
                     <FormItem className="space-y-3">
-                      <FormLabel className="font-medium">Sex*</FormLabel>
+                      <FormLabel className="font-medium">
+                        Sex<span className="text-red-500 ml-1">*</span>
+                      </FormLabel>
                       <FormControl>
                         <RadioGroup
                           onValueChange={field.onChange}
@@ -437,7 +447,9 @@ export default function ClothingForm() {
                   name="condition"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-medium">Condition*</FormLabel>
+                      <FormLabel className="font-medium">
+                        Condition<span className="text-red-500 ml-1">*</span>
+                      </FormLabel>
                       <div className="grid grid-cols-4 gap-3">
                         {["new", "good", "fair", "poor"].map((cond) => (
                           <Button

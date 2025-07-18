@@ -50,7 +50,7 @@ const formSchema = z.object({
   name: z.string().min(1, "Furniture name is required"),
   type: z.string().min(1, "Furniture type is required"),
   brand: z.string().optional(),
-  color: z.string().min(3, "Furniture color is requires"),
+  color: z.string().min(3, "Furniture color is required"),
   age: z.string().optional(),
   dimensions: z.string().optional(),
   material: z.string().optional(),
@@ -177,7 +177,9 @@ const FurnitureForm = () => {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="font-medium">Name*</FormLabel>
+                        <FormLabel className="font-medium">
+                          Name<span className="text-red-500 ml-1">*</span>
+                        </FormLabel>
                         <FormControl>
                           <Input
                             placeholder="E.g., Study Desk, Bookshelf"
@@ -195,7 +197,9 @@ const FurnitureForm = () => {
                     name="type"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="font-medium">Type*</FormLabel>
+                        <FormLabel className="font-medium">
+                          Type<span className="text-red-500 ml-1">*</span>
+                        </FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           defaultValue={field.value}
@@ -228,7 +232,9 @@ const FurnitureForm = () => {
                     name="color"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="font-medium">Color*</FormLabel>
+                        <FormLabel className="font-medium">
+                          Color<span className="text-red-500 ml-1">*</span>
+                        </FormLabel>
                         <FormControl>
                           <Input
                             placeholder="E.g., black, brown, white..."
@@ -362,7 +368,8 @@ const FurnitureForm = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="font-medium">
-                        Furniture Condition*
+                        Furniture Condition{" "}
+                        <span className="text-red-500">*</span>
                       </FormLabel>
                       <div className="grid grid-cols-4 gap-3">
                         {["new", "good", "fair", "poor"].map((cond) => (

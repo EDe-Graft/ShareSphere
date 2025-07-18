@@ -207,7 +207,7 @@ const ImageUploadField = ({
               <div className="grid grid-cols-1 gap-3">
                 {/* Camera Option for Mobile */}
                 <div
-                  className="flex flex-col items-center justify-center border-2 border-dashed border-violet-400 rounded-lg p-4 cursor-pointer hover:border-violet-500 hover:bg-violet-50 transition-colors bg-violet-25"
+                  className="flex flex-col items-center justify-center border-2 border-dashed border-violet-400 rounded-lg p-4 cursor-pointer hover:border-violet-500 hover:bg-accent transition-colors bg-violet-25"
                   onClick={() => cameraInputRef.current?.click()}
                 >
                   <Camera className="h-6 w-6 text-violet-500 mb-2" />
@@ -215,7 +215,7 @@ const ImageUploadField = ({
                     Take Photo
                   </p>
                   <p className="text-xs text-gray-500 text-center">
-                    Use your camera to capture up to 3 images
+                    Use your camera to capture up to 3 photos
                   </p>
                   <Input
                     ref={cameraInputRef}

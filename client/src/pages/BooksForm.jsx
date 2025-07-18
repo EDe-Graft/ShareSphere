@@ -57,7 +57,7 @@ const formSchema = z.object({
     .or(z.literal(""))
     .transform((val) => val || "n/a"),
   description: z.string().default("n/a"),
-  condition: z.string().default("good"),
+  condition: z.string().min(1, "Please select a condition"),
   images: z
     .array(z.instanceof(File))
     .min(1, "At least one image is required")
@@ -183,7 +183,9 @@ const BooksForm = () => {
                   name="subCategory"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-medium">Category*</FormLabel>
+                      <FormLabel className="font-medium">
+                        Category<span className="text-red-500 ml-1">*</span>
+                      </FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value}
@@ -224,11 +226,13 @@ const BooksForm = () => {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="font-medium capitalize">
-                            {fieldName === "title"
-                              ? "Title*"
-                              : fieldName.charAt(0).toUpperCase() +
-                                fieldName.slice(1) +
-                                " (optional)"}
+                            {fieldName === "title" ? (
+                              <>
+                                Title <span className="text-red-500">*</span>
+                              </>
+                            ) : (
+                              `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} (optional)`
+                            )}
                           </FormLabel>
                           <FormControl>
                             <Input
@@ -272,7 +276,8 @@ const BooksForm = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="font-medium">
-                        Book Condition*
+                        Book Condition
+                        <span className="text-red-500 ml-1">*</span>
                       </FormLabel>
                       <div className="grid grid-cols-4 gap-3">
                         {["new", "good", "fair", "poor"].map((cond) => (
