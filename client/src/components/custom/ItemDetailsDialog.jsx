@@ -839,7 +839,7 @@ export default function ItemDetailsDialog({
             )}
 
             <div>
-              {(mode === "edit" && !isEditing) || isOwnItem ? (
+              {mode === "edit" && !isEditing && isOwnItem ? (
                 <Button
                   variant="destructive"
                   onClick={() => setIsDeleteDialogOpen(true)}
