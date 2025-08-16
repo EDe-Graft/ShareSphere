@@ -160,7 +160,7 @@ export default function ClothingForm() {
 
       if (response.data.success) {
         toast.success("Clothing donation uploaded successfully!", {
-          description: `"${processedData.name}" has been added to our donation list.`,
+          description: `"${clothingFormData.name}" has been added to our donation list.`,
         });
         setTimeout(() => navigate("/clothing"), 2500);
       }
