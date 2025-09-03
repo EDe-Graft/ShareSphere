@@ -215,7 +215,7 @@ const ContactPage = () => {
                   <div>
                     <h3 className="font-medium">Location</h3>
                     <p className="text-sm text-muted-foreground">
-                      University Campus, Building 4
+                      New Jersey, United States
                     </p>
                   </div>
                 </div>
