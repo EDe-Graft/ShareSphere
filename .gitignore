@@ -5,6 +5,10 @@ node_modules/
 .env.*.local
 npm-debug.log*
 
+# --- Pdf files ---
+*.pdf
+*.txt
+
 # --- Logs ---
 logs
 *.log
