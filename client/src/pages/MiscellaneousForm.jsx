@@ -33,7 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import ImageUploadField from "@/components/custom/ImageUploadField";
-import { formatData } from "@/lib/utils";
+import { formatData, formatCondition } from "@/lib/utils";
 import axios from "axios";
 
 // Define constants for file validation

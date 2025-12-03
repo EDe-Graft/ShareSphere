@@ -173,14 +173,16 @@ export function SignInPage() {
     setIsLoading(provider.id);
     try {
       const response = await socialLogin(provider.id, data);
+      console.log("Social Login Response", response);
       if (response.error) {
         setError(response.error)
       } else {
         if (response.authSuccess) {
           const user = response.user;
+          console.log("User", user);
 
           // 1. If user has a valid, verified email
-          if (user?.email && user?.emailVerified) {
+          if (user?.email && (user?.verified || user?.emailVerified)) {
             setAuthSuccess(true);
             setUser(user);
             navigate("/", { state: { replace: true } });
@@ -362,7 +364,10 @@ export function SignInPage() {
       {/* GitHub Email Dialog */}
       <GitHubEmailDialog
         isOpen={githubDialogOpen}
-        onClose={() => setGithubDialogOpen(false)}
+        onClose={() => {
+          setGithubDialogOpen(false);
+          // logout();
+          navigate("/", { state: { replace: true } });}}
         onSubmit={handleGithubEmailSubmit}
         isLoading={isLoading === "github"}
         title="GitHub Sign Up"

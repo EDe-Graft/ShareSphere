@@ -184,7 +184,7 @@ export default function ItemCard({
                   navigate(`/profile/${item.uploaderId}`);
                 }}
               >
-                {item.uploaderUsername || "user"}
+                {"@" + item.uploaderUsername || "user"}
               </p>
               {additionalBadges.length > 0 && (
                 <div className="flex flex-wrap gap-1">{additionalBadges}</div>
@@ -311,7 +311,7 @@ export default function ItemCard({
                       navigate(`/profile/${item.uploaderId}`);
                     }}
                   >
-                    {item.uploaderUsername || "user"}
+                    {"@" + item.uploaderUsername || "user"}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">

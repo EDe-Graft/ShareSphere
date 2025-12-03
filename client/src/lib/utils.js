@@ -133,7 +133,7 @@ export function formatData(updatedData) {
 
 
 // Helper function to format condition values
-function formatCondition(condition) {
+export function formatCondition(condition) {
   if (!condition) return "Good"; // Default value
   
   const lowerCondition = condition.toLowerCase().trim();

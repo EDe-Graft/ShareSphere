@@ -8,7 +8,10 @@ export async function registerUser(db, userData) {
   const {displayName, email, password, confirmPassword} = userData;
   const saltRounds = 10;
 
-  const username = await generateUniqueUsername(db, displayName);
+  let username = userData?.username.toLowerCase() || null;
+  if (!username) {
+    username = await generateUniqueUsername(db, displayName);
+  }
   const strategy = 'credentials';
   const joinedOn = formatLocalISO().slice(0,10);
 
@@ -106,7 +109,7 @@ export async function generateUniqueUsername(db, name) {
         if (attempt > 10) throw new Error('Unable to generate unique username. Try again.');
     }
 
-    return `@${username}`;
+    return username;
 }
 
 

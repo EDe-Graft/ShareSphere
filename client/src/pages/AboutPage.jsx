@@ -52,7 +52,7 @@ const AboutPage = () => {
             </p>
             <p>
               Our platform enables students to share books, clothing, furniture,
-              and other items they no longer need, reducing waste and helping
+              and other items they no longer need, reducing cost and waste and helping
               others save money.
             </p>
           </CardContent>
@@ -131,14 +131,14 @@ const AboutPage = () => {
               <div className="flex flex-col items-center text-center space-y-4">
                 <Avatar className="h-24 w-24">
                   <AvatarImage 
-                    src={import.meta.env.VITE_DEGRAFT_PROFILE_IMAGE}
+                    // src={import.meta.env.VITE_DEGRAFT_PROFILE_IMAGE}
                   />
                   <AvatarFallback>ED</AvatarFallback>
                 </Avatar>
                 <div>
                   <h3 className="text-lg font-medium">Edward De-Graft Quansah</h3>
                   <p className="text-muted-foreground">
-                    Co-founder & Developer
+                    Co-Founder & Developer
                   </p>
                 </div>
                 <div className="flex space-x-2">
@@ -165,14 +165,14 @@ const AboutPage = () => {
               <div className="flex flex-col items-center text-center space-y-4">
                 <Avatar className="h-24 w-24">
                   <AvatarImage 
-                    src={import.meta.env.VITE_NARAYAN_PROFILE_IMAGE}
+                    // src={import.meta.env.VITE_NARAYAN_PROFILE_IMAGE}
                   />
                   <AvatarFallback>NK</AvatarFallback>
                 </Avatar>
                 <div>
                   <h3 className="text-lg font-medium">Narayan Khanal</h3>
                   <p className="text-muted-foreground">
-                    Co-founder & Developer
+                    Co-Founder & Developer
                   </p>
                 </div>
                 <div className="flex space-x-2">

@@ -105,10 +105,10 @@ export function configurePassport(passport, db) {
         );
 
         //get new user from result
-        const newUser = newUserResults.rows[0];
+        const newUser = toCamelCase(newUserResults.rows[0]);
 
         //get user id to insert into user_stats table
-        userId = newUser.user_id;
+        userId = newUser.userId;
 
         //insert new user stats into user_stats table
         const newUserStats = await db.query(
@@ -118,7 +118,7 @@ export function configurePassport(passport, db) {
 
         //update user profile with new user profile data and stats
         username = newUser.username;
-        joinedOn = newUser.joined_on;
+        joinedOn = newUser.joinedOn;
         authStrategy = newUser.strategy;
         location = newUser.locaton;
         photo = newUser.photo;
@@ -126,12 +126,12 @@ export function configurePassport(passport, db) {
         bio = newUser.bio;
       } else {
         //get user from result
-        const user = result.rows[0];
+        const user = toCamelCase(result.rows[0]);
 
         //if user exists, update user profile with existing user profile data
-        userId = user.user_id;
+        userId = user.userId;
         username = user.username;
-        joinedOn = user.joined_on;
+        joinedOn = user.joinedOn;
         authStrategy = user.strategy;
         location = user.location;
         photo = user.photo;

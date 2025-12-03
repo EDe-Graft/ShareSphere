@@ -75,7 +75,7 @@ export const RequestItemDialog = ({
     try {
       // Prepare the request data
       const emailData = {
-        uploaderEmail: item.uploaderEmail, // Assuming item.uploaderEmail contains the donor's email
+        uploaderEmail: item.uploaderEmail, //item.uploaderEmail contains the donor's email from the database
         requesterName: formState.name,
         requesterEmail: formState.email,
         message: formState.message,
@@ -87,7 +87,7 @@ export const RequestItemDialog = ({
       };
 
       // Make API call to backend to send email
-      
+      console.log("Email Data", emailData);
     
       const response = await axios.post(`${BACKEND_URL}/send-request`,
          emailData,
