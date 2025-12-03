@@ -3,7 +3,7 @@
     <img src="client/public/ShareSphereLogo.png" alt="ShareSphere Logo" width="100" style="transform: translateX(15px);" />
     <h1 style="margin: 0;">ShareSphere</h1>
   </div>
-  <p><em>Connect, Share, and Collaborate</em></p>
+  <p><em>A campus community platform to share books, clothes, and essentials – reducing waste while helping each other thrive</em></p>
 
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-18+-blue.svg)](https://reactjs.org/)
