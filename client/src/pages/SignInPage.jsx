@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { set, useForm } from "react-hook-form";
+import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Github, Mail, Loader2 } from "lucide-react";
@@ -54,7 +54,8 @@ const axiosConfig = {
 };
 
 export function SignInPage() {
-  const { setAuthSuccess, user, setUser, localLogin, socialLogin, logout } = useAuth();
+  const { setAuthSuccess, user, setUser, localLogin, socialLogin, logout } =
+    useAuth();
   const [isLoading, setIsLoading] = useState(null);
   const [error, setError] = useState(null);
   const [pageLoading, setPageLoading] = useState(true);
@@ -62,6 +63,7 @@ export function SignInPage() {
   const [emailVerificationOpen, setEmailVerificationOpen] = useState(false);
   const [unverifiedUserData, setUnverifiedUserData] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Initialize form
   const form = useForm({
@@ -94,16 +96,6 @@ export function SignInPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Handle GitHub email submission
-  const handleGithubEmailSubmit = async (data) => {
-    //logout to refresh session
-    await logout();
-
-    setIsLoading("github");
-    setGithubDialogOpen(false);
-    handleSocialLogIn(providers[0], data);
-  };
-
   // Send verification email
   const sendVerificationEmail = async (email, userName) => {
     try {
@@ -120,11 +112,23 @@ export function SignInPage() {
     }
   };
 
-
   // Handle verification completion
-  const handleVerificationComplete = () => {
+  const handleVerificationComplete = async () => {
     setEmailVerificationOpen(false);
-    setRegisteredUserData(null);    
+
+    // If this was from GitHub email collection, continue with GitHub auth
+    if (unverifiedUserData?.pendingGithubAuth) {
+      const email = unverifiedUserData.email;
+      setUnverifiedUserData(null);
+
+      // Now continue with GitHub authentication with the verified email
+      await logout(); // Logout to refresh session
+      setIsLoading("github");
+      handleSocialLogIn(providers[0], { email });
+    } else {
+      setUnverifiedUserData(null);
+      navigate("/", { state: { replace: true } });
+    }
   };
 
   // Handle form submission
@@ -132,7 +136,6 @@ export function SignInPage() {
     setIsLoading("credentials");
 
     try {
-      // First check if email is verified
       const isVerified = await checkEmailVerification(credentials.email);
 
       if (!isVerified) {
@@ -154,15 +157,13 @@ export function SignInPage() {
           const user = response.data.user;
           setAuthSuccess(true);
           setUser(user);
-          navigate("/",
-            {
-              state: { replace: true },
-            }
-          );
+          navigate("/", {
+            state: { replace: true },
+          });
         }
       }
     } catch (err) {
-      setError(err);
+      setError(err.message || "An error occurred during sign in");
     } finally {
       setIsLoading(null);
     }
@@ -175,7 +176,7 @@ export function SignInPage() {
       const response = await socialLogin(provider.id, data);
       console.log("Social Login Response", response);
       if (response.error) {
-        setError(response.error)
+        setError(response.error);
       } else {
         if (response.authSuccess) {
           const user = response.user;
@@ -190,7 +191,7 @@ export function SignInPage() {
           }
 
           // 2. If user has an email but it's not verified
-          if (provider.id === 'github' && user?.email && !user?.emailVerified) {
+          if (provider.id === "github" && user?.email && !user?.emailVerified) {
             // If we already have the email from the dialog, send verification
             if (data?.email) {
               const emailSent = await sendVerificationEmail(
@@ -223,12 +224,11 @@ export function SignInPage() {
           }
 
           // 3. If user has no email, open the GitHub email dialog
-          if (provider.id === 'github' && !user?.email) {
+          if (provider.id === "github" && !user?.email) {
             setGithubDialogOpen(true);
             return;
           }
-
-        } 
+        }
       }
     } catch (err) {
       setError("An unexpected error occurred");
@@ -237,9 +237,43 @@ export function SignInPage() {
     }
   };
 
+  // Handle GitHub email submission
+  const handleGithubEmailSubmit = async (data) => {
+    setIsLoading("github");
+
+    try {
+      // Send verification email first
+      const emailSent = await sendVerificationEmail(
+        data.email,
+        data.email.split("@")[0]
+      );
+
+      if (emailSent) {
+        // Store the email for later use
+        setUnverifiedUserData({
+          email: data.email,
+          userName: data.email.split("@")[0],
+          pendingGithubAuth: true, // Flag to indicate pending GitHub auth
+        });
+
+        // Close GitHub dialog and open verification dialog
+        setGithubDialogOpen(false);
+        setEmailVerificationOpen(true);
+        setIsLoading(null);
+      } else {
+        setError("Failed to send verification email. Please try again.");
+        setIsLoading(null);
+      }
+    } catch (error) {
+      console.error("Error in GitHub email submission:", error);
+      setError("An error occurred. Please try again.");
+      setIsLoading(null);
+    }
+  };
+
   // Show skeleton while page is loading
   if (pageLoading) {
-    return <AuthSkeleton type="sign-up" />;
+    return <AuthSkeleton type="sign-in" />;
   }
 
   return (
@@ -254,6 +288,13 @@ export function SignInPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Show verification success message if coming from email verification */}
+          {location.state?.message && (
+            <Alert>
+              <AlertDescription>{location.state.message}</AlertDescription>
+            </Alert>
+          )}
+
           {/* Social Login Buttons */}
           <div className="grid grid-cols-2 gap-4">
             <Button
@@ -366,8 +407,8 @@ export function SignInPage() {
         isOpen={githubDialogOpen}
         onClose={() => {
           setGithubDialogOpen(false);
-          // logout();
-          navigate("/", { state: { replace: true } });}}
+          navigate("/", { state: { replace: true } });
+        }}
         onSubmit={handleGithubEmailSubmit}
         isLoading={isLoading === "github"}
         title="GitHub Sign Up"
