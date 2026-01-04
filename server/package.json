@@ -8,7 +8,8 @@
     "start": "node server",
     "dev": "nodemon server",
     "build:emails": "babel emails --out-dir dist/emails --extensions \".js,.jsx\"",
-    "import-db": "node import-db-simple.js"
+    "import-db": "node import-db-simple.js",
+    "init-db": "node init-db.js"
   },
   "keywords": [],
   "author": "",

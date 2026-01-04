@@ -1,5 +1,5 @@
 -- users table
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     user_id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     name VARCHAR(100),
@@ -13,7 +13,7 @@ CREATE TABLE users (
     bio TEXT,
     joined_on VARCHAR(30) NOT NULL,
     email_verified BOOLEAN DEFAULT FALSE,
-    email_verified_at TIMESTAMP,
+    email_verified_at TIMESTAMP
     --add this constraint to users table after creating user_stats table
     --      ADD CONSTRAINT fk_user_stats
     --     FOREIGN KEY (user_id)
@@ -22,7 +22,7 @@ CREATE TABLE users (
 );
 
 -- verification tokens table
-CREATE TABLE verification_tokens (
+CREATE TABLE IF NOT EXISTS verification_tokens (
     token_id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
     token VARCHAR(255) UNIQUE NOT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE verification_tokens (
 );
     
 -- user stats table
-CREATE TABLE user_stats (
+CREATE TABLE IF NOT EXISTS user_stats (
     user_id INTEGER PRIMARY KEY,
     likes_received INTEGER,
     posts_count INTEGER,
@@ -55,7 +55,7 @@ CREATE TABLE user_stats (
 );
 
 -- items table
-CREATE TABLE items (
+CREATE TABLE IF NOT EXISTS items (
     item_id SERIAL PRIMARY KEY,
     likes INTEGER NOT NULL,
     category VARCHAR(30) NOT NULL,
@@ -75,7 +75,7 @@ CREATE TABLE items (
 );
 
 -- books table
-CREATE TABLE books (
+CREATE TABLE IF NOT EXISTS books (
     book_id SERIAL PRIMARY KEY,
     item_id INTEGER NOT NULL,
     title VARCHAR(100) NOT NULL,
@@ -101,7 +101,7 @@ CREATE TABLE books (
 );
 
 -- furniture table
-CREATE TABLE furniture (
+CREATE TABLE IF NOT EXISTS furniture (
     furniture_id SERIAL PRIMARY KEY,
     item_id INTEGER NOT NULL,
     general_category VARCHAR(20) NOT NULL,
@@ -128,7 +128,7 @@ CREATE TABLE furniture (
 );
 
 -- clothing table
-CREATE TABLE clothing (
+CREATE TABLE IF NOT EXISTS clothing (
     clothing_id SERIAL PRIMARY KEY,
     item_id INTEGER NOT NULL,
     general_category VARCHAR(20) NOT NULL,
@@ -155,7 +155,7 @@ CREATE TABLE clothing (
 );
 
 -- miscellaneous table
-CREATE TABLE miscellaneous (
+CREATE TABLE IF NOT EXISTS miscellaneous (
     miscellaneous_id SERIAL PRIMARY KEY,
     item_id INTEGER NOT NULL,
     general_category VARCHAR(30) NOT NULL,
@@ -181,7 +181,7 @@ CREATE TABLE miscellaneous (
 );
 
 -- images table
-CREATE TABLE images (
+CREATE TABLE IF NOT EXISTS images (
     image_id SERIAL PRIMARY KEY,
     image_url VARCHAR NOT NULL,
     public_id VARCHAR,
@@ -194,7 +194,7 @@ CREATE TABLE images (
 );
 
 -- favorites table
-CREATE TABLE favorites (
+CREATE TABLE IF NOT EXISTS favorites (
     id SERIAL,
     user_id INTEGER NOT NULL,
     item_id INTEGER NOT NULL,
@@ -210,7 +210,7 @@ CREATE TABLE favorites (
 );
 
 -- reviews table
-CREATE TABLE reviews (
+CREATE TABLE IF NOT EXISTS reviews (
     review_id SERIAL PRIMARY KEY,
     reviewer_id INTEGER NOT NULL,
     reviewer_name VARCHAR(50) NOT NULL,
@@ -236,7 +236,7 @@ CREATE TABLE reviews (
 
 
 -- report details table
-CREATE TABLE report_details (
+CREATE TABLE IF NOT EXISTS report_details (
   id SERIAL PRIMARY KEY,
   report_count INTEGER NOT NULL,
   reporter_name TEXT NOT NULL,
@@ -258,7 +258,7 @@ CREATE TABLE report_details (
 );
 
 -- report tracking table
-CREATE TABLE report_tracking (
+CREATE TABLE IF NOT EXISTS report_tracking (
     id SERIAL PRIMARY KEY,
     reporter_user_id INTEGER NOT NULL,
     reported_user_id INTEGER NOT NULL,

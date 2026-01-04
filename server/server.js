@@ -36,10 +36,10 @@ env.config();
 // });
 
 const db = new pg.Client({
-  connectionString: process.env.NODE_ENV === 'production' ? process.env.INTERNAL_DATABASE_URL : process.env.EXTERNAL_DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? {
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
     rejectUnauthorized: false
-  } : false
+  }
 });
 
 db.connect();
