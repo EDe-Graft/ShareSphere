@@ -131,7 +131,7 @@ const AboutPage = () => {
               <div className="flex flex-col items-center text-center space-y-4">
                 <Avatar className="h-24 w-24">
                   <AvatarImage 
-                    // src={import.meta.env.VITE_DEGRAFT_PROFILE_IMAGE}
+                    src={import.meta.env.VITE_DEGRAFT_PROFILE_IMAGE}
                   />
                   <AvatarFallback>ED</AvatarFallback>
                 </Avatar>
@@ -165,7 +165,7 @@ const AboutPage = () => {
               <div className="flex flex-col items-center text-center space-y-4">
                 <Avatar className="h-24 w-24">
                   <AvatarImage 
-                    // src={import.meta.env.VITE_NARAYAN_PROFILE_IMAGE}
+                    src={import.meta.env.VITE_NARAYAN_PROFILE_IMAGE}
                   />
                   <AvatarFallback>NK</AvatarFallback>
                 </Avatar>
