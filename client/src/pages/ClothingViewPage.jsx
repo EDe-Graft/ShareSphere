@@ -87,7 +87,7 @@ const ClothingViewPage = () => {
   const userMode = "view"; //for itemdetailsdialog display;
   const category = "clothing"; //for empty state handling
 
-  const BACKEND_URL = import.meta.env.NODE_ENV === 'production' ? import.meta.env.VITE_BACKEND_URL : 'http://localhost:3000';
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   const axiosConfig = {
     headers: { "Content-Type": "application/json" },
     withCredentials: true,
