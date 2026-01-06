@@ -145,7 +145,7 @@ export default function ClothingForm() {
     };
     const clothingFormData = formatData(clothingProcessedData);
 
-    const BACKEND_URL = process.env.NODE_ENV === 'production' ? import.meta.env.VITE_BACKEND_URL : 'http://localhost:3000';
+    const BACKEND_URL = import.meta.env.NODE_ENV === 'production' ? import.meta.env.VITE_BACKEND_URL : 'http://localhost:3000';
     const axiosConfig = {
       headers: { "Content-Type": "multipart/form-data" },
       withCredentials: true,

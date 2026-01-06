@@ -50,7 +50,7 @@ const ReviewsPage = () => {
   const [currentGivenPage, setCurrentGivenPage] = useState(1);
   const itemsPerPage = 5;
 
-  const BACKEND_URL = process.env.NODE_ENV === 'production' ? import.meta.env.VITE_BACKEND_URL : 'http://localhost:3000';
+  const BACKEND_URL = import.meta.env.NODE_ENV === 'production' ? import.meta.env.VITE_BACKEND_URL : 'http://localhost:3000';
 
   const axiosConfig = {
     headers: { "Content-Type": "application/json" },
