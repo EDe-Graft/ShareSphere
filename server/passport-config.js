@@ -39,7 +39,7 @@ export function configurePassport(passport, db) {
   passport.use("google", new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: process.env.GOOGLE_CALLBACK_URL,
+    callbackURL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3000/auth/google/callback',
     userProfileURL: process.env.USER_PROFILE_URL
   }, async function(accessToken, refreshToken, profile, cb) {
     try {
@@ -163,7 +163,7 @@ export function configurePassport(passport, db) {
   passport.use("github", new GitHubStrategy({
     clientID: process.env.GITHUB_CLIENT_ID,
     clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    callbackURL: process.env.GITHUB_CALLBACK_URL,
+    callbackURL: process.env.GITHUB_CALLBACK_URL || 'http://localhost:3000/auth/github/callback',
     passReqToCallback: true
   }, async (req, accessToken, refreshToken, profile, cb) => {
     try {
