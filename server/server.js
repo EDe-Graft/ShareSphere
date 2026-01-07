@@ -47,34 +47,52 @@ db.connect();
 // Initialize passport
 configurePassport(passport, db);
 
-// ... rest of middleware setup 
+// CORS Configuration - MUST come first
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  process.env.BACKEND_URL,
+  process.env.GOOGLE_OAUTH_DOMAIN
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (Postman, etc.)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['set-cookie']
+};
+
+// Apply CORS before anything else
+app.use(cors(corsOptions));
+
+// Body parsers
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
+// Session configuration
 app.use(
   session({
     name: "cookie1",
     secret: process.env.SESSION_SECRET,
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
     cookie: {
-      secure: false, // Set to true if using HTTPS
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    }
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: 24 * 60 * 60 * 1000
+    },
+    proxy: process.env.NODE_ENV === 'production'
 }));
-
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-
-const allowedOrigins = [
-  process.env.FRONTEND_URL,
-  process.env.BACKEND_URL, //backend origin
-  process.env.GOOGLE_OAUTH_DOMAIN // Google OAuth domain
-];
-
-const corsOptions = {
-  origin: allowedOrigins,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-};
 
 
 const storage = multer.memoryStorage();
@@ -103,7 +121,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-app.use(cors(corsOptions));
+// Passport middleware
 app.use(passport.initialize());
 app.use(passport.session());
 
