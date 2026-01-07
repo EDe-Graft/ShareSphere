@@ -8,7 +8,7 @@ export async function registerUser(db, userData) {
   const {displayName, email, password, confirmPassword} = userData;
   const saltRounds = 10;
 
-  let username = userData?.username.toLowerCase() || null;
+  let username = userData?.displayName.toLowerCase() || null;
   if (!username) {
     username = await generateUniqueUsername(db, displayName);
   }
