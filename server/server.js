@@ -8,6 +8,7 @@ import env from "dotenv";
 import multer from "multer";
 import cors from "cors";
 import nodemailer from "nodemailer";
+import { Resend } from 'resend';
 import { render } from '@react-email/render';
 import { createElement } from 'react';
 import ItemRequestEmail from './dist/emails/ItemRequestEmail.js';
@@ -112,14 +113,41 @@ const upload = multer({
   }
 });
 
-// Create transporter
-const transporter = nodemailer.createTransport({
+// Email configuration
+// Use Resend for production (Render blocks Gmail SMTP ports)
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+
+// Fallback to nodemailer for development
+const transporter = !resend ? nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: process.env.APP_USERNAME,
     pass: process.env.APP_PASSWORD,
   },
-});
+}) : null;
+
+// Helper function to send email
+async function sendEmail({ to, subject, html }) {
+  if (resend) {
+    // Use Resend in production
+    return await resend.emails.send({
+      from: `ShareSphere <${process.env.APP_USERNAME}>`,
+      to: [to],
+      subject: subject,
+      html: html,
+    });
+  } else if (transporter) {
+    // Use Gmail in development
+    return await transporter.sendMail({
+      from: process.env.APP_USERNAME,
+      to: to,
+      subject: subject,
+      html: html,
+    });
+  } else {
+    throw new Error('No email service configured');
+  }
+}
 
 // Passport middleware
 app.use(passport.initialize());
@@ -1003,15 +1031,11 @@ app.post('/send-verification', async (req, res) => {
     );
 
     // Send email
-    const mailOptions = {
-      from: `"ShareSphere" <${process.env.APP_USERNAME}>`,
+    await sendEmail({
       to: email,
       subject: "Verify your email address - ShareSphere",
-      html: emailHtml,
-      text: `Hi ${userName},\n\nWelcome to ShareSphere! To complete your registration, please verify your email address by clicking this link:\n\n${verificationUrl}\n\nThis link will expire in 24 hours.\n\nThanks,\nThe ShareSphere Team`
-    };
-
-    await transporter.sendMail(mailOptions);
+      html: emailHtml
+    });
 
     res.status(200).json({
       success: true,
@@ -1072,15 +1096,11 @@ app.post('/resend-verification', async (req, res) => {
     );
 
     // Send email
-    const mailOptions = {
-      from: `"ShareSphere" <${process.env.APP_USERNAME}>`,
+    await sendEmail({
       to: email,
       subject: "Verify your email address - ShareSphere",
-      html: emailHtml,
-      text: `Hi ${user.name},\n\nPlease verify your email address by clicking this link:\n\n${verificationUrl}\n\nThis link will expire in 24 hours.\n\nThanks,\nThe ShareSphere Team`
-    };
-
-    await transporter.sendMail(mailOptions);
+      html: emailHtml
+    });
 
     res.status(200).json({
       success: true,
@@ -1190,23 +1210,11 @@ app.post('/send-request', async (req, res) => {
     })
   );
 
-    const mailOptions = {
-      from: `"ShareSphere" <${process.env.APP_USERNAME}>`,
+    await sendEmail({
       to: uploaderEmail,
       subject: `New Request for Your ${itemName} ${itemCategory} on ShareSphere`,
-      html: emailHtml,
-      text: `You have a new request for your ${itemName} ${itemCategory} on ShareSphere.\n\n
-             Requester Details:
-             Name: ${requesterName}
-             Email: ${requesterEmail}
-             
-             Message:
-             ${message}
-             
-             Please respond to the requester directly to arrange pickup/delivery.`
-    };
-
-    await transporter.sendMail(mailOptions);
+      html: emailHtml
+    });
     return res.status(200).json({ 
       success: true,
       message: 'Request email sent successfully'
@@ -1288,22 +1296,19 @@ app.post('/report-post', async (req, res) => {
     );
 
     // Send emails
-    await transporter.sendMail({
-      from: `"ShareSphere Report" <${process.env.APP_USERNAME}>`,
+    await sendEmail({
       to: process.env.APP_USERNAME,
       subject: `User Report: ${itemName} (${itemCategory}) flagged on ShareSphere`,
       html: adminEmailHtml
     });
 
-    await transporter.sendMail({
-      from: `"ShareSphere" <${process.env.APP_USERNAME}>`,
+    await sendEmail({
       to: reporterEmail,
       subject: `We Received Your Report on ${reportedUserName}`,
       html: confirmationEmailHtml
     });
 
-    await transporter.sendMail({
-      from: `"ShareSphere Moderation" <${process.env.APP_USERNAME}>`,
+    await sendEmail({
       to: reportedUserEmail,
       subject: '⚠️ Warning: Your ShareSphere post has been reported',
       html: warningEmailHtml
