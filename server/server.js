@@ -8,7 +8,6 @@ import env from "dotenv";
 import multer from "multer";
 import cors from "cors";
 import nodemailer from "nodemailer";
-import { Resend } from 'resend';
 import { render } from '@react-email/render';
 import { createElement } from 'react';
 import ItemRequestEmail from './dist/emails/ItemRequestEmail.js';
@@ -114,39 +113,35 @@ const upload = multer({
 });
 
 // Email configuration
-// Use Resend for production (Render blocks Gmail SMTP ports)
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-
-// Fallback to nodemailer for development
-const transporter = !resend ? nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.APP_USERNAME,
-    pass: process.env.APP_PASSWORD,
-  },
-}) : null;
+// Use SendGrid for production (Render blocks Gmail SMTP ports)
+const transporter = nodemailer.createTransport(
+  process.env.NODE_ENV === 'production' && process.env.SENDGRID_API_KEY
+    ? {
+        host: 'smtp.sendgrid.net',
+        port: 587,
+        secure: false, // use TLS
+        auth: {
+          user: 'apikey',
+          pass: process.env.SENDGRID_API_KEY,
+        },
+      }
+    : {
+        service: 'gmail',
+        auth: {
+          user: process.env.APP_USERNAME,
+          pass: process.env.APP_PASSWORD,
+        },
+      }
+);
 
 // Helper function to send email
 async function sendEmail({ to, subject, html }) {
-  if (resend) {
-    // Use Resend in production
-    return await resend.emails.send({
-      from: `ShareSphere <${process.env.APP_USERNAME}>`,
-      to: [to],
-      subject: subject,
-      html: html,
-    });
-  } else if (transporter) {
-    // Use Gmail in development
-    return await transporter.sendMail({
-      from: process.env.APP_USERNAME,
-      to: to,
-      subject: subject,
-      html: html,
-    });
-  } else {
-    throw new Error('No email service configured');
-  }
+  return await transporter.sendMail({
+    from: `ShareSphere <${process.env.APP_USERNAME}>`,
+    to: to,
+    subject: subject,
+    html: html,
+  });
 }
 
 // Passport middleware
