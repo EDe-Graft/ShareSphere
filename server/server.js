@@ -27,22 +27,22 @@ const saltRounds = 10;
 env.config();
 
 // Database Connection
-// const db = new Client({
-//   user: process.env.PG_USER,
-//   host: process.env.PG_HOST,
-//   database: process.env.PG_DATABASE,
-//   password: process.env.PG_PASSWORD,
-//   port: process.env.PG_PORT,
-// });
-
-const db = new pg.Client({
+// Use Pool for better connection management with serverless databases
+const db = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
     rejectUnauthorized: false
-  }
+  },
+  max: 20, // Maximum number of clients in the pool
+  idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
+  connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection can't be established
 });
 
-db.connect();
+// Handle pool errors
+db.on('error', (err) => {
+  console.error('Unexpected error on idle database client', err);
+  process.exit(-1);
+});
 
 // Initialize passport
 configurePassport(passport, db);
@@ -1625,7 +1625,32 @@ app.delete("/items/:itemId/:itemCategory", async (req, res) => {
 
 
 // LISTENING FOR EVENTS
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Listening on port ${port}`)
+});
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  server.close(() => {
+    console.log('HTTP server closed');
+  });
+
+  // Close database pool
+  await db.end();
+  console.log('Database pool closed');
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  console.log('SIGINT signal received: closing HTTP server');
+  server.close(() => {
+    console.log('HTTP server closed');
+  });
+
+  // Close database pool
+  await db.end();
+  console.log('Database pool closed');
+  process.exit(0);
 });
 
