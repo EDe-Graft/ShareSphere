@@ -994,21 +994,27 @@ app.post('/verify-email', async (req, res) => {
 
 
 app.post('/send-verification', async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
-
   try {
     const { email, userName } = req.body;
-    const userId = req.user?.userId;
-
 
     if (!email || !userName) {
-      return res.status(400).json({ 
-        success: false, 
-        error: "Email and userName are required" 
+      return res.status(400).json({
+        success: false,
+        error: "Email and userName are required"
       });
     }
+
+    // Get user by email to find userId
+    const user = await getUserByEmail(db, email);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found"
+      });
+    }
+
+    const userId = user.userId;
 
     // Create verification token
     const token = await createVerificationToken(db, userId);
