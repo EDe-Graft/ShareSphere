@@ -1046,9 +1046,19 @@ app.post('/send-verification', async (req, res) => {
     console.error('Error sending verification email:', error);
     res.status(500).json({
       success: false,
-      error: "Failed to send verification email"
+      error: "Failed to send verification email",
+      details: error.message
     });
   }
+});
+
+// Version check endpoint for debugging
+app.get('/api/version', (req, res) => {
+  res.json({
+    version: '2.0.0',
+    timestamp: new Date().toISOString(),
+    authRequired: false
+  });
 });
 
 
