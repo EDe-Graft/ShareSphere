@@ -82,6 +82,7 @@ export function SignInPage() {
         `${BACKEND_URL}/verification-status/${email}`,
         axiosConfig
       );
+      console.log("isUserVerified: ", response.data.isVerified)
       return response.data.isVerified;
     } catch (error) {
       console.error("Failed to check verification status:", error);
@@ -137,31 +138,35 @@ export function SignInPage() {
     setIsLoading("credentials");
 
     try {
-      const isVerified = await checkEmailVerification(credentials.email);
+      // Attempt to login
+      const response = await localLogin(credentials);
 
-      if (!isVerified) {
+      if (response.data.message === "no user found") {
+        // User doesn't exist, redirect to sign-up
+        navigate("/sign-up");
+        setIsLoading(null);
+        return;
+      }
+
+      if (response.data.message === "email not verified") {
+        // User exists but email not verified
         setUnverifiedUserData({
           email: credentials.email,
-          userName: credentials.email.split("@")[0], // Use email prefix as fallback
+          userName: credentials.email.split("@")[0],
         });
         setEmailVerificationOpen(true);
         setIsLoading(null);
         return;
       }
 
-      const response = await localLogin(credentials);
-      if (response.data.message === "no user found") {
-        navigate("/sign-up");
-      } else {
-        //login successful
-        if (response.data.authSuccess) {
-          const user = response.data.user;
-          setAuthSuccess(true);
-          setUser(user);
-          navigate("/", {
-            state: { replace: true },
-          });
-        }
+      // User exists and email is verified, complete login
+      if (response.data.authSuccess) {
+        const user = response.data.user;
+        setAuthSuccess(true);
+        setUser(user);
+        navigate("/", {
+          state: { replace: true },
+        });
       }
     } catch (err) {
       setError(err.message || "An error occurred during sign in");
