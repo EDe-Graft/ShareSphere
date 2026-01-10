@@ -181,6 +181,25 @@ export function SignInPage() {
     try {
       const response = await socialLogin(provider.id, data);
       console.log("Social Login Response", response);
+
+      // Handle case where email is required (GitHub without email)
+      if (response.requireEmail) {
+        setGithubDialogOpen(true);
+        setIsLoading(null);
+        return;
+      }
+
+      // Handle case where email is not verified
+      if (response.emailNotVerified) {
+        setUnverifiedUserData({
+          email: data?.email || response.email,
+          userName: response.name || data?.userName,
+        });
+        setEmailVerificationOpen(true);
+        setIsLoading(null);
+        return;
+      }
+
       if (response.error) {
         setError(response.error);
       } else {
