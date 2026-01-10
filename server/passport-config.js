@@ -21,6 +21,12 @@ export function configurePassport(passport, db) {
         const passwordMatch = await bcrypt.compare(password, user.password);
 
         if (passwordMatch) {
+          // Check if email is verified before allowing login
+          if (!user.email_verified) {
+            console.log("Email not verified for user:", email);
+            return cb(null, false, { message: 'email not verified' });
+          }
+
           console.log(user)
           return cb(null, toCamelCase(user));
         } else {
@@ -29,7 +35,7 @@ export function configurePassport(passport, db) {
       } else {
         return cb(null, false, { message: 'no user found' });
       }
-    } catch (error) { 
+    } catch (error) {
       return cb(error);
     }
   }));
@@ -299,6 +305,17 @@ export function configurePassport(passport, db) {
         photo = user.photo;
         photoPublicId = user.photoPublicId;
         bio = user.bio;
+      }
+
+      // Check if email is provided and verified before allowing login
+      if (!email) {
+        console.log("No email provided for GitHub user:", name);
+        return cb(null, false, { message: 'email required' });
+      }
+
+      if (!emailVerified) {
+        console.log("Email not verified for GitHub user:", email);
+        return cb(null, false, { message: 'email not verified' });
       }
 
       //create profile object
