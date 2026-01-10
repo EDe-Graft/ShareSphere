@@ -191,8 +191,18 @@ export function SignInPage() {
 
       // Handle case where email is not verified
       if (response.emailNotVerified) {
+        const email = data?.email || response.email;
+
+        // If we don't have an email, ask for it first
+        if (!email) {
+          setGithubDialogOpen(true);
+          setIsLoading(null);
+          return;
+        }
+
+        // If we have the email, show verification dialog
         setUnverifiedUserData({
-          email: data?.email || response.email,
+          email: email,
           userName: response.name || data?.userName,
         });
         setEmailVerificationOpen(true);
