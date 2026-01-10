@@ -239,14 +239,65 @@ app.get("/auth/github", (req, res) => {
   })(req, res);
 });
 
-app.get("/auth/github/callback",
-  passport.authenticate("github", { failureRedirect: "/auth/failure" }),
-  (req, res) => {
-    // Successful auth
-    const state = req.query?.state;
-    res.redirect("/auth/success");
-  }
-);
+app.get("/auth/github/callback", (req, res, next) => {
+  passport.authenticate("github", (err, user, info) => {
+    if (err) {
+      console.error('GitHub auth error:', err);
+      return res.redirect("/auth/failure");
+    }
+
+    if (!user) {
+      // Check if it's because email is required
+      if (info?.message === 'email required') {
+        console.log('GitHub user needs to provide email');
+        // Send a message to open email dialog
+        return res.send(`
+          <script>
+            window.opener.postMessage(
+              {
+                authSuccess: false,
+                requireEmail: true,
+                provider: 'github',
+                message: 'Please provide your email address'
+              },
+              "${process.env.FRONTEND_URL}"
+            );
+            window.close();
+          </script>
+        `);
+      }
+
+      // Check if email not verified
+      if (info?.message === 'email not verified') {
+        return res.send(`
+          <script>
+            window.opener.postMessage(
+              {
+                authSuccess: false,
+                emailNotVerified: true,
+                message: 'Please verify your email address'
+              },
+              "${process.env.FRONTEND_URL}"
+            );
+            window.close();
+          </script>
+        `);
+      }
+
+      // Other failure
+      return res.redirect("/auth/failure");
+    }
+
+    // Successful authentication, log the user in
+    req.login(user, (err) => {
+      if (err) {
+        console.error('Login error:', err);
+        return res.redirect("/auth/failure");
+      }
+      res.redirect("/auth/success");
+    });
+  })(req, res, next);
+});
 
 
 //retrieve requested item type from database
