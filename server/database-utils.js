@@ -815,7 +815,7 @@ export async function checkEmailVerificationStatus(db, email) {
     );
 
     if (result.rows.length === 0) {
-      return null; // User not found
+      return false; // User not found
     }
 
     let isUserVerified = result.rows[0].email_verified;
@@ -836,7 +836,7 @@ export async function getUserByEmail(db, email) {
     );
 
     if (result.rows.length === 0) {
-      return null;
+      return false;
     }
 
     return toCamelCase(result.rows[0]);

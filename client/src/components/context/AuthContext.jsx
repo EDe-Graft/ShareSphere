@@ -75,6 +75,7 @@ export function AuthProvider({ children }) {
       await checkSession();
     }
     
+    console.log("localLogin response: ", response.data.message)
     return response;
   };
 
