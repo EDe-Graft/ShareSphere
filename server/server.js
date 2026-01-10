@@ -51,28 +51,39 @@ configurePassport(passport, db);
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   process.env.BACKEND_URL,
-  process.env.GOOGLE_OAUTH_DOMAIN
-];
+  process.env.GOOGLE_OAUTH_DOMAIN,
+  'http://localhost:5173', // Local development frontend
+  'http://localhost:3000', // Local development backend
+].filter(Boolean); // Remove undefined values
+
+console.log('Allowed CORS origins:', allowedOrigins);
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (Postman, etc.)
+    // Allow requests with no origin (Postman, mobile apps, etc.)
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    // Check if origin is in allowed list
+    if (allowedOrigins.some(allowed => origin === allowed || origin.includes(allowed))) {
       callback(null, true);
     } else {
+      console.warn(`CORS blocked origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  exposedHeaders: ['set-cookie']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  exposedHeaders: ['set-cookie'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 };
 
 // Apply CORS before anything else
 app.use(cors(corsOptions));
+
+// Explicitly handle OPTIONS preflight for all routes
+app.options('*', cors(corsOptions));
 
 // Body parsers
 app.use(bodyParser.urlencoded({ extended: true }));
