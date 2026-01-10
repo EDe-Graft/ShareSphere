@@ -113,33 +113,22 @@ export function SignUpPage() {
     try {
       const response = await register(credentials);
 
-      if (response.data.authSuccess) {
-        const user = response.data.user;
+      if (response.data.registerSuccess) {
+        // Registration successful - verification email already sent by backend
+        // Store user data for verification dialog
+        setRegisteredUserData({
+          email: credentials.email,
+          userName: credentials.displayName,
+        });
 
-        // Send verification email
-        const emailSent = await sendVerificationEmail(
-          credentials.email,
-          credentials.displayName
-        );
-
-        if (emailSent) {
-          // Store user data for verification dialog
-          setRegisteredUserData({
-            email: credentials.email,
-            userName: credentials.displayName,
-          });
-          setEmailVerificationOpen(true);
-        } else {
-          // If email sending fails, still proceed with login
-          setAuthSuccess(true);
-          setUser(user);
-          navigate("/");
-        }
+        // Open verification dialog
+        setEmailVerificationOpen(true);
       } else {
-        navigate("/sign-up");
+        // Registration failed
+        setError(response.data.message || "Registration failed");
       }
     } catch (err) {
-      setError("An unexpected error occurred");
+      setError(err.response?.data?.message || "An unexpected error occurred");
     } finally {
       setIsLoading(null);
     }
