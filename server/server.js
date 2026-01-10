@@ -21,7 +21,7 @@ import { formatLocalISO, capitalizeFirst, toCamelCase, toSnakeCase } from "./for
 
 // Express-app and environment creation
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 const saltRounds = 10;
 
 env.config();
@@ -150,6 +150,15 @@ app.use(passport.session());
 
 
 //Routes
+// Health check endpoint for Koyeb
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    message: 'ShareSphere API is running',
+    timestamp: new Date().toISOString()
+  });
+});
+
 //For credentials auth success/failure
 app.get('/auth/user', (req, res) => {
   if (req.isAuthenticated()) {
@@ -1671,8 +1680,9 @@ app.delete("/items/:itemId/:itemCategory", async (req, res) => {
 
 
 // LISTENING FOR EVENTS
-const server = app.listen(port, () => {
-  console.log(`Listening on port ${port}`)
+const server = app.listen(port, '0.0.0.0', () => {
+  console.log(`Server listening on port ${port}`)
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`)
 });
 
 // Graceful shutdown
