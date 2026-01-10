@@ -1163,17 +1163,20 @@ app.get('/verification-status/:email', async (req, res) => {
     const { email } = req.params;
     
     const isVerified = await checkEmailVerificationStatus(db, email);
+    console.log("isUserVerified: ", isVerified)
     
-    if (isVerified === null) {
-      return res.status(404).json({
+    if (isVerified === false) {
+      return res.status(200).json({
         success: false,
-        error: "User not found"
+        isVerified: false,
+        message: "No existing user found. Please sign up first."
       });
     }
 
     res.status(200).json({
       success: true,
-      isVerified: isVerified
+      isVerified: isVerified,
+      message: "Email verification status checked successfully. User exists."
     });
   } catch (error) {
     console.error('Error checking verification status:', error);
@@ -1517,19 +1520,46 @@ app.post("/register", async (req, res) => {
     const userData = req.body;
     const user = await registerUser(db, userData);
     const userId = user?.userId;
+    const email = user?.email;
+    const userName = user?.name;
     console.log("user registered successfully")
 
     if (user) {
-      // Log in the user after registration
-      req.login(user, (err) => {
-        if (err) {
-          console.log(err)
-          return res.status(500).json({
-            registerSuccess: false,
-            message: "Registration successful but login failed"
-          });
+      // Create verification token
+      const token = await createVerificationToken(db, userId);
+      const verificationUrl = `${process.env.FRONTEND_URL}/email-verified?token=${token}`;
+
+      // Send verification email
+      try {
+        const emailHtml = await render(
+          createElement(EmailVerificationEmail, {
+            userName,
+            verificationUrl,
+            logoUrl: process.env.SHARESPHERE_LOGO_URL
+          })
+        );
+
+        await sendEmail({
+          to: email,
+          subject: "Verify your email address - ShareSphere",
+          html: emailHtml
+        });
+
+        console.log("Verification email sent successfully");
+      } catch (emailError) {
+        console.error("Error sending verification email:", emailError);
+        // Continue with registration even if email fails
+      }
+
+      // DO NOT log in user - they must verify email first
+      res.status(201).json({
+        registerSuccess: true,
+        message: "Registration successful! Please check your email to verify your account.",
+        emailVerificationRequired: true,
+        user: {
+          email: user.email,
+          name: user.name
         }
-        res.redirect("/auth/user");
       });
     } else {
       res.status(400).json({
