@@ -20,6 +20,10 @@ export function configurePassport(passport, db) {
         const user = result.rows[0];
         const passwordMatch = await bcrypt.compare(password, user.password);
 
+        if (user.strategy != 'credentials') {
+          return cb(null, false, {message: 'incorrect authentication method'})
+        }
+
         if (passwordMatch) {
           // Check if email is verified before allowing login
           if (!user.email_verified) {
@@ -49,6 +53,13 @@ export function configurePassport(passport, db) {
     userProfileURL: process.env.USER_PROFILE_URL
   }, async function(accessToken, refreshToken, profile, cb) {
     try {
+      console.log("=== Google Strategy Initiated ===");
+      console.log("Profile received:", {
+        id: profile.id,
+        displayName: profile.displayName,
+        email: profile.email
+      });
+
       //initialize variables for user profile
       let userId;
       let username;
@@ -74,15 +85,19 @@ export function configurePassport(passport, db) {
       let reportCount;
       let averageRating;
 
+      console.log("Checking if Google user exists in database:", email);
       //check if user exists
       const result = await db.query("SELECT * FROM users WHERE email = $1", [email]);
 
       //if user does not exist, create new user
       if (result.rows.length === 0) {
+        console.log("✓ New Google user - creating account");
+
         // Generate a unique username
         username = await generateUniqueUsername(db, name)
+        console.log("Generated username:", username);
 
-        
+
         //initialize variables for user profile
         joinedOn = formatLocalISO().slice(0,10);
         photo = profile.picture;
@@ -102,8 +117,8 @@ export function configurePassport(passport, db) {
         reviewsReceived = 0;
         reportCount = 0;
         averageRating = 0;
-        
 
+        console.log("Inserting new Google user into database...");
         //insert new user into users table
         const newUserResults = await db.query(
           "INSERT INTO users (username, name, email, password, strategy, photo, photo_public_id, profile_url, location, joined_on, bio, email_verified, email_verified_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *",
@@ -112,15 +127,18 @@ export function configurePassport(passport, db) {
 
         //get new user from result
         const newUser = toCamelCase(newUserResults.rows[0]);
+        console.log("✓ Google user created successfully with ID:", newUser.userId);
 
         //get user id to insert into user_stats table
         userId = newUser.userId;
 
+        console.log("Creating user stats...");
         //insert new user stats into user_stats table
         const newUserStats = await db.query(
           "INSERT INTO user_stats (user_id, likes_received, posts_count, active_posts_count, inactive_posts_count, review_count, reviews_given, reviews_received, report_count, average_rating) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
           [userId, likesReceived, postsCount, activePostsCount, inactivePostsCount, reviewCount, reviewsGiven, reviewsReceived, reportCount, averageRating]
         );
+        console.log("✓ User stats created");
 
         //update user profile with new user profile data and stats
         username = newUser.username;
@@ -131,6 +149,7 @@ export function configurePassport(passport, db) {
         photoPublicId = newUser.photoPublicId;
         bio = newUser.bio;
       } else {
+        console.log("✓ Existing Google user found - loading profile");
         //get user from result
         const user = toCamelCase(result.rows[0]);
 
@@ -143,6 +162,7 @@ export function configurePassport(passport, db) {
         photo = user.photo;
         photoPublicId = user.photoPublicId;
         bio = user.bio;
+        console.log("Loaded user ID:", userId, "Username:", username);
       }
 
       //create profile object
@@ -156,10 +176,13 @@ export function configurePassport(passport, db) {
       profile.photoPublicId = photoPublicId;
       profile.bio = bio;
 
+      console.log("✓ Google authentication successful for:", email);
+      console.log("=== Google Strategy Complete ===\n");
+
       //return profile object
       cb(null, profile);
     } catch (error) {
-      console.error("Error in Google strategy:", error);
+      console.error("❌ Error in Google strategy:", error);
       cb(error);
     }
   }));
@@ -173,6 +196,14 @@ export function configurePassport(passport, db) {
     passReqToCallback: true
   }, async (req, accessToken, refreshToken, profile, cb) => {
     try {
+      console.log("=== GitHub Strategy Initiated ===");
+      console.log("Profile received:", {
+        id: profile.id,
+        displayName: profile.displayName,
+        username: profile.username,
+        profileUrl: profile.profileUrl
+      });
+
       //initialize variables for user profile
       let email;
       let emailVerified = false;
@@ -188,7 +219,7 @@ export function configurePassport(passport, db) {
       let location;
       let joinedOn;
       let bio;
-      
+
       //initialize variables for user stats
       let likesReceived;
       let postsCount;
@@ -200,38 +231,17 @@ export function configurePassport(passport, db) {
       let reportCount;
       let averageRating;
 
-
-      //get email from state or profile
-      const state = req.query?.state;
-
-      let emailProvided = state !== 'null';
-      let emailFromState = null;
-      
-      // Try to decode email from state if it exists
-      if (emailProvided) {
-        try {
-          // If state contains encoded email data
-          const decodedState = JSON.parse(decodeURIComponent(state));
-          emailFromState = decodedState.email;
-        } catch (e) {
-          // If state is just a plain string, convert it to null object
-          emailFromState = state;
-          if (emailFromState === 'null') {emailFromState = null};
-        }
-      }
-      
-      email = emailFromState || profile.email || null;
-
-      //log that the strategy is activated
-      console.log("GitHub strategy activated");
-
+      console.log("Checking if GitHub user exists by profile_url:", profileUrl);
       //check if user exists
       const result = await db.query("SELECT * FROM users WHERE profile_url = $1", [profileUrl]);
 
       //if user does not exist, create new user
       if (result.rows.length === 0) {
+        console.log("✓ New GitHub user - creating account");
+
         // Generate a unique username
         username = await generateUniqueUsername(db, name)
+        console.log("Generated username:", username);
 
         //initialize variables for user stats
         joinedOn = formatLocalISO().slice(0,10);
@@ -249,6 +259,10 @@ export function configurePassport(passport, db) {
         reportCount = 0;
         averageRating = 0;
 
+        console.log("Inserting new GitHub user into database...");
+        console.log("- Email:", email || "(no email)");
+        console.log("- Email verified:", emailVerified);
+
         //insert new user into users table
         const newUserResults = await db.query(
           "INSERT INTO users (username, name, email, password, strategy, photo, photo_public_id, profile_url, location, joined_on, bio, email_verified, email_verified_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *",
@@ -257,15 +271,18 @@ export function configurePassport(passport, db) {
 
         //get new user from result
         const newUser = toCamelCase(newUserResults.rows[0]);
+        console.log("✓ GitHub user created successfully with ID:", newUser.userId);
 
         //get user id to insert into user_stats table
         userId = newUser.userId;
 
+        console.log("Creating user stats...");
         //insert new user stats into user_stats table
         const newUserStats = await db.query(
           "INSERT INTO user_stats (user_id, likes_received, posts_count, active_posts_count, inactive_posts_count, review_count, reviews_given, reviews_received, report_count, average_rating) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
           [userId, likesReceived, postsCount, activePostsCount, inactivePostsCount, reviewCount, reviewsGiven, reviewsReceived, reportCount, averageRating]
         );
+        console.log("✓ User stats created");
 
         //update user profile with new user profile data
         name = newUser.name;
@@ -277,25 +294,13 @@ export function configurePassport(passport, db) {
         photoPublicId = newUser.photoPublicId;
         bio = newUser.bio;
       } else {
+        console.log("✓ Existing GitHub user found - loading profile");
 
         //get user from result
         const user = toCamelCase(result.rows[0]);
         //if user exists, update user profile with existing user profile data
         userId = user.userId;
         email = user.email;
-        
-        // Try to decode email from state if it exists
-        if (emailProvided) {
-        //update user email
-        const updateResult = await db.query(`UPDATE users SET email = $1 WHERE user_id = $2 RETURNING email`, 
-          [emailFromState, userId])
-
-        email = updateResult.rows[0].email
-        }
-
-
-        //if user exists, update user profile with existing user profile data
-        userId = user.userId;
         name = user.name;
         emailVerified = user.emailVerified;
         emailVerifiedAt = user.emailVerifiedAt;
@@ -305,19 +310,29 @@ export function configurePassport(passport, db) {
         photo = user.photo;
         photoPublicId = user.photoPublicId;
         bio = user.bio;
+
+        console.log("Loaded user ID:", userId);
+        console.log("Current email in DB:", email);
+        console.log("Email verified status:", emailVerified);
       }
 
       // Check if email is provided and verified before allowing login
+      console.log("\nValidating email requirements...");
       if (!email) {
-        console.log("No email provided for GitHub user:", name);
-        return cb(null, false, { message: 'email required' });
+        console.log("❌ No email provided for GitHub user:", name);
+        console.log("=== GitHub Strategy Incomplete - Email Required ===\n");
+        return cb(null, false, { message: 'email required', profileUrl: profileUrl });
       }
+      console.log("✓ Email present:", email);
 
       if (!emailVerified) {
-        console.log("Email not verified for GitHub user:", email);
+        console.log("❌ Email not verified for GitHub user:", email);
+        console.log("=== GitHub Strategy Incomplete - Email Verification Required ===\n");
         return cb(null, false, { message: 'email not verified' });
       }
+      console.log("✓ Email verified");
 
+      console.log("\nBuilding profile object...");
       //create profile object
       profile.userId = userId;
       profile.email = email;
@@ -331,10 +346,16 @@ export function configurePassport(passport, db) {
       profile.location = location;
       profile.bio = bio;
 
+      console.log("✓ GitHub authentication successful for:", email);
+      console.log("✓ User ID:", userId, "| Name:", name);
+      console.log("=== GitHub Strategy Complete ===\n");
+
       //return profile object
       cb(null, profile);
     } catch (error) {
-      console.error("Error in GitHub strategy:", error);
+      console.error("❌ Error in GitHub strategy:", error);
+      console.error("Error stack:", error.stack);
+      console.log("=== GitHub Strategy Failed ===\n");
       cb(error);
     }
   }));

@@ -99,11 +99,11 @@ export function SignInPage() {
   }, []);
 
   // Send verification email
-  const sendVerificationEmail = async (email, userName) => {
+  const sendVerificationEmail = async (email, userName, profileUrl = null) => {
     try {
       const response = await axios.post(
         `${BACKEND_URL}/send-verification`,
-        { email, userName },
+        { email, userName, profileUrl },
         axiosConfig
       );
 
@@ -118,15 +118,12 @@ export function SignInPage() {
   const handleVerificationComplete = async () => {
     setEmailVerificationOpen(false);
 
-    // If this was from GitHub email collection, continue with GitHub auth
+    // If this was from GitHub email collection, user can now sign in normally
     if (unverifiedUserData?.pendingGithubAuth) {
-      const email = unverifiedUserData.email;
       setUnverifiedUserData(null);
-
-      // Now continue with GitHub authentication with the verified email
-      await logout(); // Logout to refresh session
-      setIsLoading("github");
-      handleSocialLogIn(providers[0], { email });
+      // Email is already updated in database, user just needs to click "Sign in with GitHub" again
+      // Show a success message or just close the dialog
+      setIsLoading(null);
     } else {
       setUnverifiedUserData(null);
       navigate("/", { state: { replace: true } });
@@ -144,6 +141,20 @@ export function SignInPage() {
       if (response.data.message === "no user found") {
         // User doesn't exist, redirect to sign-up
         navigate("/sign-up");
+        setIsLoading(null);
+        return;
+      }
+
+      if (response.data.message === "incorrect authentication method") {
+        // User is trying to sign in with wrong method (e.g., using password for Google/GitHub account)
+        setError("This account uses a different sign-in method. Please use the social login button instead.");
+        setIsLoading(null);
+        return;
+      }
+
+      if (response.data.message === "incorrect password") {
+        // Wrong password
+        setError("Incorrect password. Please try again.");
         setIsLoading(null);
         return;
       }
@@ -184,6 +195,11 @@ export function SignInPage() {
 
       // Handle case where email is required (GitHub without email)
       if (response.requireEmail) {
+        // Store profileUrl for later use when sending verification email
+        setUnverifiedUserData({
+          profileUrl: response.profileUrl,
+          pendingGithubAuth: true
+        });
         setGithubDialogOpen(true);
         setIsLoading(null);
         return;
@@ -218,7 +234,7 @@ export function SignInPage() {
           console.log("User", user);
 
           // 1. If user has a valid, verified email
-          if (user?.email && (user?.verified || user?.emailVerified)) {
+          if (user?.email && user?.emailVerified) {
             setAuthSuccess(true);
             setUser(user);
             navigate("/", { state: { replace: true } });
@@ -277,10 +293,11 @@ export function SignInPage() {
     setIsLoading("github");
 
     try {
-      // Send verification email first
+      // Send verification email first, including profileUrl from unverifiedUserData
       const emailSent = await sendVerificationEmail(
         data.email,
-        data.email.split("@")[0]
+        data.email.split("@")[0],
+        unverifiedUserData?.profileUrl
       );
 
       if (emailSent) {
@@ -288,6 +305,7 @@ export function SignInPage() {
         setUnverifiedUserData({
           email: data.email,
           userName: data.email.split("@")[0],
+          profileUrl: unverifiedUserData?.profileUrl,
           pendingGithubAuth: true, // Flag to indicate pending GitHub auth
         });
 

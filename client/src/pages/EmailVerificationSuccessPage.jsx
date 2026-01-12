@@ -63,16 +63,16 @@ export function EmailVerificationSuccessPage() {
           });
 
         //fetch updated user profile data
-          // let userId = user.userId;
-          // const profileResponse = await axios.get(
-          //   `${BACKEND_URL}/user-profile/${userId}`,
-          //   axiosConfig
-          // )
+          let userId = user.userId;
+          const profileResponse = await axios.get(
+            `${BACKEND_URL}/user-profile/${userId}`,
+            axiosConfig
+          )
 
-          // if (profileResponse.data.success) {
-          //   const userData = profileResponse.data.userData;
-          //   setUser(userData)
-          // }
+          if (profileResponse.data.success) {
+            const userData = profileResponse.data.userData;
+            setUser(userData)
+          }
           
         } else {
           setError(response.data.error || "Verification failed");

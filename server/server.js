@@ -16,7 +16,7 @@ import ReportConfirmationEmail from './dist/emails/ReportConfirmationEmail.js';
 import WarningEmail from './dist/emails/WarningEmail.js';
 import EmailVerificationEmail from './dist/emails/EmailVerificationEmail.js';
 import { configurePassport } from "./passport-config.js";
-import { uploadToCloudinary, saveItem, saveImage, updateImage, insertCategoryDetails, getTableName, getImages, getLikes, manageLikesReceived, deleteImages, deletePost, saveReport, postReview, updateReview, getUserProfile, updateUserProfile, registerUser, getUserStats, deleteFromCloudinary, checkImageExists, createVerificationToken, verifyToken, markTokenAsUsed, verifyUserEmail, checkEmailVerificationStatus, getUserByEmail, deleteExpiredTokens } from './database-utils.js';
+import { uploadToCloudinary, saveItem, saveImage, updateImage, insertCategoryDetails, getTableName, getImages, getLikes, manageLikesReceived, deleteImages, deletePost, saveReport, postReview, updateReview, getUserProfile, updateUserProfile, registerUser, getUserStats, deleteFromCloudinary, checkImageExists, createVerificationToken, verifyToken, markTokenAsUsed, verifyUserEmail, checkEmailVerificationStatus, getUserByEmail, getUserByProfileUrl, deleteExpiredTokens } from './database-utils.js';
 import { formatLocalISO, capitalizeFirst, toCamelCase, toSnakeCase } from "./format.js";
 
 // Express-app and environment creation
@@ -56,6 +56,7 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: function (origin, callback) {
+    console.log("origin:", origin)
     // Allow requests with no origin (Postman, etc.)
     if (!origin) return callback(null, true);
 
@@ -226,21 +227,15 @@ app.get("/auth/google/callback",
 
 //GITHUB AUTH ROUTES
 app.get("/auth/github", (req, res) => {
-  // If email is provided in query params, encode it in state
-  let state = req.query?.state || null;
-  if (req.query?.email) {
-    const stateData = { email: req.query.email };
-    state = encodeURIComponent(JSON.stringify(stateData));
-  }
-  
   passport.authenticate("github", {
     scope: ['user:email'],
-    state: state
   })(req, res);
 });
 
+
 app.get("/auth/github/callback", (req, res, next) => {
   passport.authenticate("github", (err, user, info) => {
+    console.log("info: ", info, "user: ", user)
     if (err) {
       console.error('GitHub auth error:', err);
       return res.redirect("/auth/failure");
@@ -250,6 +245,7 @@ app.get("/auth/github/callback", (req, res, next) => {
       // Check if it's because email is required
       if (info?.message === 'email required') {
         console.log('GitHub user needs to provide email');
+        console.log('Profile URL:', info?.profileUrl);
         // Send a message to open email dialog
         return res.send(`
           <script>
@@ -258,6 +254,7 @@ app.get("/auth/github/callback", (req, res, next) => {
                 authSuccess: false,
                 requireEmail: true,
                 provider: 'github',
+                profileUrl: '${info?.profileUrl || ''}',
                 message: 'Please provide your email address'
               },
               "${process.env.FRONTEND_URL}"
@@ -359,9 +356,9 @@ app.get("/items", async (req, res) => {
 
 
 app.get("/user-profile/:userId", async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
+  // if (!req.isAuthenticated()) {
+  //   return res.status(401).json({ error: "Not authenticated" });
+  // }
 
   const userId = req.params?.userId;
 
@@ -379,6 +376,7 @@ app.get("/user-profile/:userId", async (req, res) => {
     });
   }
 });
+
 
 app.get("/user-stats/:userId", async (req, res) => {
   if (!req.isAuthenticated()) {
@@ -1055,7 +1053,8 @@ app.post('/verify-email', async (req, res) => {
 
 app.post('/send-verification', async (req, res) => {
   try {
-    const { email, userName } = req.body;
+    const { email, userName, profileUrl } = req.body;
+    console.log("Sending verification email to:", "email: ", email, "userName: ", userName, "profileUrl: ", profileUrl);
 
     if (!email || !userName) {
       return res.status(400).json({
@@ -1064,8 +1063,26 @@ app.post('/send-verification', async (req, res) => {
       });
     }
 
-    // Get user by email to find userId
-    const user = await getUserByEmail(db, email);
+    // Get user by profile URL (for GitHub users) or email (for regular users)
+    let user;
+    if (profileUrl) {
+      user = await getUserByProfileUrl(db, profileUrl);
+      console.log("User found by profile URL:", user);
+
+      // If this is a GitHub user providing their email for the first time, update it
+      if (user && !user.email) {
+        console.log("Updating GitHub user's email in database:", email);
+        await db.query(
+          'UPDATE users SET email = $1 WHERE user_id = $2',
+          [email, user.userId]
+        );
+        console.log("✓ Email updated successfully");
+        user.email = email; // Update local user object
+      }
+    } else {
+      user = await getUserByEmail(db, email);
+      console.log("User found by email:", user);
+    }
 
     if (!user) {
       return res.status(404).json({
@@ -1193,7 +1210,7 @@ app.post('/verify-email/:token', async (req, res) => {
 
     // Verify the token
     const tokenData = await verifyToken(db, token, 'email_verification');
-    console.log(tokenData)
+    console.log("Token data: ", tokenData)
     
     if (!tokenData) {
       // Redirect to frontend with failure parameter

@@ -107,10 +107,10 @@ export function AuthProvider({ children }) {
           if (event.data.authSuccess) {
             setAuthSuccess(true);
             setUser(event.data.user);
-            
+
             // After successful social login, check session to ensure consistency
             checkSession();
-            
+
             resolve({
               authSuccess: true,
               user: event.data.user,
@@ -119,6 +119,11 @@ export function AuthProvider({ children }) {
             resolve({
               authSuccess: false,
               user: null,
+              requireEmail: event.data.requireEmail,
+              emailNotVerified: event.data.emailNotVerified,
+              provider: event.data.provider,
+              profileUrl: event.data.profileUrl,
+              message: event.data.message
             });
           }
         });

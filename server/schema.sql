@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS users (
     user_id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     name VARCHAR(100),
-    email VARCHAR(100) UNIQUE,
+    email VARCHAR(100),
     password VARCHAR NOT NULL,
     strategy VARCHAR(15),
     photo VARCHAR,
@@ -20,6 +20,10 @@ CREATE TABLE IF NOT EXISTS users (
     --     REFERENCES user_stats(user_id)
     --     ON DELETE CASCADE
 );
+
+-- Create a unique partial index for non-NULL emails only
+-- This allows multiple NULL emails while enforcing uniqueness for actual email addresses
+CREATE UNIQUE INDEX IF NOT EXISTS unique_email_not_null ON users (email) WHERE email IS NOT NULL;
 
 -- verification tokens table
 CREATE TABLE IF NOT EXISTS verification_tokens (

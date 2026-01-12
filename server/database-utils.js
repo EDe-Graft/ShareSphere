@@ -846,6 +846,24 @@ export async function getUserByEmail(db, email) {
   }
 }
 
+export async function getUserByProfileUrl(db, profileUrl) {
+  try {
+    const result = await db.query(
+      'SELECT * FROM users WHERE profile_url = $1',
+      [profileUrl]
+    );
+
+    if (result.rows.length === 0) {
+      return false;
+    }
+
+    return toCamelCase(result.rows[0]);
+  } catch (error) {
+    console.error('Error getting user by profile URL:', error);
+    throw new Error('Failed to get user by profile URL');
+  }
+}
+
 export async function deleteExpiredTokens(db) {
   try {
     await db.query(
