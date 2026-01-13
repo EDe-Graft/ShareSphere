@@ -10,14 +10,9 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
-import PrivacyDialog from "./PrivacyDialog";
-import TermsDialog from "./TermsDialog";
 
 const Footer = () => {
   const navigate = useNavigate();
-  const [termsDialogOpen, setTermsDialogOpen] = useState(false);
-  const [privacyDialogOpen, setPrivacyDialogOpen] = useState(false);
   const currentYear = new Date().getFullYear();
 
   const handleNavigation = (path) => {
@@ -43,7 +38,7 @@ const Footer = () => {
               >
                 <img
                   src="/ShareSphereLogo.png"
-                  alt="ShareSpehereLogo"
+                  alt="ShareSphereLogo"
                   className="w-[3.5rem] h-[3.5rem] rounded-full"
                 />
                 <h3 className="font-bold text-xl text-primary">ShareSphere</h3>
@@ -63,7 +58,7 @@ const Footer = () => {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-9 w-9 rounded-full hover:bg-violet-50 hover:text-violet-500 hover:border-violet-200 transition-colors duration-200"
+                  className="h-9 w-9 rounded-full hover:bg-violet-50 hover:text-violet-500 hover:border-violet-200 transition-colors duration-200 bg-transparent"
                 >
                   <Github className="h-4 w-4" />
                 </Button>
@@ -72,7 +67,7 @@ const Footer = () => {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-9 w-9 rounded-full hover:bg-violet-50 hover:text-violet-500 hover:border-violet-200 transition-colors duration-200"
+                  className="h-9 w-9 rounded-full hover:bg-violet-50 hover:text-violet-500 hover:border-violet-200 transition-colors duration-200 bg-transparent"
                 >
                   <Mail className="h-4 w-4" />
                 </Button>
@@ -212,26 +207,33 @@ const Footer = () => {
                   </span>
                 </Link>
               </li>
-              {/* New Legal Links */}
               <li>
-                <button
+                <Link
+                  to="/terms-and-conditions"
                   className="hover:text-violet-500 transition-colors duration-200 flex items-center"
-                  onClick={() => setTermsDialogOpen(true)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNavigation("/terms-and-conditions");
+                  }}
                 >
-                  <span className=" transition-transform duration-200 inline-block">
+                  <span className="transition-transform duration-200 inline-block">
                     Terms & Conditions
                   </span>
-                </button>
+                </Link>
               </li>
               <li>
-                <button
+                <Link
+                  to="/privacy"
                   className="hover:text-violet-500 transition-colors duration-200 flex items-center"
-                  onClick={() => setPrivacyDialogOpen(true)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNavigation("/privacy");
+                  }}
                 >
-                  <span className=" transition-transform duration-200 inline-block">
+                  <span className="transition-transform duration-200 inline-block">
                     Privacy Policy
                   </span>
-                </button>
+                </Link>
               </li>
             </ul>
           </div>
@@ -282,18 +284,26 @@ const Footer = () => {
           <div className="flex flex-col md:flex-row justify-center items-center gap-2 md:gap-6">
             <p>ShareSphere &copy; {currentYear}. All Rights Reserved.</p>
             <div className="flex gap-4">
-              <button
-                onClick={() => setTermsDialogOpen(true)}
+              <Link
+                to="/terms-and-conditions"
                 className="hover:text-violet-500 transition-colors duration-200"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleNavigation("/terms-and-conditions");
+                }}
               >
                 Terms
-              </button>
-              <button
-                onClick={() => setPrivacyDialogOpen(true)}
+              </Link>
+              <Link
+                to="/privacy"
                 className="hover:text-violet-500 transition-colors duration-200"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleNavigation("/privacy-policy");
+                }}
               >
                 Privacy
-              </button>
+              </Link>
               <Link
                 to="/contact"
                 className="hover:text-violet-500 transition-colors duration-200"
@@ -308,14 +318,6 @@ const Footer = () => {
           </div>
         </div>
       </div>
-      {/* Terms Dialog */}
-      <TermsDialog open={termsDialogOpen} onOpenChange={setTermsDialogOpen} />
-
-      {/* Privacy Dialog */}
-      <PrivacyDialog
-        open={privacyDialogOpen}
-        onOpenChange={setPrivacyDialogOpen}
-      />
     </footer>
   );
 };

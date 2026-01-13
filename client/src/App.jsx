@@ -26,6 +26,8 @@ import EmailVerificationSuccessPage from "./pages/EmailVerificationSuccessPage";
 import FavoritesViewPage from "./pages/FavoritesViewPage";
 import PostsViewPage from "./pages/PostsViewPage";
 import ReportsManagementPage from "./pages/ReportsManagementPage";
+import TermsAndConditions from "./pages/TermsAndConditions";
+import Privacy from "./pages/Privacy";
 
 function App() {
   return (
@@ -42,6 +44,11 @@ function App() {
           />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route
+            path="/terms-and-conditions"
+            element={<TermsAndConditions />}
+          />
+          <Route path="/privacy" element={<Privacy />} />
           <Route
             path="/all-categories"
             element={
