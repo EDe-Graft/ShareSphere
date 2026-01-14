@@ -185,7 +185,7 @@ app.get("/auth/success", (req, res) => {
     res.send(`
       <script>
         window.opener.postMessage(
-          { authSuccess: true, user: ${JSON.stringify(req.user)} },
+          { authSuccess: true, user: ${JSON.stringify(toCamelCase(req.user))} },
           "${process.env.FRONTEND_URL}"
         );
         window.close();
@@ -221,6 +221,7 @@ app.get("/auth/google/callback",
   passport.authenticate("google", { failureRedirect: "/auth/failure" }),
   (req, res) => {
     //successful auth
+    console.log("Current User: ", req.user)
     res.redirect("/auth/success");
   }
 );

@@ -114,6 +114,9 @@ export function AuthProvider({ children }) {
             resolve({
               authSuccess: true,
               user: event.data.user,
+              requireEmail: false,
+              emailNotVerified: false,
+              provider: event.data.provider,
             });
           } else {
             resolve({
