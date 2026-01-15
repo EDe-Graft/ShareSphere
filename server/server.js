@@ -254,6 +254,7 @@ app.get("/auth/github/callback", (req, res, next) => {
               {
                 authSuccess: false,
                 requireEmail: true,
+                emailNotVerified: true,
                 provider: 'github',
                 profileUrl: '${info?.profileUrl || ''}',
                 message: 'Please provide your email address'
@@ -272,7 +273,10 @@ app.get("/auth/github/callback", (req, res, next) => {
             window.opener.postMessage(
               {
                 authSuccess: false,
+                requireEmail: false,
                 emailNotVerified: true,
+                provider: 'github',
+                profileUrl: '${info?.profileUrl || ''}',
                 message: 'Please verify your email address'
               },
               "${process.env.FRONTEND_URL}"

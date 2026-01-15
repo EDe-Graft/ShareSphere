@@ -319,7 +319,7 @@ const Navbar = () => {
               <Avatar className="cursor-pointer bg-white dark:bg-[hsl(224,71.4%,4.1%)]">
                 {user && (
                   <>
-                    <AvatarImage src={user.photo ? user.photo : null} />
+                    <AvatarImage src={user.photo ? user.photo : (user.picture ? user.picture : null)} />
                     <AvatarFallback className="bg-primary text-primary-foreground">
                       {user.displayName ? (
                         user.displayName[0].toUpperCase()
