@@ -235,6 +235,7 @@ export function SignInPage() {
 
           // 1. If user has a valid, verified email
           if (user?.email && user?.emailVerified) {
+            console.log("User email verified. Navigating to homepage")
             setAuthSuccess(true);
             setUser(user);
             navigate("/", { state: { replace: true } });
@@ -242,7 +243,7 @@ export function SignInPage() {
           }
 
           // 2. If user has an email but it's not verified
-          if (provider.id === "github" && user?.email && !user?.emailVerified) {
+          if (provider.id === "github" && user?.email && !(user?.emailVerified)) {
             // If we already have the email from the dialog, send verification
             if (data?.email) {
               const emailSent = await sendVerificationEmail(
