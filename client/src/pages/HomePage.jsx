@@ -12,7 +12,7 @@ import axios from "axios";
 const HomePage = () => {
   const { authSuccess, user } = useAuth();
   const navigate = useNavigate();
-  const [githubDialogOpen, setGithubDialogOpen] = useState((user?.authStrategy === 'github' && user?.email === null) || false);
+  const [githubDialogOpen, setGithubDialogOpen] = useState(false);
 
 
   const [isVisible, setIsVisible] = useState(false);

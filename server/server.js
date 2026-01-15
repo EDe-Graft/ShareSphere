@@ -79,6 +79,11 @@ app.use(cors(corsOptions));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+//This Express.js setting tells the application to trust the X-Forwarded-* headers from the first proxy in front of it. 
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
 // Session configuration
 app.use(
   session({
@@ -162,7 +167,7 @@ app.get('/', (req, res) => {
 
 //For credentials auth success/failure
 app.get('/auth/user', (req, res) => {
-  if (req.isAuthenticated()) {
+  if (req.user) {
     // console.log(req.user)
     res.status(200).json({
       authSuccess: req.isAuthenticated(),
@@ -202,7 +207,7 @@ app.get("/auth/failure", (req, res) => {
     <script>
       window.opener.postMessage(
         { authSuccess: false, user: null },
-        "${process.env.FRONTEND_URL}"
+        "${process.env.FRONTEND_URL}/sign-in"
       );
       window.close();
     </script>
@@ -221,7 +226,7 @@ app.get("/auth/google/callback",
   passport.authenticate("google", { failureRedirect: "/auth/failure" }),
   (req, res) => {
     //successful auth
-    console.log("Current User: ", req.user)
+    console.log("Authentication success. Redirecting to /auth/success route")
     res.redirect("/auth/success");
   }
 );

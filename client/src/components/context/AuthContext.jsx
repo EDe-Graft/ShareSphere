@@ -23,6 +23,10 @@ export function AuthProvider({ children }) {
         `${BACKEND_URL}/auth/user`,
         axiosConfig
       );
+
+      //Checking user session
+      console.log("Session data: ", data)
+      
       // if 200 OK comes back:
       if (data.authSuccess) {
         setUser(data.user);
