@@ -100,6 +100,10 @@ app.use(
     proxy: process.env.NODE_ENV === 'production'
 }));
 
+// Passport middleware
+app.use(passport.initialize());
+app.use(passport.session());
+
 
 const storage = multer.memoryStorage();
 const upload = multer({
@@ -149,10 +153,6 @@ async function sendEmail({ to, subject, html }) {
     html: html,
   });
 }
-
-// Passport middleware
-app.use(passport.initialize());
-app.use(passport.session());
 
 
 //Routes
