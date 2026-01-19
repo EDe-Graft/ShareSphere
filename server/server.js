@@ -60,9 +60,16 @@ const corsOptions = {
     // Allow requests with no origin (Postman, etc.)
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    // Normalize origins for comparison (remove trailing slashes)
+    const normalizedOrigin = origin.replace(/\/$/, '');
+    const normalizedAllowed = allowedOrigins
+      .filter(Boolean)
+      .map(orig => orig.replace(/\/$/, ''));
+
+    if (normalizedAllowed.includes(normalizedOrigin)) {
       callback(null, true);
     } else {
+      console.error(`CORS blocked origin: ${origin}. Allowed origins:`, normalizedAllowed);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -85,6 +92,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Session configuration
+const isProduction = process.env.NODE_ENV === 'production';
 app.use(
   session({
     name: "cookie1",
@@ -92,12 +100,14 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction, // Must be true when sameSite is 'none'
       httpOnly: true,
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 24 * 60 * 60 * 1000
+      sameSite: isProduction ? 'none' : 'lax', // 'none' required for cross-origin cookies
+      maxAge: 24 * 60 * 60 * 1000,
+      // Don't set domain explicitly - let it default to the current domain
+      // This ensures cookies work correctly for the backend domain
     },
-    proxy: process.env.NODE_ENV === 'production'
+    proxy: isProduction // Trust proxy in production (required for Render)
 }));
 
 // Passport middleware
@@ -167,8 +177,12 @@ app.get('/', (req, res) => {
 
 //For credentials auth success/failure
 app.get('/auth/user', (req, res) => {
+  console.log("/auth/user - Session ID:", req.sessionID);
+  console.log("/auth/user - Is authenticated:", req.isAuthenticated());
+  console.log("/auth/user - Cookies received:", req.headers.cookie);
+  console.log("/auth/user - User:", req.user);
+  
   if (req.user) {
-    // console.log(req.user)
     res.status(200).json({
       authSuccess: req.isAuthenticated(),
       message: 'User Logged In', 
@@ -186,7 +200,14 @@ app.get('/auth/user', (req, res) => {
 //For google auth success
 app.get("/auth/success", (req, res) => {
   if (req.user) {
-    console.log("User", req.user);
+    console.log("Auth success: User", req.user);
+    console.log("Auth success: Session ID:", req.sessionID);
+    console.log("Auth success: Is authenticated:", req.isAuthenticated());
+    console.log("Auth success: Cookie will be sent with:", {
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      httpOnly: true
+    });
     res.send(`
       <script>
         window.opener.postMessage(
@@ -197,6 +218,7 @@ app.get("/auth/success", (req, res) => {
       </script>
     `);
   } else {
+    console.log("Auth success: No user found, redirecting to sign-in");
     res.redirect(`${process.env.FRONTEND_URL}/sign-in`);
   }
 });
@@ -227,7 +249,16 @@ app.get("/auth/google/callback",
   (req, res) => {
     //successful auth
     console.log("Authentication success. Redirecting to /auth/success route")
-    res.redirect("/auth/success");
+    console.log("Session ID:", req.sessionID);
+    console.log("User authenticated:", req.isAuthenticated());
+    // Save session before redirect to ensure cookie is set
+    req.session.save((err) => {
+      if (err) {
+        console.error("Error saving session:", err);
+        return res.redirect("/auth/failure");
+      }
+      res.redirect("/auth/success");
+    });
   }
 );
 
@@ -301,7 +332,16 @@ app.get("/auth/github/callback", (req, res, next) => {
         console.error('Login error:', err);
         return res.redirect("/auth/failure");
       }
-      res.redirect("/auth/success");
+      console.log("GitHub auth: User logged in, session ID:", req.sessionID);
+      console.log("GitHub auth: User authenticated:", req.isAuthenticated());
+      // Save session before redirect to ensure cookie is set
+      req.session.save((err) => {
+        if (err) {
+          console.error("Error saving session:", err);
+          return res.redirect("/auth/failure");
+        }
+        res.redirect("/auth/success");
+      });
     });
   })(req, res, next);
 });
