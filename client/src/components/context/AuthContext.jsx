@@ -103,25 +103,64 @@ export function AuthProvider({ children }) {
           }
         }, 500);
 
-        window.addEventListener("message", (event) => {
+        window.addEventListener("message", async (event) => {
           if (event.origin !== BACKEND_URL) return;
 
           clearInterval(popupChecker);
 
           if (event.data.authSuccess) {
-            setAuthSuccess(true);
-            setUser(event.data.user);
+            const userData = event.data.user;
+            
+            // Establish session in parent window context by making a request
+            // This ensures the cookie is set and accessible for subsequent requests
+            try {
+              const establishResponse = await axios.post(
+                `${BACKEND_URL}/auth/establish-session`,
+                {
+                  userId: userData.userId,
+                  email: userData.email
+                },
+                axiosConfig
+              );
 
-            // After successful social login, check session to ensure consistency
-            checkSession();
+              if (establishResponse.data.success) {
+                setAuthSuccess(true);
+                setUser(userData);
 
-            resolve({
-              authSuccess: true,
-              user: event.data.user,
-              requireEmail: false,
-              emailNotVerified: false,
-              provider: event.data.provider,
-            });
+                // Verify session is working
+                await checkSession();
+
+                resolve({
+                  authSuccess: true,
+                  user: userData,
+                  requireEmail: false,
+                  emailNotVerified: false,
+                  provider: event.data.provider,
+                });
+              } else {
+                console.error("Failed to establish session:", establishResponse.data.error);
+                resolve({
+                  authSuccess: false,
+                  user: null,
+                  error: "Failed to establish session"
+                });
+              }
+            } catch (error) {
+              console.error("Error establishing session:", error);
+              // Still set user data even if session establishment fails
+              // The checkSession call might still work if cookie was set
+              setAuthSuccess(true);
+              setUser(userData);
+              await checkSession();
+              
+              resolve({
+                authSuccess: true,
+                user: userData,
+                requireEmail: false,
+                emailNotVerified: false,
+                provider: event.data.provider,
+              });
+            }
           } else {
             resolve({
               authSuccess: false,

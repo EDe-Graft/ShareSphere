@@ -2,7 +2,6 @@ import express from "express";
 import session from "express-session";
 import bodyParser from "body-parser";
 import pg from "pg";
-import bcrypt from "bcrypt";
 import passport from "passport";
 import env from "dotenv";
 import multer from "multer";
@@ -208,10 +207,20 @@ app.get("/auth/success", (req, res) => {
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       httpOnly: true
     });
+    
+    // Store session ID temporarily (in production, use Redis or similar)
+    // For now, we'll pass it in the postMessage and have parent establish session
+    const sessionId = req.sessionID;
+    
     res.send(`
       <script>
+        // Send session ID along with user data so parent can establish session
         window.opener.postMessage(
-          { authSuccess: true, user: ${JSON.stringify(toCamelCase(req.user))} },
+          { 
+            authSuccess: true, 
+            user: ${JSON.stringify(toCamelCase(req.user))},
+            sessionId: "${sessionId}"
+          },
           "${process.env.FRONTEND_URL}"
         );
         window.close();
@@ -220,6 +229,88 @@ app.get("/auth/success", (req, res) => {
   } else {
     console.log("Auth success: No user found, redirecting to sign-in");
     res.redirect(`${process.env.FRONTEND_URL}/sign-in`);
+  }
+});
+
+// Endpoint to establish session from parent window after OAuth
+// This endpoint receives user data and logs them in, establishing the session cookie
+app.post("/auth/establish-session", async (req, res) => {
+  try {
+    const { userId, email } = req.body;
+    
+    console.log("/auth/establish-session - Request received");
+    console.log("/auth/establish-session - UserId:", userId, "Email:", email);
+    console.log("/auth/establish-session - Current session ID:", req.sessionID);
+    console.log("/auth/establish-session - Cookies received:", req.headers.cookie);
+    
+    if (!userId || !email) {
+      return res.status(400).json({ 
+        success: false, 
+        error: "User ID and email required" 
+      });
+    }
+
+    // Verify the user exists and get their data
+    const userResult = await db.query(
+      'SELECT * FROM users WHERE user_id = $1 AND email = $2',
+      [userId, email]
+    );
+
+    if (userResult.rows.length === 0) {
+      console.log("/auth/establish-session - User not found in database");
+      return res.status(404).json({ 
+        success: false, 
+        error: "User not found" 
+      });
+    }
+
+    const user = toCamelCase(userResult.rows[0]);
+    console.log("/auth/establish-session - User found:", user.email);
+    
+    // Log the user in - this will establish the session cookie
+    req.login(user, (err) => {
+      if (err) {
+        console.error("Error logging in user:", err);
+        return res.status(500).json({ 
+          success: false, 
+          error: "Failed to establish session" 
+        });
+      }
+      
+      console.log("/auth/establish-session - User logged in successfully");
+      console.log("/auth/establish-session - New session ID:", req.sessionID);
+      console.log("/auth/establish-session - Is authenticated:", req.isAuthenticated());
+      
+      // Save session to ensure cookie is set
+      req.session.save((err) => {
+        if (err) {
+          console.error("Error saving session:", err);
+          return res.status(500).json({ 
+            success: false, 
+            error: "Failed to save session" 
+          });
+        }
+        
+        console.log("/auth/establish-session - Session saved successfully");
+        console.log("/auth/establish-session - Cookie will be sent with:", {
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+          httpOnly: true
+        });
+        
+        res.status(200).json({
+          success: true,
+          message: "Session established successfully",
+          user: user
+        });
+      });
+    });
+  } catch (error) {
+    console.error("Error establishing session:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to establish session" 
+    });
   }
 });
 
