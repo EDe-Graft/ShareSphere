@@ -117,8 +117,7 @@ export function AuthProvider({ children }) {
               const establishResponse = await axios.post(
                 `${BACKEND_URL}/auth/establish-session`,
                 {
-                  userId: userData.userId,
-                  email: userData.email
+                  user: userData
                 },
                 axiosConfig
               );

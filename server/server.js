@@ -236,36 +236,22 @@ app.get("/auth/success", (req, res) => {
 // This endpoint receives user data and logs them in, establishing the session cookie
 app.post("/auth/establish-session", async (req, res) => {
   try {
-    const { userId, email } = req.body;
+    const { user } = req.body;
     
     console.log("/auth/establish-session - Request received");
-    console.log("/auth/establish-session - UserId:", userId, "Email:", email);
+    console.log("/auth/establish-session - User:", user?.email || user?.userId);
     console.log("/auth/establish-session - Current session ID:", req.sessionID);
     console.log("/auth/establish-session - Cookies received:", req.headers.cookie);
     
-    if (!userId || !email) {
+    if (!user || !user.userId) {
       return res.status(400).json({ 
         success: false, 
-        error: "User ID and email required" 
+        error: "User data required" 
       });
     }
 
-    // Verify the user exists and get their data
-    const userResult = await db.query(
-      'SELECT * FROM users WHERE user_id = $1 AND email = $2',
-      [userId, email]
-    );
-
-    if (userResult.rows.length === 0) {
-      console.log("/auth/establish-session - User not found in database");
-      return res.status(404).json({ 
-        success: false, 
-        error: "User not found" 
-      });
-    }
-
-    const user = toCamelCase(userResult.rows[0]);
-    console.log("/auth/establish-session - User found:", user.email);
+    // Use the user data directly from the request (already authenticated via OAuth)
+    console.log("/auth/establish-session - Using user data from OAuth");
     
     // Log the user in - this will establish the session cookie
     req.login(user, (err) => {
