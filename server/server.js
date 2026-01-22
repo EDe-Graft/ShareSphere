@@ -63,53 +63,91 @@ configurePassport(passport, db);
 // Redis Client Configuration
 let redisClient;
 let redisStore;
+let redisConnected = false;
 
-try {
-  redisClient = createClient({
-    url: process.env.REDIS_URL || 'redis://localhost:6379',
-    socket: {
-      reconnectStrategy: (retries) => {
-        if (retries > 10) {
-          console.error('Redis: Too many reconnection attempts, giving up');
-          return new Error('Too many retries');
+// Only initialize Redis if REDIS_URL is provided (or in production)
+if (process.env.REDIS_URL || process.env.NODE_ENV === 'production') {
+  try {
+    redisClient = createClient({
+      url: process.env.REDIS_URL || 'redis://localhost:6379',
+      socket: {
+        reconnectStrategy: (retries) => {
+          if (retries > 10) {
+            console.error('Redis: Too many reconnection attempts, giving up');
+            return new Error('Too many retries');
+          }
+          const delay = Math.min(retries * 100, 3000);
+          console.log(`Redis: Reconnecting in ${delay}ms (attempt ${retries})`);
+          return delay;
         }
-        const delay = Math.min(retries * 100, 3000);
-        console.log(`Redis: Reconnecting in ${delay}ms (attempt ${retries})`);
-        return delay;
       }
-    }
-  });
+    });
 
-  redisClient.on('error', (err) => {
-    console.error('Redis Client Error:', err);
-  });
+    redisClient.on('error', (err) => {
+      console.error('Redis Client Error:', err);
+      redisConnected = false;
+    });
 
-  redisClient.on('connect', () => {
-    console.log('Redis Client Connected');
-  });
+    redisClient.on('connect', () => {
+      console.log('Redis Client Connected');
+      redisConnected = true;
+    });
 
-  redisClient.on('ready', () => {
-    console.log('Redis Client Ready');
-  });
+    redisClient.on('ready', () => {
+      console.log('Redis Client Ready');
+      redisConnected = true;
+    });
 
-  redisClient.on('reconnecting', () => {
-    console.log('Redis Client Reconnecting...');
-  });
+    redisClient.on('end', () => {
+      console.log('Redis Client Connection Ended');
+      redisConnected = false;
+    });
 
-  // Connect to Redis (non-blocking)
-  redisClient.connect().catch((err) => {
-    console.error('Failed to connect to Redis:', err);
+    redisClient.on('reconnecting', () => {
+      console.log('Redis Client Reconnecting...');
+      redisConnected = false;
+    });
+
+    // Connect to Redis and wait for connection
+    // Note: This is async, but we'll handle it gracefully
+    (async () => {
+      try {
+        await redisClient.connect();
+        redisConnected = true;
+        console.log('Redis connection established successfully');
+        
+        // Create Redis store only after connection is established
+        try {
+          redisStore = new RedisStore({
+            client: redisClient,
+            prefix: 'sharesphere:sess:',
+          });
+          console.log('Redis session store initialized');
+        } catch (storeErr) {
+          console.error('Error creating Redis store:', storeErr);
+          redisStore = undefined;
+          redisConnected = false;
+        }
+      } catch (err) {
+        console.error('Failed to connect to Redis:', err);
+        console.log('Falling back to in-memory session store');
+        redisConnected = false;
+        redisStore = undefined;
+        // Don't throw - let it fall back to memory store
+      }
+    })().catch((err) => {
+      console.error('Unexpected error in Redis connection:', err);
+      redisConnected = false;
+      redisStore = undefined;
+    });
+  } catch (error) {
+    console.error('Error initializing Redis client:', error);
     console.log('Falling back to in-memory session store');
-  });
-
-  // Create Redis store for sessions
-  redisStore = new RedisStore({
-    client: redisClient,
-    prefix: 'sharesphere:sess:',
-  });
-} catch (error) {
-  console.error('Error initializing Redis:', error);
-  console.log('Falling back to in-memory session store');
+    redisStore = undefined;
+    redisConnected = false;
+  }
+} else {
+  console.log('Redis URL not provided, using in-memory session store');
   redisStore = undefined;
 }
 
@@ -164,12 +202,16 @@ const isProduction = process.env.NODE_ENV === 'production';
 // Note: For cross-origin cookies (frontend on different domain than backend),
 // we should NOT set the domain attribute. The cookie will be set on the backend domain
 // and sent automatically when the frontend makes requests to the backend.
+// Only use Redis store if it's actually initialized
+// If Redis isn't ready yet, it will fall back to in-memory store
 const sessionConfig = {
   name: "cookie1",
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  store: redisStore || undefined, // Use Redis if available, otherwise in-memory
+  // Only use Redis store if it exists (will be undefined if Redis isn't connected)
+  // Otherwise, express-session will use in-memory store (default)
+  store: redisStore || undefined,
   cookie: {
     secure: isProduction, // Must be true when sameSite is 'none'
     httpOnly: true,
@@ -194,6 +236,12 @@ console.log('Session Configuration:', {
   path: sessionConfig.cookie.path,
   domain: 'not set (defaults to backend domain for cross-origin support)',
 });
+
+// If Redis isn't ready yet, log a warning but continue with memory store
+if (process.env.REDIS_URL && !redisStore) {
+  console.warn('Redis URL provided but store not initialized yet. Using in-memory store temporarily.');
+  console.warn('Redis store will be available once connection is established.');
+}
 
 app.use(session(sessionConfig));
 
@@ -1963,10 +2011,50 @@ app.delete("/items/:itemId/:itemCategory", async (req, res) => {
 
 
 // LISTENING FOR EVENTS
-const server = app.listen(port, '0.0.0.0', () => {
-  console.log(`Server listening on port ${port}`)
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`)
-});
+// Wait for Redis connection if Redis URL is provided, then start server
+let server;
+(async () => {
+  // If Redis URL is provided, wait for connection (with timeout)
+  if (process.env.REDIS_URL || process.env.NODE_ENV === 'production') {
+    if (redisClient && !redisConnected) {
+      console.log('Waiting for Redis connection...');
+      try {
+        // Wait up to 5 seconds for Redis connection
+        const connectionPromise = new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Redis connection timeout'));
+          }, 5000);
+
+          if (redisClient.isOpen) {
+            clearTimeout(timeout);
+            resolve();
+          } else {
+            redisClient.once('ready', () => {
+              clearTimeout(timeout);
+              resolve();
+            });
+            redisClient.once('error', (err) => {
+              clearTimeout(timeout);
+              reject(err);
+            });
+          }
+        });
+
+        await connectionPromise;
+        console.log('Redis connected, starting server...');
+      } catch (err) {
+        console.warn('Redis connection not ready, starting server with in-memory store:', err.message);
+        redisStore = undefined; // Ensure we don't use Redis if not connected
+      }
+    }
+  }
+
+  server = app.listen(port, '0.0.0.0', () => {
+    console.log(`Server listening on port ${port}`)
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`)
+    console.log(`Session store: ${redisStore ? 'Redis' : 'Memory'}`)
+  });
+})();
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
