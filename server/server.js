@@ -65,23 +65,56 @@ let redisClient;
 let redisStore;
 let redisConnected = false;
 
-// Only initialize Redis if REDIS_URL is provided (or in production)
-if (process.env.REDIS_URL || process.env.NODE_ENV === 'production') {
+// Support both URL format and username/password/socket format
+const redisUrl = process.env.REDIS_URL;
+const redisUsername = process.env.REDIS_USERNAME;
+const redisPassword = process.env.REDIS_PASSWORD;
+const redisHost = process.env.REDIS_HOST;
+const redisPort = process.env.REDIS_PORT;
+
+// Check if we have either URL format or username/password/socket format
+const hasValidRedisUrl = redisUrl && redisUrl.trim() !== '' && redisUrl.startsWith('redis://');
+const hasValidRedisCredentials = redisUsername && redisPassword && redisHost && redisPort;
+
+if (hasValidRedisUrl || hasValidRedisCredentials) {
   try {
-    redisClient = createClient({
-      url: process.env.REDIS_URL || 'redis://localhost:6379',
-      socket: {
-        reconnectStrategy: (retries) => {
-          if (retries > 10) {
-            console.error('Redis: Too many reconnection attempts, giving up');
-            return new Error('Too many retries');
+    console.log('Initializing Redis client...');
+    
+    // Use username/password/socket format if credentials are provided, otherwise use URL
+    if (hasValidRedisCredentials) {
+      redisClient = createClient({
+        username: redisUsername,
+        password: redisPassword,
+        socket: {
+          host: redisHost,
+          port: parseInt(redisPort, 10),
+          reconnectStrategy: (retries) => {
+            if (retries > 10) {
+              console.error('Redis: Too many reconnection attempts, giving up');
+              return new Error('Too many retries');
+            }
+            const delay = Math.min(retries * 100, 3000);
+            console.log(`Redis: Reconnecting in ${delay}ms (attempt ${retries})`);
+            return delay;
           }
-          const delay = Math.min(retries * 100, 3000);
-          console.log(`Redis: Reconnecting in ${delay}ms (attempt ${retries})`);
-          return delay;
         }
-      }
-    });
+      });
+    } else {
+      redisClient = createClient({
+        url: redisUrl,
+        socket: {
+          reconnectStrategy: (retries) => {
+            if (retries > 10) {
+              console.error('Redis: Too many reconnection attempts, giving up');
+              return new Error('Too many retries');
+            }
+            const delay = Math.min(retries * 100, 3000);
+            console.log(`Redis: Reconnecting in ${delay}ms (attempt ${retries})`);
+            return delay;
+          }
+        }
+      });
+    }
 
     redisClient.on('error', (err) => {
       console.error('Redis Client Error:', err);
@@ -145,10 +178,19 @@ if (process.env.REDIS_URL || process.env.NODE_ENV === 'production') {
     console.log('Falling back to in-memory session store');
     redisStore = undefined;
     redisConnected = false;
+    redisClient = undefined;
   }
 } else {
-  console.log('Redis URL not provided, using in-memory session store');
+  if (process.env.NODE_ENV === 'production') {
+    console.log('Redis credentials not provided in production, using in-memory session store');
+    console.log('To use Redis, set either:');
+    console.log('  - REDIS_URL (format: redis://username:password@host:port)');
+    console.log('  - OR REDIS_USERNAME, REDIS_PASSWORD, REDIS_HOST, REDIS_PORT');
+  } else {
+    console.log('Redis credentials not provided, using in-memory session store');
+  }
   redisStore = undefined;
+  redisClient = undefined;
 }
 
 // CORS Configuration - MUST come first
@@ -2014,9 +2056,8 @@ app.delete("/items/:itemId/:itemCategory", async (req, res) => {
 // Wait for Redis connection if Redis URL is provided, then start server
 let server;
 (async () => {
-  // If Redis URL is provided, wait for connection (with timeout)
-  if (process.env.REDIS_URL || process.env.NODE_ENV === 'production') {
-    if (redisClient && !redisConnected) {
+  // If Redis client exists, wait for connection (with timeout)
+  if (redisClient && !redisConnected) {
       console.log('Waiting for Redis connection...');
       try {
         // Wait up to 5 seconds for Redis connection
@@ -2047,12 +2088,11 @@ let server;
         redisStore = undefined; // Ensure we don't use Redis if not connected
       }
     }
-  }
 
   server = app.listen(port, '0.0.0.0', () => {
-    console.log(`Server listening on port ${port}`)
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`)
-    console.log(`Session store: ${redisStore ? 'Redis' : 'Memory'}`)
+    console.log(`Server listening on port ${port}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`Session store: ${redisStore ? 'Redis' : 'Memory'}`);
   });
 })();
 
