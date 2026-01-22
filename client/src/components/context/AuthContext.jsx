@@ -4,11 +4,37 @@ import axios from 'axios';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
-// Always send cookies
-const axiosConfig = {
-  headers: { "Content-Type": "application/json" },
-  withCredentials: true
-};
+// Get token from localStorage
+function getToken() {
+  return localStorage.getItem('authToken');
+}
+
+// Set token in localStorage
+function setToken(token) {
+  if (token) {
+    localStorage.setItem('authToken', token);
+  } else {
+    localStorage.removeItem('authToken');
+  }
+}
+
+// Create axios config with token in headers
+function getAxiosConfig() {
+  const token = getToken();
+  const config = {
+    headers: { 
+      "Content-Type": "application/json",
+    },
+    withCredentials: true // Keep for backward compatibility with session auth
+  };
+  
+  // Add token to Authorization header if available
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  return config;
+}
 
 export const AuthContext = createContext();
 
@@ -21,20 +47,27 @@ export function AuthProvider({ children }) {
     try {
       const { data } = await axios.get(
         `${BACKEND_URL}/auth/user`,
-        axiosConfig
+        getAxiosConfig()
       );
 
-      //Checking user session
-      console.log("Session data: ", data)
+      //Checking user session/token
+      console.log("Auth data: ", data)
       
       // if 200 OK comes back:
       if (data.authSuccess) {
         setUser(data.user);
         setAuthSuccess(true);
+      } else {
+        // Clear token if auth failed
+        setToken(null);
+        setUser(null);
+        setAuthSuccess(false);
       }
       
     } catch (err) {
       // 401 or network error
+      console.error("Auth check failed:", err);
+      setToken(null);
       setUser(null);
       setAuthSuccess(false);
     } finally {
@@ -54,7 +87,7 @@ export function AuthProvider({ children }) {
     const response = await axios.post(
       `${BACKEND_URL}/register`,
       { displayName, email, password, confirmPassword },
-      axiosConfig
+      getAxiosConfig()
     );
     
     // After successful registration, check session to get user data
@@ -71,11 +104,16 @@ export function AuthProvider({ children }) {
     const response = await axios.post(
       `${BACKEND_URL}/login`,
       { email, password },
-      axiosConfig
+      getAxiosConfig()
     );
     
-    // After successful login, check session to get updated user data
-    if (response.data.authSuccess) {
+    // After successful login, store token and update user
+    if (response.data.authSuccess && response.data.token) {
+      setToken(response.data.token);
+      setUser(response.data.user);
+      setAuthSuccess(true);
+    } else if (response.data.authSuccess) {
+      // Fallback: check session if no token (backward compatibility)
       await checkSession();
     }
     
@@ -110,25 +148,67 @@ export function AuthProvider({ children }) {
 
           if (event.data.authSuccess) {
             const userData = event.data.user;
+            const token = event.data.token;
             
-            // Establish session in parent window context by making a request
-            // This ensures the cookie is set and accessible for subsequent requests
-            try {
-              const establishResponse = await axios.post(
-                `${BACKEND_URL}/auth/establish-session`,
-                {
-                  user: userData
-                },
-                axiosConfig
-              );
+            // Store token if provided (token-based auth)
+            if (token) {
+              setToken(token);
+              setAuthSuccess(true);
+              setUser(userData);
+              
+              // Verify token is working
+              await checkSession();
+              
+              resolve({
+                authSuccess: true,
+                user: userData,
+                token: token,
+                requireEmail: false,
+                emailNotVerified: false,
+                provider: event.data.provider,
+              });
+            } else {
+              // Fallback: try to establish session (backward compatibility)
+              try {
+                const establishResponse = await axios.post(
+                  `${BACKEND_URL}/auth/establish-session`,
+                  {
+                    user: userData
+                  },
+                  getAxiosConfig()
+                );
 
-              if (establishResponse.data.success) {
+                if (establishResponse.data.success) {
+                  // Store token if returned
+                  if (establishResponse.data.token) {
+                    setToken(establishResponse.data.token);
+                  }
+                  
+                  setAuthSuccess(true);
+                  setUser(userData);
+                  await checkSession();
+
+                  resolve({
+                    authSuccess: true,
+                    user: userData,
+                    requireEmail: false,
+                    emailNotVerified: false,
+                    provider: event.data.provider,
+                  });
+                } else {
+                  console.error("Failed to establish session:", establishResponse.data.error);
+                  resolve({
+                    authSuccess: false,
+                    user: null,
+                    error: "Failed to establish session"
+                  });
+                }
+              } catch (error) {
+                console.error("Error establishing session:", error);
                 setAuthSuccess(true);
                 setUser(userData);
-
-                // Verify session is working
                 await checkSession();
-
+                
                 resolve({
                   authSuccess: true,
                   user: userData,
@@ -136,29 +216,7 @@ export function AuthProvider({ children }) {
                   emailNotVerified: false,
                   provider: event.data.provider,
                 });
-              } else {
-                console.error("Failed to establish session:", establishResponse.data.error);
-                resolve({
-                  authSuccess: false,
-                  user: null,
-                  error: "Failed to establish session"
-                });
               }
-            } catch (error) {
-              console.error("Error establishing session:", error);
-              // Still set user data even if session establishment fails
-              // The checkSession call might still work if cookie was set
-              setAuthSuccess(true);
-              setUser(userData);
-              await checkSession();
-              
-              resolve({
-                authSuccess: true,
-                user: userData,
-                requireEmail: false,
-                emailNotVerified: false,
-                provider: event.data.provider,
-              });
             }
           } else {
             resolve({
@@ -180,14 +238,23 @@ export function AuthProvider({ children }) {
 
 
   const logout = async () => {
-    const response = await axios.post(
-      `${BACKEND_URL}/logout/user`,
-      {},
-      axiosConfig
-    );
+    try {
+      // Try to logout on server (for session-based auth)
+      await axios.post(
+        `${BACKEND_URL}/logout/user`,
+        {},
+        getAxiosConfig()
+      );
+    } catch (error) {
+      // Ignore errors - we'll clear token anyway
+      console.log("Logout request failed (may be using token auth):", error);
+    }
+    
+    // Clear token and user data
+    setToken(null);
     setUser(null);
     setAuthSuccess(false);
-    return response.data.logoutSuccess
+    return true;
   };
 
   // 3️⃣ Only render children once we've checked session

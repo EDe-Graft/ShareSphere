@@ -19,6 +19,7 @@ import EmailVerificationEmail from './dist/emails/EmailVerificationEmail.js';
 import { configurePassport } from "./passport-config.js";
 import { uploadToCloudinary, saveItem, saveImage, updateImage, insertCategoryDetails, getTableName, getImages, getLikes, manageLikesReceived, deleteImages, deletePost, saveReport, postReview, updateReview, getUserProfile, updateUserProfile, registerUser, getUserStats, deleteFromCloudinary, checkImageExists, createVerificationToken, verifyToken, markTokenAsUsed, verifyUserEmail, checkEmailVerificationStatus, getUserByEmail, getUserByProfileUrl, deleteExpiredTokens } from './database-utils.js';
 import { formatLocalISO, capitalizeFirst, toCamelCase, toSnakeCase } from "./format.js";
+import jwt from "jsonwebtoken";
 
 // Express-app and environment creation
 const app = express();
@@ -291,6 +292,94 @@ app.use(session(sessionConfig));
 app.use(passport.initialize());
 app.use(passport.session());
 
+// JWT Token Utilities
+const JWT_SECRET = process.env.JWT_SECRET || process.env.SESSION_SECRET || 'fallback-secret-change-in-production';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d'; // 7 days default
+
+// Generate JWT token for user
+function generateToken(user) {
+  const payload = {
+    userId: user.userId,
+    email: user.email,
+    username: user.username || user.name,
+    emailVerified: user.emailVerified || user.email_verified,
+    strategy: user.authStrategy || user.strategy
+  };
+  
+  return jwt.sign(payload, JWT_SECRET, {
+    expiresIn: JWT_EXPIRES_IN,
+    issuer: 'sharesphere',
+    audience: 'sharesphere-users'
+  });
+}
+
+// Verify and decode JWT token
+function verifyJWTToken(token) {
+  try {
+    return jwt.verify(token, JWT_SECRET, {
+      issuer: 'sharesphere',
+      audience: 'sharesphere-users'
+    });
+  } catch (error) {
+    return null;
+  }
+}
+
+// Token authentication middleware
+// This middleware checks for token in Authorization header and attaches user to req
+// Falls back to session-based auth if no token is provided
+function authenticateToken(req, res, next) {
+  // First, try to get token from Authorization header
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+  if (token) {
+    const decoded = verifyJWTToken(token);
+    if (decoded) {
+      // Token is valid, attach user info to request
+      req.user = {
+        userId: decoded.userId,
+        email: decoded.email,
+        username: decoded.username,
+        emailVerified: decoded.emailVerified,
+        authStrategy: decoded.strategy
+      };
+      req.authMethod = 'token'; // Mark that we're using token auth
+      return next();
+    } else {
+      // Invalid token
+      return res.status(401).json({ 
+        error: "Invalid or expired token",
+        authSuccess: false 
+      });
+    }
+  }
+
+  // No token provided, fall back to session-based auth
+  // This allows backward compatibility
+  req.authMethod = 'session';
+  next();
+}
+
+// Middleware to require authentication (works with both token and session)
+function requireAuth(req, res, next) {
+  // Check if user is authenticated via token
+  if (req.authMethod === 'token' && req.user) {
+    return next();
+  }
+  
+  // Check if user is authenticated via session
+  if (req.isAuthenticated && req.isAuthenticated()) {
+    return next();
+  }
+
+  // Not authenticated
+  return res.status(401).json({ 
+    error: "Authentication required",
+    authSuccess: false 
+  });
+}
+
 
 const storage = multer.memoryStorage();
 const upload = multer({
@@ -353,17 +442,23 @@ app.get('/', (req, res) => {
 });
 
 //For credentials auth success/failure
-app.get('/auth/user', (req, res) => {
+// This endpoint works with both token and session-based auth
+app.get('/auth/user', authenticateToken, (req, res) => {
+  console.log("/auth/user - Auth method:", req.authMethod);
   console.log("/auth/user - Session ID:", req.sessionID);
-  console.log("/auth/user - Is authenticated:", req.isAuthenticated());
+  console.log("/auth/user - Is authenticated:", req.isAuthenticated ? req.isAuthenticated() : 'N/A (token auth)');
   console.log("/auth/user - Cookies received:", req.headers.cookie);
   console.log("/auth/user - User:", req.user);
   
-  if (req.user) {
+  // Check if user is authenticated via token or session
+  const user = req.user || (req.isAuthenticated && req.isAuthenticated() ? req.user : null);
+  
+  if (user) {
     res.status(200).json({
-      authSuccess: req.isAuthenticated(),
+      authSuccess: true,
       message: 'User Logged In', 
-      user: toCamelCase(req.user) 
+      user: toCamelCase(user),
+      authMethod: req.authMethod || 'session'
     });
   } else {
     res.status(401).json({
@@ -380,24 +475,22 @@ app.get("/auth/success", (req, res) => {
     console.log("Auth success: User", req.user);
     console.log("Auth success: Session ID:", req.sessionID);
     console.log("Auth success: Is authenticated:", req.isAuthenticated());
-    console.log("Auth success: Cookie will be sent with:", {
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      httpOnly: true
-    });
     
-    // Store session ID temporarily (in production, use Redis or similar)
-    // For now, we'll pass it in the postMessage and have parent establish session
-    const sessionId = req.sessionID;
+    // Generate JWT token for token-based authentication
+    const token = generateToken(req.user);
+    const userData = toCamelCase(req.user);
+    
+    console.log("Auth success: JWT token generated");
     
     res.send(`
       <script>
-        // Send session ID along with user data so parent can establish session
+        // Send JWT token and user data to parent window
+        // Token will be stored in localStorage on the frontend
         window.opener.postMessage(
           { 
             authSuccess: true, 
-            user: ${JSON.stringify(toCamelCase(req.user))},
-            sessionId: "${sessionId}"
+            user: ${JSON.stringify(userData)},
+            token: "${token}"
           },
           "${process.env.FRONTEND_URL}"
         );
@@ -411,63 +504,45 @@ app.get("/auth/success", (req, res) => {
 });
 
 // Endpoint to establish session from parent window after OAuth
-// This endpoint receives user data and logs them in, establishing the session cookie
+// DEPRECATED: This endpoint is kept for backward compatibility
+// New token-based auth doesn't need this - token is sent directly from /auth/success
+// But we'll keep it for now in case frontend hasn't updated yet
 app.post("/auth/establish-session", async (req, res) => {
   try {
-    const { user } = req.body;
+    const { user, token } = req.body;
     
     console.log("/auth/establish-session - Request received");
     console.log("/auth/establish-session - User:", user?.email || user?.userId);
-    console.log("/auth/establish-session - Current session ID:", req.sessionID);
-    console.log("/auth/establish-session - Cookies received:", req.headers.cookie);
+    console.log("/auth/establish-session - Has token:", !!token);
     
+    // If token is provided, just return success (token is already generated)
+    if (token) {
+      return res.status(200).json({
+        success: true,
+        message: "Token-based authentication - no session needed",
+        token: token,
+        user: user
+      });
+    }
+    
+    // Fallback to session-based auth if no token
     if (!user || !user.userId) {
       return res.status(400).json({ 
         success: false, 
-        error: "User data required" 
+        error: "User data or token required" 
       });
     }
 
-    // Use the user data directly from the request (already authenticated via OAuth)
-    console.log("/auth/establish-session - Using user data from OAuth");
+    // Generate token for the user
+    const jwtToken = generateToken(user);
     
-    // Log the user in - this will establish the session cookie
-    req.login(user, (err) => {
-      if (err) {
-        console.error("Error logging in user:", err);
-        return res.status(500).json({ 
-          success: false, 
-          error: "Failed to establish session" 
-        });
-      }
-      
-      console.log("/auth/establish-session - User logged in successfully");
-      console.log("/auth/establish-session - New session ID:", req.sessionID);
-      console.log("/auth/establish-session - Is authenticated:", req.isAuthenticated());
-      
-      // Save session to ensure cookie is set
-      req.session.save((err) => {
-        if (err) {
-          console.error("Error saving session:", err);
-          return res.status(500).json({ 
-            success: false, 
-            error: "Failed to save session" 
-          });
-        }
-        
-        console.log("/auth/establish-session - Session saved successfully");
-        console.log("/auth/establish-session - Cookie will be sent with:", {
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-          httpOnly: true
-        });
-        
-        res.status(200).json({
-          success: true,
-          message: "Session established successfully",
-          user: user
-        });
-      });
+    console.log("/auth/establish-session - Token generated");
+    
+    res.status(200).json({
+      success: true,
+      message: "Token generated successfully",
+      token: jwtToken,
+      user: user
     });
   } catch (error) {
     console.error("Error establishing session:", error);
@@ -1993,14 +2068,27 @@ app.post("/register", async (req, res) => {
       }
     }
 
-    // Log the user in
+    // Generate JWT token for token-based authentication
+    const token = generateToken(user);
+    const userData = toCamelCase(user);
+    
+    console.log('Login successful for user:', user.username);
+    console.log('JWT token generated for credentials login');
+    
+    // Return token and user data (for token-based auth)
+    // Also log in via session for backward compatibility
     req.login(user, (err) => {
       if (err) {
-        console.error('Login error:', err);
-        return next(err);
+        console.error('Session login error:', err);
+        // Still return token even if session login fails
       }
-      console.log('Login successful for user:', user.username);
-      return res.redirect("/auth/user");
+      
+      return res.json({
+        authSuccess: true,
+        message: 'Login successful',
+        user: userData,
+        token: token
+      });
     });
   })(req, res, next);
 });
