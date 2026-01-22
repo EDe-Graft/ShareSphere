@@ -21,7 +21,6 @@ import { formatLocalISO, capitalizeFirst, toCamelCase, toSnakeCase } from "./for
 // Express-app and environment creation
 const app = express();
 const port = process.env.PORT || 3000;
-const saltRounds = 10;
 
 env.config();
 
@@ -35,12 +34,25 @@ const db = new pg.Pool({
   max: 20, // Maximum number of clients in the pool
   idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
   connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection can't be established
+  // For serverless databases (Neon), connections may be terminated by the server
+  // The pool will automatically remove dead connections and create new ones
+  allowExitOnIdle: false, // Don't exit when pool is idle
 });
 
-// Handle pool errors
+// Handle pool errors - don't crash the app, just log
+// Serverless databases (like Neon) may terminate idle connections
+// The pool will automatically handle this by removing dead connections
 db.on('error', (err) => {
-  console.error('Unexpected error on idle database client', err);
-  process.exit(-1);
+  // Only log errors, don't exit the process
+  // Connection terminations are normal for serverless databases
+  if (err.code === '57P01' || err.message.includes('terminated')) {
+    // Connection terminated - this is normal for serverless DBs
+    console.warn('Database connection terminated (normal for serverless DBs):', err.message);
+  } else {
+    // Other errors should be logged but not crash the app
+    console.error('Database pool error:', err.message);
+  }
+  // The pool will automatically remove the dead connection and create a new one when needed
 });
 
 // Initialize passport
