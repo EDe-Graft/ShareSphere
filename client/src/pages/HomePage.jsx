@@ -7,6 +7,7 @@ import { ArrowRight, ArrowDown, Heart, Users, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { GitHubEmailDialog } from "@/components/custom/GithubEmailDialog";
+import { getAxiosConfig } from "@/components/context/AuthContext";
 import axios from "axios";
 
 const HomePage = () => {
@@ -39,10 +40,6 @@ const HomePage = () => {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-  const axiosConfig = {
-    headers: { "Content-Type": "application/json" },
-    withCredentials: true,
-  };
 
   // typewrite effect using useEffect
   useEffect(() => {
@@ -70,10 +67,17 @@ const HomePage = () => {
   // Handle GitHub email submission
   const handleGithubEmailSubmit = async (data) => {
     //update user email in backend for github auth
+    const config = getAxiosConfig();
     const updateResult = await axios.patch(
       `${BACKEND_URL}/update-profile`,
       data, 
-      axiosConfig
+      {
+        headers: { 
+          "Content-Type": "application/json",
+          ...(config.headers.Authorization && { Authorization: config.headers.Authorization })
+        },
+        withCredentials: false,
+      }
     )
 
     if (updateResult.data.success) {

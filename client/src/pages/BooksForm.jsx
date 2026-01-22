@@ -36,6 +36,7 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { formatData, CATEGORY_OPTIONS } from "@/lib/utils";
 import ImageUploadField from "@/components/custom/ImageUploadField";
+import { getAxiosConfig } from "@/components/context/AuthContext";
 import axios from "axios";
 
 const MAX_FILE_SIZE = 7000000;
@@ -118,17 +119,20 @@ const BooksForm = () => {
     const booksFormData = formatData(booksProcessedData);
 
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-    const axiosConfig = {
-      headers: { "Content-Type": "multipart/form-data" },
-      withCredentials: true,
-    };
+    const config = getAxiosConfig();
 
     try {
       // console.log(formData)
       const response = await axios.post(
         `${BACKEND_URL}/upload?category=book`,
         booksFormData,
-        axiosConfig
+        {
+          headers: { 
+            "Content-Type": "multipart/form-data",
+            ...(config.headers.Authorization && { Authorization: config.headers.Authorization })
+          },
+          withCredentials: false,
+        }
       );
 
       if (response.data.success) {

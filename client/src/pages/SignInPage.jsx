@@ -30,6 +30,7 @@ import { AuthSkeleton } from "@/components/custom/AuthSkeleton";
 import axios from "axios";
 import { GitHubEmailDialog } from "@/components/custom/GithubEmailDialog";
 import { EmailVerificationDialog } from "@/components/custom/EmailVerificationDialog";
+import { getAxiosConfig } from "@/components/context/AuthContext";
 
 // Define the authentication providers
 const providers = [
@@ -48,11 +49,6 @@ const formSchema = z.object({
 
 // Backend configuration
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-
-const axiosConfig = {
-  headers: { "Content-Type": "application/json" },
-  withCredentials: true,
-};
 
 export function SignInPage() {
   const { setAuthSuccess, user, setUser, localLogin, socialLogin, logout } =
@@ -80,7 +76,7 @@ export function SignInPage() {
     try {
       const response = await axios.get(
         `${BACKEND_URL}/verification-status/${email}`,
-        axiosConfig
+        getAxiosConfig()
       );
       console.log("isUserVerified: ", response.data.isVerified)
       return response.data.isVerified;
@@ -104,7 +100,7 @@ export function SignInPage() {
       const response = await axios.post(
         `${BACKEND_URL}/send-verification`,
         { email, userName, profileUrl },
-        axiosConfig
+        getAxiosConfig()
       );
 
       return response.data.success;

@@ -30,7 +30,7 @@ import ItemCard from "@/components/custom/ItemCard";
 import ItemDetailsDialog from "@/components/custom/ItemDetailsDialog";
 import EmptyState from "@/components/custom/EmptyState";
 import Pagination from "@/components/custom/Pagination";
-import { useAuth } from "@/components/context/AuthContext";
+import { useAuth, getAxiosConfig } from "@/components/context/AuthContext";
 import { getSizeOptions } from "./ClothingForm";
 import axios from "axios";
 import { formatData } from "@/lib/utils";
@@ -88,10 +88,6 @@ const ClothingViewPage = () => {
   const category = "clothing"; //for empty state handling
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-  const axiosConfig = {
-    headers: { "Content-Type": "application/json" },
-    withCredentials: true,
-  };
 
   // Calculate current items for pagination
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -122,7 +118,7 @@ const ClothingViewPage = () => {
     try {
       const response = await axios.get(
         `${BACKEND_URL}/favorites?category=clothing`,
-        axiosConfig
+        getAxiosConfig()
       );
 
       if (response.data.getSuccess) {
@@ -144,7 +140,7 @@ const ClothingViewPage = () => {
       const res = await axios.post(
         `${BACKEND_URL}/favorites/toggle`,
         { itemId },
-        axiosConfig
+        getAxiosConfig()
       );
 
       if (res.data.toggleSuccess) {
@@ -200,7 +196,7 @@ const ClothingViewPage = () => {
         response = await axios.post(
           `${BACKEND_URL}/update-post?hasFile=false`,
           { updateData: formattedData },
-          axiosConfig
+          getAxiosConfig()
         );
       }
 
@@ -223,7 +219,7 @@ const ClothingViewPage = () => {
       try {
         const response = await axios.get(
           `${BACKEND_URL}/items?category=clothing`,
-          axiosConfig
+          getAxiosConfig()
         );
         if (response.data.getSuccess) {
           const items = response.data.items;
@@ -259,7 +255,7 @@ const ClothingViewPage = () => {
       console.log("Attempting to delete:", itemId, itemCategory);
       const response = await axios.delete(
         `${BACKEND_URL}/items/${itemId}/${itemCategory}`,
-        axiosConfig
+        getAxiosConfig()
       );
 
       if (response.data.deleteSuccess) {

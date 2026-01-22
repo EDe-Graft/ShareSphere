@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/select";
 import ImageUploadField from "@/components/custom/ImageUploadField";
 import { formatData } from "@/lib/utils";
+import { getAxiosConfig } from "@/components/context/AuthContext";
 import axios from "axios";
 
 // Define constants for file validation
@@ -110,17 +111,20 @@ const FurnitureForm = () => {
     const furnitureFormData = formatData(furnitureProcessedData);
 
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-    const axiosConfig = {
-      headers: { "Content-Type": "multipart/form-data" },
-      withCredentials: true,
-    };
+    const config = getAxiosConfig();
 
     try {
       // console.log(formData)
       const response = await axios.post(
         `${BACKEND_URL}/upload?category=furniture`,
         furnitureFormData,
-        axiosConfig
+        {
+          headers: { 
+            "Content-Type": "multipart/form-data",
+            ...(config.headers.Authorization && { Authorization: config.headers.Authorization })
+          },
+          withCredentials: false,
+        }
       );
 
       if (response.data.success) {

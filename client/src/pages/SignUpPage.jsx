@@ -30,6 +30,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { GitHubEmailDialog } from "@/components/custom/GithubEmailDialog";
 import axios from "axios";
 import { EmailVerificationDialog } from "@/components/custom/EmailVerificationDialog";
+import { getAxiosConfig } from "@/components/context/AuthContext";
 
 // Define the authentication providers
 const providers = [
@@ -55,11 +56,6 @@ const formSchema = z
 
 //Backend configuration
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-
-const axiosConfig = {
-  headers: { "Content-Type": "application/json" },
-  withCredentials: true,
-};
 
 export function SignUpPage() {
   const { setAuthSuccess, setUser, register, socialLogin, logout } = useAuth();
@@ -97,7 +93,7 @@ export function SignUpPage() {
       const response = await axios.post(
         `${BACKEND_URL}/send-verification`,
         { email, userName },
-        axiosConfig
+        getAxiosConfig()
       );
 
       return response.data.success;

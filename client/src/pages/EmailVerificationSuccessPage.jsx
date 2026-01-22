@@ -18,14 +18,10 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AuthSkeleton } from "@/components/custom/AuthSkeleton";
 import axios from "axios";
-import { useAuth } from "@/components/context/AuthContext";
+import { useAuth, getAxiosConfig } from "@/components/context/AuthContext";
 
 // Backend configuration
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-const axiosConfig = {
-  headers: { "Content-Type": "application/json" },
-  withCredentials: true,
-};
 
 export function EmailVerificationSuccessPage() {
   const [searchParams] = useSearchParams();
@@ -52,7 +48,7 @@ export function EmailVerificationSuccessPage() {
         const response = await axios.post(
           `${BACKEND_URL}/verify-email/`,
           { token },
-          axiosConfig
+          getAxiosConfig()
         );
 
         if (response.data.success) {
@@ -66,7 +62,7 @@ export function EmailVerificationSuccessPage() {
           let userId = user.userId;
           const profileResponse = await axios.get(
             `${BACKEND_URL}/user-profile/${userId}`,
-            axiosConfig
+            getAxiosConfig()
           )
 
           if (profileResponse.data.success) {

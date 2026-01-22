@@ -21,7 +21,7 @@ import ItemDetailsDialog from "@/components/custom/ItemDetailsDialog";
 import DonateItemDialog from "@/components/custom/DonateItemDialog";
 import ReviewDialog from "@/components/custom/ReviewDialog";
 import Pagination from "@/components/custom/Pagination";
-import { useAuth } from "@/components/context/AuthContext";
+import { useAuth, getAxiosConfig } from "@/components/context/AuthContext";
 import axios from "axios";
 import { formatData } from "@/lib/utils";
 
@@ -63,10 +63,6 @@ const ProfilePage = () => {
   });
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-  const axiosConfig = {
-    headers: { "Content-Type": "application/json" },
-    withCredentials: true,
-  };
 
   //Determine if viewing own profile or another user's profile
   const isOwnProfile = String(userId) === String(currentUser?.userId);
@@ -99,7 +95,7 @@ const ProfilePage = () => {
         try {
           const favoritesResponse = await axios.get(
             `${BACKEND_URL}/favorites?category=all`,
-            axiosConfig
+            getAxiosConfig()
           );
           if (favoritesResponse.data.getSuccess) {
             userFavorites = favoritesResponse.data.userFavorites || [];
@@ -112,7 +108,7 @@ const ProfilePage = () => {
       // Load user profile info
       const profileResponse = await axios.get(
         `${BACKEND_URL}/user-profile/${targetUserId}`,
-        axiosConfig
+        getAxiosConfig()
       );
 
       if (profileResponse.data.success) {
@@ -124,7 +120,7 @@ const ProfilePage = () => {
       //get user stats
       const statsResponse = await axios.get(
         `${BACKEND_URL}/user-stats/${targetUserId}`,
-        axiosConfig
+        getAxiosConfig()
       );
 
       if (statsResponse.data.success) {
@@ -136,7 +132,7 @@ const ProfilePage = () => {
       // Load user's posts
       const postsResponse = await axios.get(
         `${BACKEND_URL}/user-posts/${targetUserId}`,
-        axiosConfig
+        getAxiosConfig()
       );
 
       if (postsResponse.data.success) {
@@ -174,7 +170,7 @@ const ProfilePage = () => {
       // Load reviews given by user
       const reviewsResponse = await axios.get(
         `${BACKEND_URL}/reviews/given/${targetUserId}`,
-        axiosConfig
+        getAxiosConfig()
       );
 
       if (reviewsResponse.data.success) {
@@ -186,7 +182,7 @@ const ProfilePage = () => {
       // Load reviews received by user
       const receivedReviewsResponse = await axios.get(
         `${BACKEND_URL}/reviews/received/${targetUserId}`,
-        axiosConfig
+        getAxiosConfig()
       );
 
       if (receivedReviewsResponse.data.success) {
@@ -205,7 +201,7 @@ const ProfilePage = () => {
   //   try {
   //     const response = await axios.get(
   //       `${BACKEND_URL}/favorites?category=all`,
-  //       axiosConfig
+  //       getAxiosConfig()
   //     );
 
   //     if (response.data.getSuccess) {
@@ -228,7 +224,7 @@ const ProfilePage = () => {
       const res = await axios.post(
         `${BACKEND_URL}/favorites/toggle`,
         { itemId },
-        axiosConfig
+        getAxiosConfig()
       );
 
       if (res.data.toggleSuccess) {
@@ -264,12 +260,16 @@ const ProfilePage = () => {
 
       let response;
       if (hasFile) {
+        const config = getAxiosConfig();
         response = await axios.post(
           `${BACKEND_URL}/update-post?hasFile=true`,
           formData,
           {
-            headers: { "Content-Type": "multipart/form-data" },
-            withCredentials: true,
+            headers: { 
+              "Content-Type": "multipart/form-data",
+              ...(config.headers.Authorization && { Authorization: config.headers.Authorization })
+            },
+            withCredentials: false,
           }
         );
       } else {
@@ -280,7 +280,7 @@ const ProfilePage = () => {
         response = await axios.post(
           `${BACKEND_URL}/update-post?hasFile=false`,
           { updateData: formattedData },
-          axiosConfig
+          getAxiosConfig()
         );
       }
 
@@ -302,7 +302,7 @@ const ProfilePage = () => {
     try {
       const response = await axios.delete(
         `${BACKEND_URL}/items/${itemId}/${itemCategory}`,
-        axiosConfig
+        getAxiosConfig()
       );
 
       if (response.data.deleteSuccess) {
@@ -339,12 +339,16 @@ const ProfilePage = () => {
       const formData = new FormData();
       formData.append("profilePhoto", file);
 
+      const config = getAxiosConfig();
       const response = await axios.patch(
         `${BACKEND_URL}/update-profile`,
         formData,
         {
-          headers: { "Content-Type": "multipart/form-data" },
-          withCredentials: true,
+          headers: { 
+            "Content-Type": "multipart/form-data",
+            ...(config.headers.Authorization && { Authorization: config.headers.Authorization })
+          },
+          withCredentials: false,
         }
       );
 

@@ -26,7 +26,7 @@ import {
 
 import ReviewDialog from "@/components/custom/ReviewDialog";
 import Pagination from "@/components/custom/Pagination";
-import { useAuth } from "@/components/context/AuthContext";
+import { useAuth, getAxiosConfig } from "@/components/context/AuthContext";
 import axios from "axios";
 
 const ReviewsPage = () => {
@@ -51,11 +51,6 @@ const ReviewsPage = () => {
   const itemsPerPage = 5;
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-
-  const axiosConfig = {
-    headers: { "Content-Type": "application/json" },
-    withCredentials: true,
-  };
 
   useEffect(() => {
     loadReviews();
@@ -86,7 +81,7 @@ const ReviewsPage = () => {
       // Load reviews given by user
       const givenResponse = await axios.get(
         `${BACKEND_URL}/reviews/given/${user.userId}`,
-        axiosConfig
+        getAxiosConfig()
       );
 
       if (givenResponse.data.success) {
@@ -96,7 +91,7 @@ const ReviewsPage = () => {
       // Load reviews received by user
       const receivedResponse = await axios.get(
         `${BACKEND_URL}/reviews/received/${user.userId}`,
-        axiosConfig
+        getAxiosConfig()
       );
 
       if (receivedResponse.data.success) {
@@ -188,7 +183,7 @@ const ReviewsPage = () => {
     try {
       const response = await axios.delete(
         `${BACKEND_URL}/reviews/${reviewId}`,
-        axiosConfig
+        getAxiosConfig()
       );
 
       if (response.data.deleteSuccess) {

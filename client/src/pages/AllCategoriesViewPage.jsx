@@ -30,7 +30,7 @@ import ItemDetailsDialog from "@/components/custom/ItemDetailsDialog";
 import DonateItemDialog from "@/components/custom/DonateItemDialog";
 import EmptyState from "@/components/custom/EmptyState";
 import Pagination from "@/components/custom/Pagination";
-import { useAuth } from "@/components/context/AuthContext";
+import { useAuth, getAxiosConfig } from "@/components/context/AuthContext";
 import axios from "axios";
 import { Plus, BookOpen, Shirt, Sofa, Package } from "lucide-react";
 import { formatData } from "@/lib/utils";
@@ -61,10 +61,6 @@ const AllCategoriesViewPage = () => {
   const category = "all";
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-  const axiosConfig = {
-    headers: { "Content-Type": "application/json" },
-    withCredentials: true,
-  };
 
   // Calculate current items for pagination
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -93,7 +89,7 @@ const AllCategoriesViewPage = () => {
     try {
       const response = await axios.get(
         `${BACKEND_URL}/favorites?category=all`,
-        axiosConfig
+        getAxiosConfig()
       );
 
       if (response.data.getSuccess) {
@@ -115,7 +111,7 @@ const AllCategoriesViewPage = () => {
       const res = await axios.post(
         `${BACKEND_URL}/favorites/toggle`,
         { itemId },
-        axiosConfig
+        getAxiosConfig()
       );
 
       if (res.data.toggleSuccess) {
@@ -194,10 +190,10 @@ const AllCategoriesViewPage = () => {
 
     try {
       console.log("Attempting to delete:", itemId, itemCategory);
-      const response = await axios.delete(
-        `${BACKEND_URL}/items/${itemId}/${itemCategory}`,
-        axiosConfig
-      );
+        const response = await axios.delete(
+          `${BACKEND_URL}/items/${itemId}/${itemCategory}`,
+          getAxiosConfig()
+        );
 
       if (response.data.deleteSuccess) {
         toast.success("Post deleted successfully", {
@@ -222,12 +218,12 @@ const AllCategoriesViewPage = () => {
         // Fetch items from all categories
         const [booksRes, furnitureRes, clothingRes, miscRes] =
           await Promise.all([
-            axios.get(`${BACKEND_URL}/items?category=book`, axiosConfig),
-            axios.get(`${BACKEND_URL}/items?category=furniture`, axiosConfig),
-            axios.get(`${BACKEND_URL}/items?category=clothing`, axiosConfig),
+            axios.get(`${BACKEND_URL}/items?category=book`, getAxiosConfig()),
+            axios.get(`${BACKEND_URL}/items?category=furniture`, getAxiosConfig()),
+            axios.get(`${BACKEND_URL}/items?category=clothing`, getAxiosConfig()),
             axios.get(
               `${BACKEND_URL}/items?category=miscellaneous`,
-              axiosConfig
+              getAxiosConfig()
             ),
           ]);
 

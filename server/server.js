@@ -1,5 +1,4 @@
 import express from "express";
-import session from "express-session";
 import bodyParser from "body-parser";
 import pg from "pg";
 import passport from "passport";
@@ -7,8 +6,7 @@ import env from "dotenv";
 import multer from "multer";
 import cors from "cors";
 import nodemailer from "nodemailer";
-import { createClient } from "redis";
-import RedisStore from "connect-redis";
+// Redis removed - no longer needed for token-based auth
 import { render } from '@react-email/render';
 import { createElement } from 'react';
 import ItemRequestEmail from './dist/emails/ItemRequestEmail.js';
@@ -58,141 +56,8 @@ db.on('error', (err) => {
   // The pool will automatically remove the dead connection and create a new one when needed
 });
 
-// Initialize passport
+// Initialize passport (for OAuth only, no sessions)
 configurePassport(passport, db);
-
-// Redis Client Configuration
-let redisClient;
-let redisStore;
-let redisConnected = false;
-
-// Support both URL format and username/password/socket format
-const redisUrl = process.env.REDIS_URL;
-const redisUsername = process.env.REDIS_USERNAME;
-const redisPassword = process.env.REDIS_PASSWORD;
-const redisHost = process.env.REDIS_HOST;
-const redisPort = process.env.REDIS_PORT;
-
-// Check if we have either URL format or username/password/socket format
-const hasValidRedisUrl = redisUrl && redisUrl.trim() !== '' && redisUrl.startsWith('redis://');
-const hasValidRedisCredentials = redisUsername && redisPassword && redisHost && redisPort;
-
-if (hasValidRedisUrl || hasValidRedisCredentials) {
-  try {
-    console.log('Initializing Redis client...');
-    
-    // Use username/password/socket format if credentials are provided, otherwise use URL
-    if (hasValidRedisCredentials) {
-      redisClient = createClient({
-        username: redisUsername,
-        password: redisPassword,
-        socket: {
-          host: redisHost,
-          port: parseInt(redisPort, 10),
-          reconnectStrategy: (retries) => {
-            if (retries > 10) {
-              console.error('Redis: Too many reconnection attempts, giving up');
-              return new Error('Too many retries');
-            }
-            const delay = Math.min(retries * 100, 3000);
-            console.log(`Redis: Reconnecting in ${delay}ms (attempt ${retries})`);
-            return delay;
-          }
-        }
-      });
-    } else {
-      redisClient = createClient({
-        url: redisUrl,
-        socket: {
-          reconnectStrategy: (retries) => {
-            if (retries > 10) {
-              console.error('Redis: Too many reconnection attempts, giving up');
-              return new Error('Too many retries');
-            }
-            const delay = Math.min(retries * 100, 3000);
-            console.log(`Redis: Reconnecting in ${delay}ms (attempt ${retries})`);
-            return delay;
-          }
-        }
-      });
-    }
-
-    redisClient.on('error', (err) => {
-      console.error('Redis Client Error:', err);
-      redisConnected = false;
-    });
-
-    redisClient.on('connect', () => {
-      console.log('Redis Client Connected');
-      redisConnected = true;
-    });
-
-    redisClient.on('ready', () => {
-      console.log('Redis Client Ready');
-      redisConnected = true;
-    });
-
-    redisClient.on('end', () => {
-      console.log('Redis Client Connection Ended');
-      redisConnected = false;
-    });
-
-    redisClient.on('reconnecting', () => {
-      console.log('Redis Client Reconnecting...');
-      redisConnected = false;
-    });
-
-    // Connect to Redis and wait for connection
-    // Note: This is async, but we'll handle it gracefully
-    (async () => {
-      try {
-        await redisClient.connect();
-        redisConnected = true;
-        console.log('Redis connection established successfully');
-        
-        // Create Redis store only after connection is established
-        try {
-          redisStore = new RedisStore({
-            client: redisClient,
-            prefix: 'sharesphere:sess:',
-          });
-          console.log('Redis session store initialized');
-        } catch (storeErr) {
-          console.error('Error creating Redis store:', storeErr);
-          redisStore = undefined;
-          redisConnected = false;
-        }
-      } catch (err) {
-        console.error('Failed to connect to Redis:', err);
-        console.log('Falling back to in-memory session store');
-        redisConnected = false;
-        redisStore = undefined;
-        // Don't throw - let it fall back to memory store
-      }
-    })().catch((err) => {
-      console.error('Unexpected error in Redis connection:', err);
-      redisConnected = false;
-      redisStore = undefined;
-    });
-  } catch (error) {
-    console.error('Error initializing Redis client:', error);
-    console.log('Falling back to in-memory session store');
-    redisStore = undefined;
-    redisConnected = false;
-    redisClient = undefined;
-  }
-} else {
-  if (process.env.NODE_ENV === 'production') {
-    console.log('Redis credentials not provided in production, using in-memory session store');
-    console.log('To use Redis, set either:');
-    console.log('  - REDIS_URL (format: redis://username:password@host:port)');
-    console.log('  - OR REDIS_USERNAME, REDIS_PASSWORD, REDIS_HOST, REDIS_PORT');
-  } else {
-    console.log('Redis credentials not provided, using in-memory session store');
-  }
-  redisStore = undefined;
-  redisClient = undefined;
-}
 
 // CORS Configuration - MUST come first
 const allowedOrigins = [
@@ -238,59 +103,8 @@ if (process.env.NODE_ENV === 'production') {
   app.set('trust proxy', 1);
 }
 
-// Session configuration
-const isProduction = process.env.NODE_ENV === 'production';
-
-// Session store configuration
-// Note: For cross-origin cookies (frontend on different domain than backend),
-// we should NOT set the domain attribute. The cookie will be set on the backend domain
-// and sent automatically when the frontend makes requests to the backend.
-// Only use Redis store if it's actually initialized
-// If Redis isn't ready yet, it will fall back to in-memory store
-const sessionConfig = {
-  name: "cookie1",
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  // Only use Redis store if it exists (will be undefined if Redis isn't connected)
-  // Otherwise, express-session will use in-memory store (default)
-  store: redisStore || undefined,
-  cookie: {
-    secure: isProduction, // Must be true when sameSite is 'none'
-    httpOnly: true,
-    sameSite: isProduction ? 'none' : 'lax', // 'none' required for cross-origin cookies
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    path: '/', // Explicitly set path to root
-    // Do NOT set domain for cross-origin cookies - let it default to backend domain
-    // Setting domain would break cross-origin cookie functionality
-  },
-  proxy: isProduction, // Trust proxy in production (required for Render)
-  // Rolling: false means cookie expiration doesn't extend on each request
-  rolling: false,
-};
-
-// Log session configuration (without sensitive data)
-console.log('Session Configuration:', {
-  store: redisStore ? 'Redis' : 'Memory',
-  cookieName: sessionConfig.name,
-  secure: sessionConfig.cookie.secure,
-  sameSite: sessionConfig.cookie.sameSite,
-  maxAge: sessionConfig.cookie.maxAge,
-  path: sessionConfig.cookie.path,
-  domain: 'not set (defaults to backend domain for cross-origin support)',
-});
-
-// If Redis isn't ready yet, log a warning but continue with memory store
-if (process.env.REDIS_URL && !redisStore) {
-  console.warn('Redis URL provided but store not initialized yet. Using in-memory store temporarily.');
-  console.warn('Redis store will be available once connection is established.');
-}
-
-app.use(session(sessionConfig));
-
-// Passport middleware
+// Passport middleware (for OAuth only, no sessions)
 app.use(passport.initialize());
-app.use(passport.session());
 
 // JWT Token Utilities
 const JWT_SECRET = process.env.JWT_SECRET || process.env.SESSION_SECRET || 'fallback-secret-change-in-production';
@@ -327,49 +141,42 @@ function verifyJWTToken(token) {
 
 // Token authentication middleware
 // This middleware checks for token in Authorization header and attaches user to req
-// Falls back to session-based auth if no token is provided
 function authenticateToken(req, res, next) {
-  // First, try to get token from Authorization header
+  // Get token from Authorization header
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
-  if (token) {
-    const decoded = verifyJWTToken(token);
-    if (decoded) {
-      // Token is valid, attach user info to request
-      req.user = {
-        userId: decoded.userId,
-        email: decoded.email,
-        username: decoded.username,
-        emailVerified: decoded.emailVerified,
-        authStrategy: decoded.strategy
-      };
-      req.authMethod = 'token'; // Mark that we're using token auth
-      return next();
-    } else {
-      // Invalid token
-      return res.status(401).json({ 
-        error: "Invalid or expired token",
-        authSuccess: false 
-      });
-    }
+  if (!token) {
+    return res.status(401).json({ 
+      error: "No token provided",
+      authSuccess: false 
+    });
   }
 
-  // No token provided, fall back to session-based auth
-  // This allows backward compatibility
-  req.authMethod = 'session';
-  next();
+  const decoded = verifyJWTToken(token);
+  if (decoded) {
+    // Token is valid, attach user info to request
+    req.user = {
+      userId: decoded.userId,
+      email: decoded.email,
+      username: decoded.username,
+      emailVerified: decoded.emailVerified,
+      authStrategy: decoded.strategy
+    };
+    return next();
+  } else {
+    // Invalid token
+    return res.status(401).json({ 
+      error: "Invalid or expired token",
+      authSuccess: false 
+    });
+  }
 }
 
-// Middleware to require authentication (works with both token and session)
+// Middleware to require authentication (token-based only)
 function requireAuth(req, res, next) {
   // Check if user is authenticated via token
-  if (req.authMethod === 'token' && req.user) {
-    return next();
-  }
-  
-  // Check if user is authenticated via session
-  if (req.isAuthenticated && req.isAuthenticated()) {
+  if (req.user) {
     return next();
   }
 
@@ -441,25 +248,30 @@ app.get('/', (req, res) => {
   });
 });
 
-//For credentials auth success/failure
-// This endpoint works with both token and session-based auth
-app.get('/auth/user', authenticateToken, (req, res) => {
-  console.log("/auth/user - Auth method:", req.authMethod);
-  console.log("/auth/user - Session ID:", req.sessionID);
-  console.log("/auth/user - Is authenticated:", req.isAuthenticated ? req.isAuthenticated() : 'N/A (token auth)');
-  console.log("/auth/user - Cookies received:", req.headers.cookie);
+// Get current user (token-based auth only)
+app.get('/auth/user', authenticateToken, async (req, res) => {
   console.log("/auth/user - User:", req.user);
   
-  // Check if user is authenticated via token or session
-  const user = req.user || (req.isAuthenticated && req.isAuthenticated() ? req.user : null);
-  
-  if (user) {
-    res.status(200).json({
-      authSuccess: true,
-      message: 'User Logged In', 
-      user: toCamelCase(user),
-      authMethod: req.authMethod || 'session'
-    });
+  if (req.user) {
+    try {
+      // Fetch full user profile from database to get all fields including photo
+      const userId = req.user.userId;
+      const userProfile = await getUserProfile(db, userId);
+      
+      res.status(200).json({
+        authSuccess: true,
+        message: 'User Logged In', 
+        user: toCamelCase(userProfile)
+      });
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      // Fallback to JWT token data if database fetch fails
+      res.status(200).json({
+        authSuccess: true,
+        message: 'User Logged In', 
+        user: toCamelCase(req.user)
+      });
+    }
   } else {
     res.status(401).json({
       authSuccess: false,
@@ -469,12 +281,10 @@ app.get('/auth/user', authenticateToken, (req, res) => {
   }
 });
 
-//For google auth success
+//For OAuth auth success (Google/GitHub)
 app.get("/auth/success", (req, res) => {
   if (req.user) {
     console.log("Auth success: User", req.user);
-    console.log("Auth success: Session ID:", req.sessionID);
-    console.log("Auth success: Is authenticated:", req.isAuthenticated());
     
     // Generate JWT token for token-based authentication
     const token = generateToken(req.user);
@@ -503,55 +313,8 @@ app.get("/auth/success", (req, res) => {
   }
 });
 
-// Endpoint to establish session from parent window after OAuth
-// DEPRECATED: This endpoint is kept for backward compatibility
-// New token-based auth doesn't need this - token is sent directly from /auth/success
-// But we'll keep it for now in case frontend hasn't updated yet
-app.post("/auth/establish-session", async (req, res) => {
-  try {
-    const { user, token } = req.body;
-    
-    console.log("/auth/establish-session - Request received");
-    console.log("/auth/establish-session - User:", user?.email || user?.userId);
-    console.log("/auth/establish-session - Has token:", !!token);
-    
-    // If token is provided, just return success (token is already generated)
-    if (token) {
-      return res.status(200).json({
-        success: true,
-        message: "Token-based authentication - no session needed",
-        token: token,
-        user: user
-      });
-    }
-    
-    // Fallback to session-based auth if no token
-    if (!user || !user.userId) {
-      return res.status(400).json({ 
-        success: false, 
-        error: "User data or token required" 
-      });
-    }
-
-    // Generate token for the user
-    const jwtToken = generateToken(user);
-    
-    console.log("/auth/establish-session - Token generated");
-    
-    res.status(200).json({
-      success: true,
-      message: "Token generated successfully",
-      token: jwtToken,
-      user: user
-    });
-  } catch (error) {
-    console.error("Error establishing session:", error);
-    res.status(500).json({ 
-      success: false, 
-      error: "Failed to establish session" 
-    });
-  }
-});
+// Endpoint removed - no longer needed with token-based auth
+// Token is sent directly from /auth/success via postMessage
 
 //for google auth failure
 app.get("/auth/failure", (req, res) => {
@@ -575,20 +338,41 @@ app.get("/auth/google", passport.authenticate("google",
 
 // After Authentication Success/Failure
 app.get("/auth/google/callback", 
-  passport.authenticate("google", { failureRedirect: "/auth/failure" }),
+  passport.authenticate("google", { 
+    failureRedirect: "/auth/failure",
+    session: false // Disable sessions - we use token-based auth
+  }),
   (req, res) => {
-    //successful auth
-    console.log("Authentication success. Redirecting to /auth/success route")
-    console.log("Session ID:", req.sessionID);
-    console.log("User authenticated:", req.isAuthenticated());
-    // Save session before redirect to ensure cookie is set
-    req.session.save((err) => {
-      if (err) {
-        console.error("Error saving session:", err);
-        return res.redirect("/auth/failure");
-      }
-      res.redirect("/auth/success");
-    });
+    //successful auth - user is attached to req.user by passport
+    if (req.user) {
+      console.log("Google authentication success");
+      console.log("User:", req.user?.email);
+      
+      // Generate JWT token directly here (can't redirect with session: false)
+      const token = generateToken(req.user);
+      const userData = toCamelCase(req.user);
+      
+      console.log("Auth success: JWT token generated");
+      
+      res.send(`
+        <script>
+          // Send JWT token and user data to parent window
+          // Token will be stored in localStorage on the frontend
+          window.opener.postMessage(
+            { 
+              authSuccess: true, 
+              user: ${JSON.stringify(userData)},
+              token: "${token}"
+            },
+            "${process.env.FRONTEND_URL}"
+          );
+          window.close();
+        </script>
+      `);
+    } else {
+      console.log("Google auth: No user found, redirecting to sign-in");
+      res.redirect(`${process.env.FRONTEND_URL}/sign-in`);
+    }
   }
 );
 
@@ -601,7 +385,7 @@ app.get("/auth/github", (req, res) => {
 
 
 app.get("/auth/github/callback", (req, res, next) => {
-  passport.authenticate("github", (err, user, info) => {
+  passport.authenticate("github", { session: false }, (err, user, info) => {
     console.log("info: ", info, "user: ", user)
     if (err) {
       console.error('GitHub auth error:', err);
@@ -656,32 +440,37 @@ app.get("/auth/github/callback", (req, res, next) => {
       return res.redirect("/auth/failure");
     }
 
-    // Successful authentication, log the user in
-    req.login(user, (err) => {
-      if (err) {
-        console.error('Login error:', err);
-        return res.redirect("/auth/failure");
-      }
-      console.log("GitHub auth: User logged in, session ID:", req.sessionID);
-      console.log("GitHub auth: User authenticated:", req.isAuthenticated());
-      // Save session before redirect to ensure cookie is set
-      req.session.save((err) => {
-        if (err) {
-          console.error("Error saving session:", err);
-          return res.redirect("/auth/failure");
-        }
-        res.redirect("/auth/success");
-      });
-    });
+    // Successful authentication - user is attached to req.user by passport
+    console.log("GitHub authentication success");
+    console.log("User:", user?.email);
+    
+    // Generate JWT token directly here (can't redirect with session: false)
+    const token = generateToken(user);
+    const userData = toCamelCase(user);
+    
+    console.log("Auth success: JWT token generated");
+    
+    return res.send(`
+      <script>
+        // Send JWT token and user data to parent window
+        // Token will be stored in localStorage on the frontend
+        window.opener.postMessage(
+          { 
+            authSuccess: true, 
+            user: ${JSON.stringify(userData)},
+            token: "${token}"
+          },
+          "${process.env.FRONTEND_URL}"
+        );
+        window.close();
+      </script>
+    `);
   })(req, res, next);
 });
 
 
 //retrieve requested item type from database
-app.get("/items", async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
+app.get("/items", authenticateToken, async (req, res) => {
 
   const itemCategory = capitalizeFirst(req.query.category);
   const validCategories = ['Book', 'Clothing', 'Furniture', 'Miscellaneous', 'Favorites'];
@@ -758,10 +547,7 @@ app.get("/user-profile/:userId", async (req, res) => {
 });
 
 
-app.get("/user-stats/:userId", async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
+app.get("/user-stats/:userId", authenticateToken, async (req, res) => {
 
   const userId = req.params?.userId;
 
@@ -782,10 +568,7 @@ app.get("/user-stats/:userId", async (req, res) => {
 });
 
 
-app.get("/user-posts/:userId", async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
+app.get("/user-posts/:userId", authenticateToken, async (req, res) => {
 
   const userId = req.params?.userId;
 
@@ -858,10 +641,7 @@ app.get("/user-posts/:userId", async (req, res) => {
 });
 
 
-app.post("/update-post", upload.array('newImages', 3), async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
+app.post("/update-post", authenticateToken, upload.array('newImages', 3), async (req, res) => {
 
   const hasFile = req.query.hasFile;
   let newImages;
@@ -1037,10 +817,7 @@ app.post("/update-post", upload.array('newImages', 3), async (req, res) => {
 
 
 
-app.patch("/update-profile", upload.single('profilePhoto'), async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
+app.patch("/update-profile", authenticateToken, upload.single('profilePhoto'), async (req, res) => {
   const userId = req.user?.userId;
   const image = req.file || null;
   let updateData = {
@@ -1092,11 +869,7 @@ app.patch("/update-profile", upload.single('profilePhoto'), async (req, res) => 
 
 
 
-app.get("/favorites", async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
-
+app.get("/favorites", authenticateToken, async (req, res) => {
   const userId = req.user.userId;
   const category = capitalizeFirst(req.query.category);
   const includeDetails = req.query.includeDetails === "true";
@@ -1168,11 +941,7 @@ app.get("/favorites", async (req, res) => {
 
 
 //Post Routes
-app.post("/favorites/toggle", async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
-
+app.post("/favorites/toggle", authenticateToken, async (req, res) => {
   const userId = req.user.userId;
   const { itemId } = req.body;
 
@@ -1253,9 +1022,8 @@ app.post("/favorites/toggle", async (req, res) => {
 
 
 // Post Routes
-app.post("/upload", upload.array('images', 3), async (req, res) => {
-  if (req.isAuthenticated()) {
-    try {    
+app.post("/upload", authenticateToken, upload.array('images', 3), async (req, res) => {
+  try {    
 
       //retrieve form data for all categories
       const category = capitalizeFirst(req.query.category)
@@ -1347,9 +1115,6 @@ app.post("/upload", upload.array('images', 3), async (req, res) => {
         error: error.message 
       });
     }
-  } else {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
 });
 
 
@@ -1646,10 +1411,7 @@ app.get('/verification-status/:email', async (req, res) => {
 
 
 // Send item request email
-app.post('/send-request', async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
+app.post('/send-request', authenticateToken, async (req, res) => {
 
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
@@ -1702,10 +1464,7 @@ app.post('/send-request', async (req, res) => {
 
 
 // Report post route
-app.post('/report-post', async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
+app.post('/report-post', authenticateToken, async (req, res) => {
 
   try {
     const {
@@ -1806,10 +1565,7 @@ app.post('/report-post', async (req, res) => {
 
 // Review Routes
 // Get reviews given by user
-app.get("/reviews/:type/:userId", async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
+app.get("/reviews/:type/:userId", authenticateToken, async (req, res) => {
 
   const { type, userId } = req.params;
 
@@ -1834,10 +1590,7 @@ app.get("/reviews/:type/:userId", async (req, res) => {
 });
 
 
-app.post("/reviews", async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
+app.post("/reviews", authenticateToken, async (req, res) => {
 
   try {
     const reviewData = req.body;
@@ -1860,10 +1613,7 @@ app.post("/reviews", async (req, res) => {
 });
 
 
-app.patch("/reviews/update/:reviewId", async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
+app.patch("/reviews/update/:reviewId", authenticateToken, async (req, res) => {
 
   try {
     const { reviewId } = req.params;
@@ -1893,10 +1643,7 @@ app.patch("/reviews/update/:reviewId", async (req, res) => {
 
 
 // Delete review
-app.delete("/reviews/:reviewId", async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
+app.delete("/reviews/:reviewId", authenticateToken, async (req, res) => {
 
   try {
     const { reviewId } = req.params;
@@ -1933,10 +1680,7 @@ app.delete("/reviews/:reviewId", async (req, res) => {
 
 
 
-app.post("/change-availability", async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
+app.post("/change-availability", authenticateToken, async (req, res) => {
 
   const {itemId, itemCategory, newAvailability} = req.body;
   let tableName;
@@ -2075,48 +1819,30 @@ app.post("/register", async (req, res) => {
     console.log('Login successful for user:', user.username);
     console.log('JWT token generated for credentials login');
     
-    // Return token and user data (for token-based auth)
-    // Also log in via session for backward compatibility
-    req.login(user, (err) => {
-      if (err) {
-        console.error('Session login error:', err);
-        // Still return token even if session login fails
-      }
-      
-      return res.json({
-        authSuccess: true,
-        message: 'Login successful',
-        user: userData,
-        token: token
-      });
+    // Return token and user data (token-based auth only)
+    return res.json({
+      authSuccess: true,
+      message: 'Login successful',
+      user: userData,
+      token: token
     });
   })(req, res, next);
 });
 
 
-// Logout user and terminate session
+// Logout user (token-based auth - token is cleared on frontend)
 app.post("/logout/user", (req, res) => {
-  if (req.isAuthenticated()) {
-    console.log("Starting logout")
-    req.logout(function (err) {
-      if (err) {
-        console.log(err)
-        return next(err);
-      }
-      //send logout data to front end
-      res.status(200).json({
-        logoutSuccess: true,
-        message: "User logged out successfully",
-        user: null
-      })
-    });
-  }
+  // With token-based auth, logout is handled on frontend by clearing token
+  // This endpoint is kept for compatibility but doesn't need to do anything
+  console.log("Logout requested");
+  res.status(200).json({
+    logoutSuccess: true,
+    message: "User logged out successfully",
+    user: null
+  });
 });
 
-app.delete("/items/:itemId/:itemCategory", async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
+app.delete("/items/:itemId/:itemCategory", authenticateToken, async (req, res) => {
 
   try {
     console.log("Deletion requested")
@@ -2141,48 +1867,11 @@ app.delete("/items/:itemId/:itemCategory", async (req, res) => {
 
 
 // LISTENING FOR EVENTS
-// Wait for Redis connection if Redis URL is provided, then start server
-let server;
-(async () => {
-  // If Redis client exists, wait for connection (with timeout)
-  if (redisClient && !redisConnected) {
-      console.log('Waiting for Redis connection...');
-      try {
-        // Wait up to 5 seconds for Redis connection
-        const connectionPromise = new Promise((resolve, reject) => {
-          const timeout = setTimeout(() => {
-            reject(new Error('Redis connection timeout'));
-          }, 5000);
-
-          if (redisClient.isOpen) {
-            clearTimeout(timeout);
-            resolve();
-          } else {
-            redisClient.once('ready', () => {
-              clearTimeout(timeout);
-              resolve();
-            });
-            redisClient.once('error', (err) => {
-              clearTimeout(timeout);
-              reject(err);
-            });
-          }
-        });
-
-        await connectionPromise;
-        console.log('Redis connected, starting server...');
-      } catch (err) {
-        console.warn('Redis connection not ready, starting server with in-memory store:', err.message);
-        redisStore = undefined; // Ensure we don't use Redis if not connected
-      }
-    }
-
-  server = app.listen(port, '0.0.0.0', () => {
-    console.log(`Server listening on port ${port}`);
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`Session store: ${redisStore ? 'Redis' : 'Memory'}`);
-  });
-})();
+const server = app.listen(port, '0.0.0.0', () => {
+  console.log(`Server listening on port ${port}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Authentication: Token-based (JWT)`);
+});
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
@@ -2190,16 +1879,6 @@ process.on('SIGTERM', async () => {
   server.close(() => {
     console.log('HTTP server closed');
   });
-
-  // Close Redis connection if connected
-  if (redisClient && redisClient.isOpen) {
-    try {
-      await redisClient.quit();
-      console.log('Redis connection closed');
-    } catch (err) {
-      console.error('Error closing Redis connection:', err);
-    }
-  }
 
   // Close database pool
   await db.end();
@@ -2212,16 +1891,6 @@ process.on('SIGINT', async () => {
   server.close(() => {
     console.log('HTTP server closed');
   });
-
-  // Close Redis connection if connected
-  if (redisClient && redisClient.isOpen) {
-    try {
-      await redisClient.quit();
-      console.log('Redis connection closed');
-    } catch (err) {
-      console.error('Error closing Redis connection:', err);
-    }
-  }
 
   // Close database pool
   await db.end();

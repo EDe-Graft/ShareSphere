@@ -19,13 +19,13 @@ function setToken(token) {
 }
 
 // Create axios config with token in headers
-function getAxiosConfig() {
+export function getAxiosConfig() {
   const token = getToken();
   const config = {
     headers: { 
       "Content-Type": "application/json",
     },
-    withCredentials: true // Keep for backward compatibility with session auth
+    withCredentials: false // Token-based auth doesn't need cookies
   };
   
   // Add token to Authorization header if available
@@ -112,9 +112,6 @@ export function AuthProvider({ children }) {
       setToken(response.data.token);
       setUser(response.data.user);
       setAuthSuccess(true);
-    } else if (response.data.authSuccess) {
-      // Fallback: check session if no token (backward compatibility)
-      await checkSession();
     }
     
     console.log("localLogin response: ", response.data.message)
@@ -150,7 +147,7 @@ export function AuthProvider({ children }) {
             const userData = event.data.user;
             const token = event.data.token;
             
-            // Store token if provided (token-based auth)
+            // Store token (token-based auth)
             if (token) {
               setToken(token);
               setAuthSuccess(true);
@@ -168,55 +165,13 @@ export function AuthProvider({ children }) {
                 provider: event.data.provider,
               });
             } else {
-              // Fallback: try to establish session (backward compatibility)
-              try {
-                const establishResponse = await axios.post(
-                  `${BACKEND_URL}/auth/establish-session`,
-                  {
-                    user: userData
-                  },
-                  getAxiosConfig()
-                );
-
-                if (establishResponse.data.success) {
-                  // Store token if returned
-                  if (establishResponse.data.token) {
-                    setToken(establishResponse.data.token);
-                  }
-                  
-                  setAuthSuccess(true);
-                  setUser(userData);
-                  await checkSession();
-
-                  resolve({
-                    authSuccess: true,
-                    user: userData,
-                    requireEmail: false,
-                    emailNotVerified: false,
-                    provider: event.data.provider,
-                  });
-                } else {
-                  console.error("Failed to establish session:", establishResponse.data.error);
-                  resolve({
-                    authSuccess: false,
-                    user: null,
-                    error: "Failed to establish session"
-                  });
-                }
-              } catch (error) {
-                console.error("Error establishing session:", error);
-                setAuthSuccess(true);
-                setUser(userData);
-                await checkSession();
-                
-                resolve({
-                  authSuccess: true,
-                  user: userData,
-                  requireEmail: false,
-                  emailNotVerified: false,
-                  provider: event.data.provider,
-                });
-              }
+              // No token provided - this shouldn't happen with token-based auth
+              console.error("No token received from OAuth");
+              resolve({
+                authSuccess: false,
+                user: null,
+                error: "No token received"
+              });
             }
           } else {
             resolve({

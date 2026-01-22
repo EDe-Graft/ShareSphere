@@ -360,7 +360,6 @@ export function configurePassport(passport, db) {
     }
   }));
 
-  // SERIALIZATION
-  passport.serializeUser((user, cb) => cb(null, user));
-  passport.deserializeUser((user, cb) => cb(null, user));
+  // No session serialization needed for token-based auth
+  // Passport is only used for OAuth authentication, not session management
 }

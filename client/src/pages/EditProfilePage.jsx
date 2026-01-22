@@ -18,7 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { useAuth } from "@/components/context/AuthContext";
+import { useAuth, getAxiosConfig } from "@/components/context/AuthContext";
 import axios from "axios";
 
 const EditProfilePage = () => {
@@ -39,10 +39,6 @@ const EditProfilePage = () => {
   const [photoPreview, setPhotoPreview] = useState("");
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-  const axiosConfig = {
-    headers: { "Content-Type": "application/json" },
-    withCredentials: true,
-  };
 
   const location = useLocation();
   const passedProfileData = location.state?.profileData;
@@ -75,7 +71,7 @@ const EditProfilePage = () => {
       // Load current user profile data
       const response = await axios.get(
         `${BACKEND_URL}/user-profile/${user.userId}`,
-        axiosConfig
+        getAxiosConfig()
       );
 
       if (response.data.getSuccess) {
@@ -176,12 +172,16 @@ const EditProfilePage = () => {
       }
 
       //send patch request to backend
+      const config = getAxiosConfig();
       const updateResponse = await axios.patch(
         `${BACKEND_URL}/update-profile`,
         formData,
         {
-          headers: { "Content-Type": "multipart/form-data" },
-          withCredentials: true,
+          headers: { 
+            "Content-Type": "multipart/form-data",
+            ...(config.headers.Authorization && { Authorization: config.headers.Authorization })
+          },
+          withCredentials: false,
         }
       );
 

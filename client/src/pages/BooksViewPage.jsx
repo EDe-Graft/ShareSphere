@@ -37,7 +37,7 @@ import EmptyState from "@/components/custom/EmptyState";
 import Pagination from "@/components/custom/Pagination";
 import { CATEGORY_OPTIONS, toTitleCase } from "@/lib/utils";
 import axios from "axios";
-import { useAuth } from "@/components/context/AuthContext";
+import { useAuth, getAxiosConfig } from "@/components/context/AuthContext";
 import { formatData } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -65,10 +65,6 @@ const BooksViewPage = () => {
   const userMode = "view"; //for itemdetailsdialog display;
   const category = "book"; //for empty state handling
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-  const axiosConfig = {
-    headers: { "Content-Type": "application/json" },
-    withCredentials: true,
-  };
 
   // Calculate current items for pagination
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -98,7 +94,7 @@ const BooksViewPage = () => {
     try {
       const response = await axios.get(
         `${BACKEND_URL}/favorites?category=book`,
-        axiosConfig
+        getAxiosConfig()
       );
 
       if (response.data.getSuccess) {
@@ -120,7 +116,7 @@ const BooksViewPage = () => {
       const res = await axios.post(
         `${BACKEND_URL}/favorites/toggle`,
         { itemId },
-        axiosConfig
+        getAxiosConfig()
       );
 
       if (res.data.toggleSuccess) {
@@ -176,7 +172,7 @@ const BooksViewPage = () => {
         response = await axios.post(
           `${BACKEND_URL}/update-post?hasFile=false`,
           { updateData: formattedData },
-          axiosConfig
+          getAxiosConfig()
         );
       }
 
@@ -199,7 +195,7 @@ const BooksViewPage = () => {
       try {
         const response = await axios.get(
           `${BACKEND_URL}/items?category=book`,
-          axiosConfig
+          getAxiosConfig()
         );
         if (response.data.getSuccess) {
           const items = response.data.items;
@@ -323,7 +319,7 @@ const BooksViewPage = () => {
       console.log("Attempting to delete:", itemId, itemCategory);
       const response = await axios.delete(
         `${BACKEND_URL}/items/${itemId}/${itemCategory}`,
-        axiosConfig
+        getAxiosConfig()
       );
 
       if (response.data.deleteSuccess) {

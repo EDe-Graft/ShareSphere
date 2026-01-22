@@ -32,7 +32,7 @@ import { ConditionBadge } from "@/components/custom/CustomBadges";
 import ItemDetailsDialog from "@/components/custom/ItemDetailsDialog";
 import EmptyState from "@/components/custom/EmptyState";
 import Pagination from "@/components/custom/Pagination";
-import { useAuth } from "@/components/context/AuthContext";
+import { useAuth, getAxiosConfig } from "@/components/context/AuthContext";
 import axios from "axios";
 import { formatData } from "@/lib/utils";
 
@@ -59,10 +59,6 @@ const FavoritesViewPage = () => {
   const category = "favorites";
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-  const axiosConfig = {
-    headers: { "Content-Type": "application/json" },
-    withCredentials: true,
-  };
 
   // Calculate current items for pagination
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -86,7 +82,7 @@ const FavoritesViewPage = () => {
     try {
       const response = await axios.get(
         `${BACKEND_URL}/favorites?category=all&includeDetails=true`, // Key change
-        axiosConfig
+        getAxiosConfig()
       );
 
       if (response.data.getSuccess) {
@@ -123,7 +119,7 @@ const FavoritesViewPage = () => {
       const res = await axios.post(
         `${BACKEND_URL}/favorites/toggle`,
         { itemId },
-        axiosConfig
+        getAxiosConfig()
       );
 
       if (res.data.toggleSuccess) {
@@ -171,12 +167,16 @@ const FavoritesViewPage = () => {
       let response;
       if (hasFile) {
         // Send as multipart/form-data
+        const config = getAxiosConfig();
         response = await axios.post(
           `${BACKEND_URL}/update-post?hasFile=true`,
           formData,
           {
-            headers: { "Content-Type": "multipart/form-data" },
-            withCredentials: true,
+            headers: { 
+              "Content-Type": "multipart/form-data",
+              ...(config.headers.Authorization && { Authorization: config.headers.Authorization })
+            },
+            withCredentials: false,
           }
         );
       } else {
@@ -188,7 +188,7 @@ const FavoritesViewPage = () => {
         response = await axios.post(
           `${BACKEND_URL}/update-post?hasFile=false`,
           { updateData: formattedData },
-          axiosConfig
+          getAxiosConfig()
         );
       }
 
@@ -213,7 +213,7 @@ const FavoritesViewPage = () => {
       console.log("Attempting to delete:", itemId, itemCategory);
       const response = await axios.delete(
         `${BACKEND_URL}/items/${itemId}/${itemCategory}`,
-        axiosConfig
+        getAxiosConfig()
       );
 
       if (response.data.deleteSuccess) {
