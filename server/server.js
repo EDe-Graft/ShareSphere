@@ -7,6 +7,8 @@ import env from "dotenv";
 import multer from "multer";
 import cors from "cors";
 import nodemailer from "nodemailer";
+import { createClient } from "redis";
+import RedisStore from "connect-redis";
 import { render } from '@react-email/render';
 import { createElement } from 'react';
 import ItemRequestEmail from './dist/emails/ItemRequestEmail.js';
@@ -58,6 +60,59 @@ db.on('error', (err) => {
 // Initialize passport
 configurePassport(passport, db);
 
+// Redis Client Configuration
+let redisClient;
+let redisStore;
+
+try {
+  redisClient = createClient({
+    url: process.env.REDIS_URL || 'redis://localhost:6379',
+    socket: {
+      reconnectStrategy: (retries) => {
+        if (retries > 10) {
+          console.error('Redis: Too many reconnection attempts, giving up');
+          return new Error('Too many retries');
+        }
+        const delay = Math.min(retries * 100, 3000);
+        console.log(`Redis: Reconnecting in ${delay}ms (attempt ${retries})`);
+        return delay;
+      }
+    }
+  });
+
+  redisClient.on('error', (err) => {
+    console.error('Redis Client Error:', err);
+  });
+
+  redisClient.on('connect', () => {
+    console.log('Redis Client Connected');
+  });
+
+  redisClient.on('ready', () => {
+    console.log('Redis Client Ready');
+  });
+
+  redisClient.on('reconnecting', () => {
+    console.log('Redis Client Reconnecting...');
+  });
+
+  // Connect to Redis (non-blocking)
+  redisClient.connect().catch((err) => {
+    console.error('Failed to connect to Redis:', err);
+    console.log('Falling back to in-memory session store');
+  });
+
+  // Create Redis store for sessions
+  redisStore = new RedisStore({
+    client: redisClient,
+    prefix: 'sharesphere:sess:',
+  });
+} catch (error) {
+  console.error('Error initializing Redis:', error);
+  console.log('Falling back to in-memory session store');
+  redisStore = undefined;
+}
+
 // CORS Configuration - MUST come first
 const allowedOrigins = [
   process.env.FRONTEND_URL,
@@ -104,22 +159,43 @@ if (process.env.NODE_ENV === 'production') {
 
 // Session configuration
 const isProduction = process.env.NODE_ENV === 'production';
-app.use(
-  session({
-    name: "cookie1",
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: isProduction, // Must be true when sameSite is 'none'
-      httpOnly: true,
-      sameSite: isProduction ? 'none' : 'lax', // 'none' required for cross-origin cookies
-      maxAge: 24 * 60 * 60 * 1000,
-      // Don't set domain explicitly - let it default to the current domain
-      // This ensures cookies work correctly for the backend domain
-    },
-    proxy: isProduction // Trust proxy in production (required for Render)
-}));
+
+// Session store configuration
+// Note: For cross-origin cookies (frontend on different domain than backend),
+// we should NOT set the domain attribute. The cookie will be set on the backend domain
+// and sent automatically when the frontend makes requests to the backend.
+const sessionConfig = {
+  name: "cookie1",
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  store: redisStore || undefined, // Use Redis if available, otherwise in-memory
+  cookie: {
+    secure: isProduction, // Must be true when sameSite is 'none'
+    httpOnly: true,
+    sameSite: isProduction ? 'none' : 'lax', // 'none' required for cross-origin cookies
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    path: '/', // Explicitly set path to root
+    // Do NOT set domain for cross-origin cookies - let it default to backend domain
+    // Setting domain would break cross-origin cookie functionality
+  },
+  proxy: isProduction, // Trust proxy in production (required for Render)
+  // Rolling: false means cookie expiration doesn't extend on each request
+  rolling: false,
+};
+
+// Log session configuration (without sensitive data)
+console.log('Session Configuration:', {
+  store: redisStore ? 'Redis' : 'Memory',
+  cookieName: sessionConfig.name,
+  secure: sessionConfig.cookie.secure,
+  sameSite: sessionConfig.cookie.sameSite,
+  maxAge: sessionConfig.cookie.maxAge,
+  path: sessionConfig.cookie.path,
+  domain: 'not set (defaults to backend domain for cross-origin support)',
+});
+
+app.use(session(sessionConfig));
 
 // Passport middleware
 app.use(passport.initialize());
@@ -1899,6 +1975,16 @@ process.on('SIGTERM', async () => {
     console.log('HTTP server closed');
   });
 
+  // Close Redis connection if connected
+  if (redisClient && redisClient.isOpen) {
+    try {
+      await redisClient.quit();
+      console.log('Redis connection closed');
+    } catch (err) {
+      console.error('Error closing Redis connection:', err);
+    }
+  }
+
   // Close database pool
   await db.end();
   console.log('Database pool closed');
@@ -1911,9 +1997,18 @@ process.on('SIGINT', async () => {
     console.log('HTTP server closed');
   });
 
+  // Close Redis connection if connected
+  if (redisClient && redisClient.isOpen) {
+    try {
+      await redisClient.quit();
+      console.log('Redis connection closed');
+    } catch (err) {
+      console.error('Error closing Redis connection:', err);
+    }
+  }
+
   // Close database pool
   await db.end();
   console.log('Database pool closed');
   process.exit(0);
 });
-
