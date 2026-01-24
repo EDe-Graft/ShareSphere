@@ -27,7 +27,7 @@ import ImageCarousel from "./ImageCarousel";
 import { ConditionBadge } from "./CustomBadges";
 import { RequestItemDialog } from "./RequestItemDialog";
 import { ReportDialog } from "./ReportDialog";
-import { useAuth } from "@/components/context/AuthContext";
+import { useAuth, getAxiosConfig } from "@/components/context/AuthContext";
 import { CATEGORY_OPTIONS } from "@/lib/utils";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
 import ReviewDialog from "./ReviewDialog";
@@ -147,9 +147,7 @@ export default function ItemDetailsDialog({
       const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
       const response = await axios.get(
         `${BACKEND_URL}/reviews/received/${item.uploaderId}`,
-        {
-          withCredentials: true,
-        }
+        getAxiosConfig()
       );
 
       if (response.data.success) {
