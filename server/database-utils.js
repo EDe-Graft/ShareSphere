@@ -43,7 +43,19 @@ export async function registerUser(db, userData) {
       ]);
   
       if (checkResult.rows.length > 0) {
-          throw new Error("User already exists. Please sign in.");
+          const existingUser = checkResult.rows[0];
+          const existingStrategy = existingUser.strategy;
+          
+          let signInMethod = "your account";
+          if (existingStrategy === "google") {
+            signInMethod = "Google";
+          } else if (existingStrategy === "github") {
+            signInMethod = "GitHub";
+          } else if (existingStrategy === "credentials") {
+            signInMethod = "email and password";
+          }
+          
+          throw new Error(`An account with this email already exists. Please sign in with ${signInMethod}.`);
       } else {
           // Convert bcrypt.hash to use promises
           const hash = await new Promise((resolve, reject) => {
@@ -73,8 +85,9 @@ export async function registerUser(db, userData) {
           return user;
       }
   } catch (err) {
-      console.log(err)
-      throw new Error("Unable to register user");
+      console.log(err);
+      // Preserve original error message (e.g., "User already exists")
+      throw err;
     }
 } else {
   throw new Error("Passwords don't match. Try again");

@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import axios from "axios";
+import { getAxiosConfig } from "@/components/context/AuthContext";
 
 // GitHub email form schema
 const githubEmailSchema = z.object({
@@ -30,31 +31,30 @@ const githubEmailSchema = z.object({
 
 // Backend configuration
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-const axiosConfig = {
-  headers: { "Content-Type": "application/json" },
-  withCredentials: true,
-};
 
-// Verify Email Exists
+// Check if email exists in database and verify deliverability
 const checkEmailExists = async (email) => {
   try {
     const response = await axios.post(
       `${BACKEND_URL}/check-email`,
       { email },
-      axiosConfig
+      getAxiosConfig()
     );
-
 
     return {
       isValid: response.data.isValid,
       reason: response.data.reason,
       confidence: response.data.confidence || null,
+      existingAccount: response.data.existingAccount || false,
+      strategy: response.data.strategy || null,
     };
   } catch (error) {
     console.error("Email verification error:", error);
     return {
       isValid: false,
       reason: `Verification error: ${error.response?.data?.message || error.message}`,
+      existingAccount: false,
+      strategy: null,
     };
   }
 };
@@ -114,8 +114,18 @@ export function GitHubEmailDialog({
       return;
     }
 
+    // Don't proceed if verification is in progress
+    if (isVerifying) {
+      return;
+    }
+
+    // Don't proceed if email verification hasn't completed yet
+    if (!emailVerification) {
+      return;
+    }
+
     // Check if email is valid before submitting
-    if (emailVerification && !emailVerification.isValid) {
+    if (!emailVerification.isValid) {
       return; // Don't submit if email is invalid
     }
 
@@ -128,6 +138,8 @@ export function GitHubEmailDialog({
   // Handle dialog close
   const handleClose = () => {
     githubEmailForm.reset();
+    setEmailVerification(null);
+    setVerificationAttempted(false);
     onClose();
   };
 
@@ -245,7 +257,7 @@ export function GitHubEmailDialog({
               ) : (
                 <Button
                   type="submit"
-                  disabled={isLoading || emailVerification?.isValid === false}
+                  disabled={isLoading || isVerifying || !emailVerification || emailVerification?.isValid === false}
                 >
                   {isLoading ? (
                     <>

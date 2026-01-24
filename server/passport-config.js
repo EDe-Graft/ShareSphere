@@ -204,8 +204,20 @@ export function configurePassport(passport, db) {
         profileUrl: profile.profileUrl
       });
 
+      // Parse state parameter to get email from frontend dialog
+      let stateData = null;
+      if (req.query.state) {
+        try {
+          stateData = JSON.parse(req.query.state);
+          console.log("State data from frontend:", stateData);
+        } catch (e) {
+          console.log("Could not parse state parameter");
+        }
+      }
+
       //initialize variables for user profile
-      let email;
+      // Use email from state if provided, otherwise undefined
+      let email = stateData?.email || undefined;
       let emailVerified = false;
       let emailVerifiedAt = null;
       let userId;
@@ -300,7 +312,6 @@ export function configurePassport(passport, db) {
         const user = toCamelCase(result.rows[0]);
         //if user exists, update user profile with existing user profile data
         userId = user.userId;
-        email = user.email;
         name = user.name;
         emailVerified = user.emailVerified;
         emailVerifiedAt = user.emailVerifiedAt;
@@ -312,8 +323,24 @@ export function configurePassport(passport, db) {
         bio = user.bio;
 
         console.log("Loaded user ID:", userId);
-        console.log("Current email in DB:", email);
+        console.log("Current email in DB:", user.email);
+        console.log("Email from state:", email);
         console.log("Email verified status:", emailVerified);
+
+        // If user doesn't have an email but one was provided from state, update their email
+        if (!user.email && email) {
+          console.log("Updating user email from state:", email);
+          await db.query(
+            "UPDATE users SET email = $1 WHERE user_id = $2",
+            [email, userId]
+          );
+          console.log("✓ Email updated for existing user");
+          // Keep emailVerified as false since the new email needs verification
+          emailVerified = false;
+        } else {
+          // Use email from database
+          email = user.email;
+        }
       }
 
       // Check if email is provided and verified before allowing login

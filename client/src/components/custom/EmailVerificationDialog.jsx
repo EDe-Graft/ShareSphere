@@ -10,12 +10,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import axios from "axios";
+import { getAxiosConfig } from "@/components/context/AuthContext";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-const axiosConfig = {
-  headers: { "Content-Type": "application/json" },
-  withCredentials: true,
-};
 
 export function EmailVerificationDialog({
   isOpen,
@@ -37,7 +34,7 @@ export function EmailVerificationDialog({
       const response = await axios.post(
         `${BACKEND_URL}/resend-verification`,
         { email },
-        axiosConfig
+        getAxiosConfig()
       );
 
       if (response.data.success) {

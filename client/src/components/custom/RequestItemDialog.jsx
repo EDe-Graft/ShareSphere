@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Send, CheckCircle, AlertCircle } from "lucide-react";
 import axios from "axios"; // Import Axios
-import { useAuth } from "../context/AuthContext";
+import { useAuth, getAxiosConfig } from "../context/AuthContext";
 import {
   Dialog,
   DialogContent,
@@ -41,16 +41,12 @@ export const RequestItemDialog = ({
   const [error, setError] = useState(null);
   
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-  const axiosConfig = {
-    headers: { "Content-Type": "application/json" },
-    withCredentials: true
-  }
 
   const handleRequestComplete = async (itemId) => {
     try {
         const response = await axios.post(`${BACKEND_URL}/change-availability`,
         { itemId, itemCategory, newAvailability: false}, 
-        axiosConfig
+        getAxiosConfig()
         )
         console.log(response)
 
@@ -91,7 +87,7 @@ export const RequestItemDialog = ({
     
       const response = await axios.post(`${BACKEND_URL}/send-request`,
          emailData,
-         axiosConfig
+         getAxiosConfig()
       );
 
       if (response.data.success) {

@@ -137,12 +137,17 @@ export function SignUpPage() {
 
   // Handle GitHub email submission
   const handleGithubEmailSubmit = async (data) => {
-    //refresh session to load updated user data
-    await logout();
-
     setIsLoading("github");
     setGithubDialogOpen(false);
-    handleSocialSignUp(providers[0], data);
+    
+    try {
+      // Call social signup with the email data
+      await handleSocialSignUp(providers[0], data);
+    } catch (error) {
+      console.error("Error in GitHub email submission:", error);
+      setError("An error occurred during GitHub sign up. Please try again.");
+      setIsLoading(null);
+    }
   };
 
   // Handle social login
@@ -151,35 +156,69 @@ export function SignUpPage() {
 
     try {
       const response = await socialLogin(provider.id, data);
+      console.log("Social Sign Up Response:", response);
+      
       if (response.error) {
         setError(response.error);
-      } else {
-        if (response.authSuccess) {
-          const user = response.user;
+        return;
+      }
 
-          // For github social login and credentials login, send verification email if email is provided
-          if (data?.email) {
-            const emailSent = await sendVerificationEmail(
-              data.email,
-              user.displayName || user.name
-            );
+      // Handle case where email is not verified (GitHub with provided email)
+      if (response.emailNotVerified && data?.email) {
+        console.log("Email not verified, sending verification email...");
+        
+        const emailSent = await sendVerificationEmail(
+          data.email,
+          data.email.split("@")[0]
+        );
 
-            if (emailSent) {
-              setRegisteredUserData({
-                email: data.email,
-                userName: user.displayName || user.name,
-              });
-              setEmailVerificationOpen(true);
-              return;
-            }
-          }
-
-          setAuthSuccess(true);
-          setUser(user);
-          navigate("/");
+        if (emailSent) {
+          setRegisteredUserData({
+            email: data.email,
+            userName: data.email.split("@")[0],
+          });
+          setEmailVerificationOpen(true);
+          return;
+        } else {
+          setError("Failed to send verification email. Please try again.");
+          return;
         }
       }
+      
+      if (response.authSuccess) {
+        const user = response.user;
+        console.log("User from social signup:", user);
+
+        // For GitHub social login with email, handle email verification
+        if (provider.id === "github" && data?.email && !user?.emailVerified) {
+          // Logout first so user can't access app until verified
+          await logout();
+          
+          const emailSent = await sendVerificationEmail(
+            data.email,
+            user.displayName || user.name
+          );
+
+          if (emailSent) {
+            setRegisteredUserData({
+              email: data.email,
+              userName: user.displayName || user.name,
+            });
+            setEmailVerificationOpen(true);
+            return;
+          } else {
+            setError("Failed to send verification email. Please try again.");
+            return;
+          }
+        }
+
+        // For Google (which provides verified emails), go directly to home
+        setAuthSuccess(true);
+        setUser(user);
+        navigate("/");
+      }
     } catch (err) {
+      console.error("Social sign up error:", err);
       setError("An unexpected error occurred");
     } finally {
       setIsLoading(null);

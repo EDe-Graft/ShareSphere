@@ -378,8 +378,11 @@ app.get("/auth/google/callback",
 
 //GITHUB AUTH ROUTES
 app.get("/auth/github", (req, res) => {
+  // Pass the state parameter through to preserve email data from frontend
+  const state = req.query.state || null;
   passport.authenticate("github", {
     scope: ['user:email'],
+    state: state, // Pass state to preserve email from frontend dialog
   })(req, res);
 });
 
@@ -1143,10 +1146,23 @@ app.post('/check-email', async (req, res) => {
     // Check if email exists in the database
     const user = await getUserByEmail(db, email);
     if (user) {
+      const existingStrategy = user.strategy;
+      
+      let signInMethod = "your account";
+      if (existingStrategy === "google") {
+        signInMethod = "Google";
+      } else if (existingStrategy === "github") {
+        signInMethod = "GitHub";
+      } else if (existingStrategy === "credentials") {
+        signInMethod = "email and password";
+      }
+      
       return res.status(200).json({
         isValid: false,
-        reason: "Email is already registered. Please sign in",
-        confidence: "high"
+        reason: `This email is already registered. Please sign in with ${signInMethod}.`,
+        confidence: "high",
+        existingAccount: true,
+        strategy: existingStrategy
       });
     }
 

@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useAuth } from "@/components/context/AuthContext";
+import { useAuth, getAxiosConfig } from "@/components/context/AuthContext";
 import { toast } from "sonner";
 import axios from "axios";
 
@@ -120,12 +120,8 @@ export function ReportDialog({
       };
 
       const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-      const axiosConfig = {
-        headers: { "Content-Type": "application/json" },
-        withCredentials: true
-      };
 
-      const reportRes = await axios.post(`${BACKEND_URL}/report-post`, reportData, axiosConfig)
+      const reportRes = await axios.post(`${BACKEND_URL}/report-post`, reportData, getAxiosConfig())
 
       if (reportRes.data.alreadyReported) {
         toast.error("You have already reported this item");

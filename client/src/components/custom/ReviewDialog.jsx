@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Slider } from "@/components/ui/slider";
-import { useAuth } from "@/components/context/AuthContext";
+import { useAuth, getAxiosConfig } from "@/components/context/AuthContext";
 import axios from "axios";
 
 const ReviewDialog = ({
@@ -32,10 +32,6 @@ const ReviewDialog = ({
   const [error, setError] = useState(null);
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-  const axiosConfig = {
-    headers: { "Content-Type": "application/json" },
-    withCredentials: true,
-  };
 
   useEffect(() => {
     if (existingReview) {
@@ -86,14 +82,14 @@ const ReviewDialog = ({
         response = await axios.patch(
           `${BACKEND_URL}/reviews/update/${existingReview.reviewId}`,
           reviewData,
-          axiosConfig
+          getAxiosConfig()
         );
       } else {
         // Create new review
         response = await axios.post(
           `${BACKEND_URL}/reviews`,
           reviewData,
-          axiosConfig
+          getAxiosConfig()
         );
       }
 
