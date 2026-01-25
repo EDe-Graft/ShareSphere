@@ -430,7 +430,7 @@ export default function ItemDetailsDialog({
         >
           <button
             type="button"
-            className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100 mb-2"
+            className="absolute right-6 top-1 rounded-sm opacity-70 hover:opacity-100 mb-2"
             onClick={handleDialogClose}
           >
             <X className="h-6 w-6" />
@@ -490,7 +490,6 @@ export default function ItemDetailsDialog({
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsEditing(true)}
-                className="mt-2 "
               >
                 <Edit2 className="h-4 w-4" />
               </Button>
