@@ -414,7 +414,7 @@ export default function ItemDetailsDialog({
     <>
       <div
         ref={overlayRef}
-        className="fixed inset-0 z-50 bg-black/80"
+        className="fixed inset-0 z-50 bg-black/80 py-4 sm:py-0"
         onClick={(e) => {
           if (e.target === overlayRef.current) {
             handleDialogClose();
