@@ -430,7 +430,7 @@ export default function ItemDetailsDialog({
         >
           <button
             type="button"
-            className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100"
+            className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100 mb-2"
             onClick={handleDialogClose}
           >
             <X className="h-6 w-6" />
@@ -438,7 +438,7 @@ export default function ItemDetailsDialog({
 
           <div className="flex flex-row items-center justify-between">
             <div className="space-y-2">
-              <h2 className="text-base">
+              <h2 className="text-base font-bold">
                 {isEditing ? (
                   <div>
                     <div className="text-sm font-medium text-muted-foreground mb-1">
