@@ -414,7 +414,7 @@ export default function ItemDetailsDialog({
     <>
       <div
         ref={overlayRef}
-        className="fixed inset-0 z-50 bg-black/80 py-4 sm:py-0"
+        className="fixed inset-0 z-50 bg-black/80"
         onClick={(e) => {
           if (e.target === overlayRef.current) {
             handleDialogClose();
@@ -423,7 +423,7 @@ export default function ItemDetailsDialog({
       >
         <div
           ref={dialogRef}
-          className="fixed left-[50%] top-[50%] w-full z-50 grid max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-4 sm:p-6 shadow-lg rounded-lg sm:max-w-[600px] max-h-[95vh] sm:max-h-[90vh] overflow-y-auto mx-0"
+          className="fixed left-[50%] top-[50%] w-full z-50 grid max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-1 sm:p-6 shadow-lg rounded-lg sm:max-w-[600px] max-h-[95vh] sm:max-h-[90vh] overflow-y-auto mx-0"
           role="dialog"
           aria-modal="true"
           onClick={(e) => e.stopPropagation()}
