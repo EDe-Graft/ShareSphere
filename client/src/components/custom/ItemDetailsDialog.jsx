@@ -430,7 +430,7 @@ export default function ItemDetailsDialog({
         >
           <button
             type="button"
-            className="absolute right-6 top-1 rounded-sm opacity-70 hover:opacity-100 mb-2"
+            className="absolute right-8 top-0 rounded-sm opacity-70 hover:opacity-100"
             onClick={handleDialogClose}
           >
             <X className="h-6 w-6" />
