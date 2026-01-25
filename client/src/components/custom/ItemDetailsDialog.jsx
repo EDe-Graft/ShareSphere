@@ -490,6 +490,7 @@ export default function ItemDetailsDialog({
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsEditing(true)}
+                className="mt-2 "
               >
                 <Edit2 className="h-4 w-4" />
               </Button>
