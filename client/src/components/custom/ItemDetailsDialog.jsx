@@ -428,9 +428,19 @@ export default function ItemDetailsDialog({
           aria-modal="true"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-start justify-between gap-4 -mt-2 mb-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleDialogClose}
+            className="absolute right-4 top-4 h-10 w-10 rounded-full hover:bg-muted z-10"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+
+          {/* Header */}
+          <div className="flex items-start justify-between gap-4 pr-12">
             <div className="flex-1 min-w-0">
-              <h2 className="text-md font-bold truncate">
+              <h2 className="text-lg font-bold truncate">
                 {isEditing ? (
                   <div>
                     <div className="text-sm font-medium text-muted-foreground mb-1">
@@ -477,48 +487,29 @@ export default function ItemDetailsDialog({
               </div>
             </div>
 
-            {/* Action buttons */}
-            <div className="flex items-center gap-1 shrink-0">
-              {isEditing ? (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleCancelEdit}
-                    className="h-8 w-8"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleSaveEdit}
-                    className="h-8 w-8"
-                  >
-                    <Save className="h-4 w-4" />
-                  </Button>
-                </>
-              ) : (
-                (mode === "edit" || isOwnItem) && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsEditing(true)}
-                    className="h-8 w-8"
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </Button>
-                )
-              )}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleDialogClose}
-                className="h-8 w-8"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+            {/* Action buttons - Edit*/}
+            {isEditing ? (
+              <div className="flex items-center gap-2 shrink-0">
+                <Button variant="outline" size="sm" onClick={handleCancelEdit}>
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={handleSaveEdit}>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save
+                </Button>
+              </div>
+            ) : (
+              (mode === "edit" || isOwnItem) && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsEditing(true)}
+                  className="h-9 w-9 shrink-0"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+              )
+            )}
           </div>
 
           <div className="py-4">
