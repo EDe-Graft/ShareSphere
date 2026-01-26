@@ -47,7 +47,7 @@ const BooksViewPage = () => {
   const [books, setBooks] = useState([]);
   const [filteredBooks, setFilteredBooks] = useState([]);
   const [likesById, setLikesById] = useState({});
-  const [isLikeLoading, setIsLikeLoading] = useState(false);
+  const [isLikeLoading, setIsLikeLoading] = useState(true);
   const [isLikedById, setIsLikedById] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -55,7 +55,7 @@ const BooksViewPage = () => {
   const [selectedCondition, setSelectedCondition] = useState("all");
   const [selectedAvailability, setSelectedAvailability] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedBook, setSelectedBook] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);

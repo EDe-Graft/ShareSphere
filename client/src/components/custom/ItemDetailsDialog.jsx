@@ -428,17 +428,9 @@ export default function ItemDetailsDialog({
           aria-modal="true"
           onClick={(e) => e.stopPropagation()}
         >
-          <button
-            type="button"
-            className="absolute right-8 top-0 rounded-sm opacity-70 hover:opacity-100"
-            onClick={handleDialogClose}
-          >
-            <X className="h-6 w-6" />
-          </button>
-
-          <div className="flex flex-row items-center justify-between">
-            <div className="space-y-2">
-              <h2 className="text-base font-bold">
+          <div className="flex items-start justify-between gap-4 -mt-2 mb-2">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-md font-bold truncate">
                 {isEditing ? (
                   <div>
                     <div className="text-sm font-medium text-muted-foreground mb-1">
@@ -455,7 +447,7 @@ export default function ItemDetailsDialog({
                   item.title || item.name
                 )}
               </h2>
-              <div className="text-base font-medium">
+              <div className="text-sm font-medium text-muted-foreground mt-1">
                 {isEditing ? (
                   <div>
                     <div className="text-sm font-medium text-muted-foreground mb-1">
@@ -485,26 +477,48 @@ export default function ItemDetailsDialog({
               </div>
             </div>
 
-            {(mode === "edit" || isOwnItem) && (
+            {/* Action buttons */}
+            <div className="flex items-center gap-1 shrink-0">
+              {isEditing ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleCancelEdit}
+                    className="h-8 w-8"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleSaveEdit}
+                    className="h-8 w-8"
+                  >
+                    <Save className="h-4 w-4" />
+                  </Button>
+                </>
+              ) : (
+                (mode === "edit" || isOwnItem) && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsEditing(true)}
+                    className="h-8 w-8"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                )
+              )}
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setIsEditing(true)}
+                onClick={handleDialogClose}
+                className="h-8 w-8"
               >
-                <Edit2 className="h-4 w-4" />
+                <X className="h-4 w-4" />
               </Button>
-            )}
-
-            {isEditing && (
-              <div className="flex gap-2">
-                <Button variant="ghost" size="icon" onClick={handleCancelEdit}>
-                  <X className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={handleSaveEdit}>
-                  <Save className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
+            </div>
           </div>
 
           <div className="py-4">
