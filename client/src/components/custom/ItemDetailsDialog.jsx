@@ -432,13 +432,13 @@ export default function ItemDetailsDialog({
             variant="ghost"
             size="icon"
             onClick={handleDialogClose}
-            className="absolute right-4 top-4 h-10 w-10 rounded-full hover:bg-muted z-10"
+            className="absolute right-0 top-0 h-12 w-12 rounded-full hover:bg-muted z-10"
           >
-            <X className="h-5 w-5" />
+            <X className="h-6 w-6" />
           </Button>
 
           {/* Header */}
-          <div className="flex items-start justify-between gap-4 pr-12">
+          <div className="flex items-start justify-between gap-4 pr-14 mt-2">
             <div className="flex-1 min-w-0">
               <h2 className="text-lg font-bold truncate">
                 {isEditing ? (
@@ -487,28 +487,16 @@ export default function ItemDetailsDialog({
               </div>
             </div>
 
-            {/* Action buttons - Edit*/}
-            {isEditing ? (
-              <div className="flex items-center gap-2 shrink-0">
-                <Button variant="outline" size="sm" onClick={handleCancelEdit}>
-                  Cancel
-                </Button>
-                <Button size="sm" onClick={handleSaveEdit}>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save
-                </Button>
-              </div>
-            ) : (
-              (mode === "edit" || isOwnItem) && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsEditing(true)}
-                  className="h-9 w-9 shrink-0"
-                >
-                  <Edit2 className="h-4 w-4" />
-                </Button>
-              )
+            {/* Action buttons*/}
+            {!isEditing && (mode === "edit" || isOwnItem) && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsEditing(true)}
+                className="h-9 w-9 shrink-0"
+              >
+                <Edit2 className="h-4 w-4" />
+              </Button>
             )}
           </div>
 
